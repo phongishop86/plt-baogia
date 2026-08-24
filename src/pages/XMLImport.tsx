@@ -32,11 +32,8 @@ export default function XMLImport() {
         let invoiceType: 'INPUT' | 'OUTPUT';
         if (seller.taxCode === PLT_TAX_CODE) {
           invoiceType = 'OUTPUT'; // PLT là người bán -> Hóa đơn bán ra
-        } else if (buyer.taxCode === PLT_TAX_CODE) {
-          invoiceType = 'INPUT'; // PLT là người mua -> Hóa đơn mua vào
         } else {
-          // Nếu không khớp, mặc định hỏi hoặc báo lỗi. Ở đây tạm cho vào INPUT và cảnh báo
-          throw new Error(`MST trong hóa đơn không khớp với PLT (${PLT_TAX_CODE}). Mua: ${buyer.taxCode}, Bán: ${seller.taxCode}`);
+          invoiceType = 'INPUT'; // PLT không phải người bán -> Mặc định là Hóa đơn mua vào (Nhà cung cấp xuất cho PLT)
         }
         
         // Check for duplicates
