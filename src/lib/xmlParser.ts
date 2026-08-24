@@ -58,37 +58,41 @@ export function parseInvoiceXML(xmlString: string) {
     const domParser = new DOMParser();
     const xmlDoc = domParser.parseFromString(xmlString, "text/xml");
 
-    // Helper: Lấy text content của node con bỏ qua Namespace và quét sâu
+    // Helper: Lấy text content của node con bỏ qua Namespace và quét sâu không phân biệt hoa thường
     const getNodeText = (parent: Element, tagNames: string[]): string => {
+      const allChildren = Array.from(parent.getElementsByTagName("*"));
       for (const tag of tagNames) {
-        let elements = Array.from(parent.getElementsByTagNameNS("*", tag));
-        if (elements.length === 0) elements = Array.from(parent.getElementsByTagName(tag));
+        const lowerTag = tag.toLowerCase();
+        const match = allChildren.find(child => {
+          const localName = (child.localName || child.tagName).toLowerCase();
+          return localName === lowerTag || localName.endsWith(':' + lowerTag);
+        });
         
-        if (elements.length > 0 && elements[0].textContent) {
-           return elements[0].textContent.trim();
+        if (match && match.textContent) {
+           return match.textContent.trim();
         }
       }
       return '';
     };
 
     // Tìm tất cả các node HHDV trong toàn bộ file XML
-    let itemNodes = Array.from(xmlDoc.getElementsByTagNameNS("*", "HHDV"));
-    if (itemNodes.length === 0) itemNodes = Array.from(xmlDoc.getElementsByTagName("HHDV"));
-    if (itemNodes.length === 0) itemNodes = Array.from(xmlDoc.getElementsByTagNameNS("*", "HangHoa"));
-    if (itemNodes.length === 0) itemNodes = Array.from(xmlDoc.getElementsByTagName("HangHoa"));
-    if (itemNodes.length === 0) itemNodes = Array.from(xmlDoc.getElementsByTagNameNS("*", "ChiTiet"));
-    if (itemNodes.length === 0) itemNodes = Array.from(xmlDoc.getElementsByTagName("ChiTiet"));
+    // Tìm tất cả các node đóng vai trò là "Dòng hàng hóa" (bất kể chữ hoa hay chữ thường)
+    const allNodes = Array.from(xmlDoc.getElementsByTagName("*"));
+    let itemNodes = allNodes.filter(node => {
+      const name = (node.localName || node.tagName).toLowerCase();
+      return ['hhdv', 'hanghoa', 'chitiet', 'row', 'item'].includes(name);
+    });
 
     const products = itemNodes.map(node => {
-      const quantityStr = getNodeText(node, ['SLuong', 'SoLuong']);
-      const priceStr = getNodeText(node, ['DGia', 'DonGia']);
-      const taxRateStr = getNodeText(node, ['TSuat', 'ThueSuat']);
-      const amountStr = getNodeText(node, ['ThTien', 'ThanhTien', 'TTien']);
+      const quantityStr = getNodeText(node, ['SLuong', 'SoLuong', 'Quantity', 'Qty']);
+      const priceStr = getNodeText(node, ['DGia', 'DonGia', 'Price', 'UnitPrice']);
+      const taxRateStr = getNodeText(node, ['TSuat', 'ThueSuat', 'VATRate', 'TaxRate']);
+      const amountStr = getNodeText(node, ['ThTien', 'ThanhTien', 'TTien', 'Amount', 'TotalAmount']);
 
       return {
-        code: getNodeText(node, ['MHHDV', 'MaHang', 'MaSP']),
-        name: getNodeText(node, ['THHDV', 'TenHang', 'TenSP', 'TenHHDV', 'TenDichVu', 'TenHangHoa']),
-        unit: getNodeText(node, ['DVTinh', 'DonViTinh', 'DVT', 'DonVi']),
+        code: getNodeText(node, ['MHHDV', 'MaHang', 'MaSP', 'ItemCode', 'ProdCode']),
+        name: getNodeText(node, ['THHDV', 'TenHang', 'TenSP', 'TenHHDV', 'TenDichVu', 'TenHangHoa', 'ItemName', 'ProductName', 'ProdName']),
+        unit: getNodeText(node, ['DVTinh', 'DonViTinh', 'DVT', 'DonVi', 'UnitName', 'Unit']),
         quantity: parseFloat(quantityStr.replace(',', '.') || '1'),
         unitPrice: parseFloat(priceStr.replace(',', '.') || '0'),
         taxRate: parseFloat(taxRateStr.replace('%', '') || '0'),
