@@ -5,6 +5,7 @@ export function parseInvoiceXML(xmlString: string) {
   const parser = new XMLParser({
     ignoreAttributes: false,
     parseAttributeValue: true,
+    removeNSPrefix: true, // Quan trọng: tự động bỏ các tiền tố như inv:, ns1: trong thẻ XML
   });
 
   const parsed = parser.parse(xmlString);

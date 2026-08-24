@@ -23,6 +23,10 @@ export default function XMLImport() {
         
         const { buyer, seller, products, invoiceInfo } = parsed;
         
+        if (!invoiceInfo.docNumber || invoiceInfo.docNumber.trim() === '') {
+          throw new Error("Không tìm thấy Số hóa đơn trong file XML (File không đúng chuẩn hoặc bị thiếu dữ liệu).");
+        }
+        
         // Check for duplicates
         const docType = invoiceType === 'INPUT' ? 'INPUT_INVOICE' : 'OUTPUT_INVOICE';
         const existingDoc = await db.documents
