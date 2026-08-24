@@ -23,6 +23,17 @@ export default function XMLImport() {
         
         const { buyer, seller, products, invoiceInfo } = parsed;
         
+        // Check for duplicates
+        const docType = invoiceType === 'INPUT' ? 'INPUT_INVOICE' : 'OUTPUT_INVOICE';
+        const existingDoc = await db.documents
+          .where('docNumber').equals(invoiceInfo.docNumber)
+          .and(doc => doc.type === docType)
+          .first();
+          
+        if (existingDoc) {
+          throw new Error(`Hóa đơn số ${invoiceInfo.docNumber} đã tồn tại trong hệ thống.`);
+        }
+        
         // Determine the counterpart based on invoice type
         // INPUT invoice (Mua vào): the counterpart is the Seller (Nhà cung cấp)
         // OUTPUT invoice (Bán ra): the counterpart is the Buyer (Khách hàng)

@@ -70,7 +70,7 @@ export function parseInvoiceXML(xmlString: string) {
     }));
 
     const invoiceInfo = {
-      docNumber: ttChung['SHDon'] || '',
+      docNumber: (ttChung['KHHDon'] ? ttChung['KHHDon'] + '-' : '') + (ttChung['SHDon'] || ''),
       date: new Date(ttChung['NLap'] || Date.now()),
       subTotal: parseFloat(tToan['TgTCThue'] || '0'),
       taxAmount: parseFloat(tToan['TgTThue'] || '0'),
