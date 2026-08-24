@@ -30,7 +30,11 @@ export default function XMLImport() {
         
         // Tự động phân loại hóa đơn dựa vào MST của PLT
         let invoiceType: 'INPUT' | 'OUTPUT';
-        if (seller.taxCode === PLT_TAX_CODE) {
+        const cleanTax = (code?: string) => (code || '').toString().replace(/[^0-9]/g, '');
+        const sellerName = (seller.name || '').toLowerCase();
+        
+        // Kiểm tra xem bên xuất hóa đơn có phải là PLT không (qua MST hoặc Tên công ty)
+        if (cleanTax(seller.taxCode) === cleanTax(PLT_TAX_CODE) || sellerName.includes('phát lộc tech') || sellerName.includes('phat loc tech')) {
           invoiceType = 'OUTPUT'; // PLT là người bán -> Hóa đơn bán ra
         } else {
           invoiceType = 'INPUT'; // PLT không phải người bán -> Mặc định là Hóa đơn mua vào (Nhà cung cấp xuất cho PLT)
