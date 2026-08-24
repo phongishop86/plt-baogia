@@ -35,11 +35,28 @@ export function parseInvoiceXML(xmlString: string) {
       ndHDonNode = hdon['DLHDon']['NDHDon'];
     }
 
-    const ttChung = ndHDonNode['TTChung'] || {};
-    const nMua = ndHDonNode['NMua'] || {};
-    const nBan = ndHDonNode['NBan'] || {};
-    const dshhdv = (ndHDonNode['DSHHDV'] && ndHDonNode['DSHHDV']['HHDV']) || [];
-    const tToan = ndHDonNode['TToan'] || {};
+    const findNode = (obj: any, targetKey: string): any => {
+      if (!obj || typeof obj !== 'object') return null;
+      if (obj[targetKey]) return obj[targetKey];
+      for (const key of Object.keys(obj)) {
+        const found = findNode(obj[key], targetKey);
+        if (found) return found;
+      }
+      return null;
+    };
+
+    const ttChung = findNode(ndHDonNode, 'TTChung') || {};
+    const nMua = findNode(ndHDonNode, 'NMua') || {};
+    const nBan = findNode(ndHDonNode, 'NBan') || {};
+    const tToan = findNode(ndHDonNode, 'TToan') || {};
+    
+    // Đôi khi cấu trúc có thể là DSHHDV -> HHDV, hoặc chỉ có HHDV (dù sai chuẩn nhưng vẫn có thể xảy ra)
+    let dshhdv = findNode(ndHDonNode, 'DSHHDV');
+    if (dshhdv && dshhdv['HHDV']) {
+      dshhdv = dshhdv['HHDV'];
+    } else {
+      dshhdv = findNode(ndHDonNode, 'HHDV') || [];
+    }
 
     const buyer: Partial<Customer> = {
       name: nMua['Ten'] || '',
@@ -58,7 +75,8 @@ export function parseInvoiceXML(xmlString: string) {
       isSupplier: true,
     };
 
-    const items = Array.isArray(dshhdv) ? dshhdv : [dshhdv];
+    // Đảm bảo dshhdv luôn là mảng, nếu trống thì trả về mảng rỗng
+    const items = Array.isArray(dshhdv) ? dshhdv : (dshhdv ? [dshhdv] : []);
     const products = items.map((item: any) => ({
       code: item['MHHDV'] || '',
       name: item['THHDV'] || '',
