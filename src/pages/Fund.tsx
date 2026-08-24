@@ -108,50 +108,52 @@ export default function Fund() {
         <div className="p-4 border-b border-gray-200 bg-gray-50">
           <h3 className="font-semibold text-gray-800">Lịch sử Giao dịch Quỹ</h3>
         </div>
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Loại Giao Dịch</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Diễn giải</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Thu (Tăng Quỹ)</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Chi (Giảm Quỹ)</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Hành động</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {transactions?.map((tx) => (
-              <tr key={tx.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(tx.date).toLocaleDateString('vi-VN')}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                  {tx.type === 'ADVANCE' && <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-medium">GĐ Nộp Quỹ (Tạm ứng)</span>}
-                  {tx.type === 'REPAYMENT' && <span className="px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded-full font-medium">Hoàn ứng GĐ</span>}
-                  {tx.type === 'OTHER_IN' && <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full font-medium">Thu khác</span>}
-                  {tx.type === 'OTHER_OUT' && <span className="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full font-medium">Chi khác</span>}
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-900">{tx.description}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-green-600">
-                  {(tx.type === 'ADVANCE' || tx.type === 'OTHER_IN') ? `+${formatCurrency(tx.amount)}` : '-'}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-red-600">
-                  {(tx.type === 'REPAYMENT' || tx.type === 'OTHER_OUT') ? `-${formatCurrency(tx.amount)}` : '-'}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <button onClick={() => handleDelete(tx.id!)} className="text-red-500 hover:text-red-700">
-                    <Trash2 size={18} />
-                  </button>
-                </td>
-              </tr>
-            ))}
-            {transactions?.length === 0 && (
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
               <tr>
-                <td colSpan={6} className="px-6 py-8 text-center text-sm text-gray-500">
-                  Chưa có giao dịch quỹ nào.
-                </td>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Loại Giao Dịch</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Diễn giải</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Thu (Tăng Quỹ)</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Chi (Giảm Quỹ)</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Hành động</th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {transactions?.map((tx) => (
+                <tr key={tx.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(tx.date).toLocaleDateString('vi-VN')}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    {tx.type === 'ADVANCE' && <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-medium">GĐ Nộp Quỹ (Tạm ứng)</span>}
+                    {tx.type === 'REPAYMENT' && <span className="px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded-full font-medium">Hoàn ứng GĐ</span>}
+                    {tx.type === 'OTHER_IN' && <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full font-medium">Thu khác</span>}
+                    {tx.type === 'OTHER_OUT' && <span className="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full font-medium">Chi khác</span>}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-900">{tx.description}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-green-600">
+                    {(tx.type === 'ADVANCE' || tx.type === 'OTHER_IN') ? `+${formatCurrency(tx.amount)}` : '-'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-red-600">
+                    {(tx.type === 'REPAYMENT' || tx.type === 'OTHER_OUT') ? `-${formatCurrency(tx.amount)}` : '-'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <button onClick={() => handleDelete(tx.id!)} className="text-red-500 hover:text-red-700">
+                      <Trash2 size={18} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {transactions?.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-6 py-8 text-center text-sm text-gray-500">
+                    Chưa có giao dịch quỹ nào.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* MODAL THÊM GIAO DỊCH */}
