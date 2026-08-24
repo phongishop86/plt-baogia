@@ -1,6 +1,8 @@
 import { useState, useRef } from 'react';
 import { db } from '../db/db';
-import { Trash2, AlertTriangle, ShieldCheck, Download, Upload, Database } from 'lucide-react';
+import { Trash2, AlertTriangle, ShieldCheck, Download, Upload, Database, Cloud } from 'lucide-react';
+import { useGoogleLogin } from '@react-oauth/google';
+import { findBackupFile, uploadBackup, downloadBackup, DRIVE_SCOPE } from '../utils/googleDrive';
 
 export default function Settings() {
   const [pin, setPin] = useState('');
@@ -89,6 +91,90 @@ export default function Settings() {
     reader.readAsText(file);
   };
 
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<string>('');
+
+  const login = useGoogleLogin({
+    scope: DRIVE_SCOPE,
+    onSuccess: async (tokenResponse) => {
+      setIsSyncing(true);
+      setSyncStatus('Đang kiểm tra Google Drive...');
+      try {
+        const token = tokenResponse.access_token;
+        const fileId = await findBackupFile(token);
+
+        if (!fileId) {
+          // Lần đầu kết nối -> Tải dữ liệu từ máy lên Drive
+          setSyncStatus('Chưa có file trên Drive. Đang tạo file mới...');
+          const customers = await db.customers.toArray();
+          const products = await db.products.toArray();
+          const documents = await db.documents.toArray();
+          const transactions = await db.transactions.toArray();
+          
+          const backupData = {
+            version: 2,
+            date: new Date().toISOString(),
+            data: { customers, products, documents, transactions }
+          };
+
+          await uploadBackup(token, null, backupData);
+          setSyncStatus('Lưu dữ liệu lên Google Drive thành công!');
+        } else {
+          // Đã có file trên Drive -> Hỏi người dùng
+          const choice = confirm('Phát hiện dữ liệu cũ trên Google Drive!\n\nNhấn [OK] để TẢI DỮ LIỆU TỪ DRIVE VỀ MÁY (Ghi đè máy).\nNhấn [Cancel] để ĐẨY DỮ LIỆU TỪ MÁY LÊN DRIVE (Ghi đè Drive).');
+          
+          if (choice) {
+            // Tải về
+            setSyncStatus('Đang tải dữ liệu từ Drive về máy...');
+            const backupData = await downloadBackup(token, fileId);
+            if (backupData && backupData.data) {
+              await db.transaction('rw', db.customers, db.products, db.documents, db.transactions, async () => {
+                  await db.customers.clear();
+                  await db.products.clear();
+                  await db.documents.clear();
+                  await db.transactions.clear();
+                  if (backupData.data.customers?.length) await db.customers.bulkAdd(backupData.data.customers);
+                  if (backupData.data.products?.length) await db.products.bulkAdd(backupData.data.products);
+                  if (backupData.data.documents?.length) await db.documents.bulkAdd(backupData.data.documents);
+                  if (backupData.data.transactions?.length) await db.transactions.bulkAdd(backupData.data.transactions);
+              });
+              setSyncStatus('Phục hồi dữ liệu từ Drive thành công!');
+              alert('Đã phục hồi dữ liệu từ Google Drive thành công!');
+              window.location.reload();
+            }
+          } else {
+            // Đẩy lên
+            setSyncStatus('Đang lưu dữ liệu máy tính lên Drive...');
+            const customers = await db.customers.toArray();
+            const products = await db.products.toArray();
+            const documents = await db.documents.toArray();
+            const transactions = await db.transactions.toArray();
+            
+            const backupData = {
+              version: 2,
+              date: new Date().toISOString(),
+              data: { customers, products, documents, transactions }
+            };
+  
+            await uploadBackup(token, fileId, backupData);
+            setSyncStatus('Lưu dữ liệu lên Google Drive thành công!');
+            alert('Đã đồng bộ dữ liệu mới lên Google Drive thành công!');
+          }
+        }
+      } catch (err) {
+        console.error(err);
+        setSyncStatus('Lỗi đồng bộ Google Drive.');
+        alert('Có lỗi xảy ra trong quá trình đồng bộ!');
+      } finally {
+        setTimeout(() => { setIsSyncing(false); setSyncStatus(''); }, 3000);
+      }
+    },
+    onError: (error) => {
+      console.error(error);
+      alert('Đăng nhập Google thất bại!');
+    }
+  });
+
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -98,21 +184,46 @@ export default function Settings() {
         </div>
         
         <div className="p-6 space-y-8">
+
+          {/* GOOGLE DRIVE SYNC */}
+          <div className="bg-green-50 border border-green-200 rounded-lg p-5">
+            <div className="flex items-start space-x-4">
+              <Cloud className="text-green-600 flex-shrink-0 mt-1" size={24} />
+              <div className="w-full">
+                <h3 className="text-lg font-bold text-green-900">Đồng bộ Đám mây (Google Drive)</h3>
+                <p className="text-sm text-green-800 mt-1 mb-4">
+                  Đồng bộ dữ liệu của bạn an toàn trên Google Drive cá nhân, giúp làm việc liên tục giữa Máy tính và Điện thoại mà không cần tải file thủ công.
+                </p>
+                
+                <div className="flex flex-col sm:flex-row items-center gap-3">
+                  <button 
+                    onClick={() => login()}
+                    disabled={isSyncing}
+                    className="w-full sm:w-auto bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-5 py-2.5 rounded font-medium flex items-center justify-center space-x-2 transition-colors text-sm shadow-sm"
+                  >
+                    {isSyncing ? <span className="animate-spin text-lg block">↻</span> : <Cloud size={18} />}
+                    <span>Kết nối & Đồng bộ Drive</span>
+                  </button>
+                  {syncStatus && <span className="text-sm font-medium text-green-700">{syncStatus}</span>}
+                </div>
+              </div>
+            </div>
+          </div>
           
-          {/* SAO LƯU & PHỤC HỒI */}
+          {/* SAO LƯU & PHỤC HỒI THỦ CÔNG */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-5">
             <div className="flex items-start space-x-4">
               <Database className="text-blue-600 flex-shrink-0 mt-1" size={24} />
               <div className="w-full">
-                <h3 className="text-lg font-bold text-blue-900">Sao lưu & Đồng bộ thiết bị (Backup/Restore)</h3>
+                <h3 className="text-lg font-bold text-blue-900">Sao lưu & Đồng bộ qua File thủ công</h3>
                 <p className="text-sm text-blue-700 mt-1 mb-4">
-                  Dữ liệu hiện tại được lưu độc lập trên trình duyệt của máy tính này. Để làm việc trên Điện thoại hoặc Máy tính khác, hãy <b>Sao lưu</b> (tải file về) sau đó gửi qua Zalo/Drive sang máy kia, rồi chọn <b>Phục hồi</b>.
+                  Dành cho trường hợp không dùng Google Drive. Hãy tải file về, gửi qua thiết bị khác (Zalo) rồi chọn Phục hồi từ File.
                 </p>
                 
                 <div className="flex flex-col sm:flex-row items-center gap-3">
                   <button 
                     onClick={handleBackup}
-                    className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded font-medium flex items-center justify-center space-x-2 transition-colors text-sm shadow-sm"
+                    className="w-full sm:w-auto bg-white hover:bg-blue-50 text-blue-700 border border-blue-600 px-5 py-2.5 rounded font-medium flex items-center justify-center space-x-2 transition-colors text-sm shadow-sm"
                   >
                     <Download size={18} />
                     <span>Tải file Sao lưu (.json)</span>
