@@ -24,12 +24,31 @@ export default function Dashboard() {
     return { customers, products, documents: documents.length, revenue, cost, profit };
   });
 
+  const handleResetData = async () => {
+    if (confirm('BẠN CÓ CHẮC CHẮN MUỐN XÓA TOÀN BỘ DỮ LIỆU?\nHành động này không thể hoàn tác!')) {
+      await db.customers.clear();
+      await db.products.clear();
+      await db.documents.clear();
+      alert('Đã xóa trắng dữ liệu!');
+    }
+  };
+
   const formatCurrency = (val: number) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
 
   if (!stats) return <div className="p-8 text-center text-gray-500">Đang tải dữ liệu...</div>;
 
   return (
     <div className="space-y-6">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold text-gray-800">Tổng quan hệ thống</h2>
+        <button 
+          onClick={handleResetData}
+          className="bg-red-100 hover:bg-red-200 text-red-700 px-4 py-2 rounded-md font-medium text-sm border border-red-300"
+        >
+          Xóa toàn bộ dữ liệu (Reset)
+        </button>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <StatCard title="Khách hàng / Đối tác" value={stats.customers.toString()} icon={<Users size={24} className="text-blue-500" />} />
         <StatCard title="Sản phẩm" value={stats.products.toString()} icon={<Box size={24} className="text-purple-500" />} />
