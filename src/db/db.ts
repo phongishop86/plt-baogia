@@ -49,10 +49,20 @@ export interface DocumentItem {
   amount: number;
 }
 
+export interface Transaction {
+  id?: number;
+  date: Date;
+  amount: number;
+  type: 'ADVANCE' | 'REPAYMENT' | 'OTHER_IN' | 'OTHER_OUT'; // ADVANCE: GĐ ứng tiền (Tăng quỹ), REPAYMENT: Hoàn ứng (Giảm quỹ)
+  description: string;
+  createdAt?: Date;
+}
+
 export class PLTDatabase extends Dexie {
   customers!: Table<Customer, number>;
   products!: Table<Product, number>;
   documents!: Table<Document, number>;
+  transactions!: Table<Transaction, number>;
 
   constructor() {
     super('PLTERPDatabase');
@@ -60,6 +70,12 @@ export class PLTDatabase extends Dexie {
       customers: '++id, taxCode, name',
       products: '++id, code, name',
       documents: '++id, type, docNumber, customerId, date'
+    });
+    this.version(2).stores({
+      customers: '++id, taxCode, name',
+      products: '++id, code, name',
+      documents: '++id, type, docNumber, customerId, date',
+      transactions: '++id, date, type'
     });
   }
 }

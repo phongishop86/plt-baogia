@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { FileText, Users, Box, LayoutDashboard, Upload, FilePlus, Settings as SettingsIcon } from 'lucide-react';
+import { FileText, Users, Box, LayoutDashboard, Upload, FilePlus, Settings as SettingsIcon, Wallet } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import Customers from './pages/Customers';
 import Products from './pages/Products';
 import Documents from './pages/Documents';
 import XMLImport from './pages/XMLImport';
 import CreateQuotation from './pages/CreateQuotation';
+import Fund from './pages/Fund';
 import Settings from './pages/Settings';
 
 function App() {
@@ -15,11 +16,9 @@ function App() {
     <div className="flex h-screen bg-gray-50 text-gray-900 font-sans print:bg-white">
       {/* Sidebar */}
       <aside className="w-64 bg-white border-r border-gray-200 flex flex-col print:hidden">
-        <div className="p-4 border-b border-gray-200 flex items-center space-x-2">
-          <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center">
-            <FileText className="text-white" size={20} />
-          </div>
-          <h1 className="font-bold text-lg text-gray-800">PLT ERP</h1>
+        <div className="p-4 border-b border-gray-200 flex items-center space-x-3">
+          <img src="/PLT-Logo-web.png" alt="PLT Logo" className="w-9 h-9 object-contain bg-white rounded" />
+          <h1 className="font-bold text-lg text-gray-800 tracking-wide">PLT ERP</h1>
         </div>
         
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
@@ -46,6 +45,12 @@ function App() {
             label="Hồ sơ Chứng từ" 
             active={activeTab === 'documents'} 
             onClick={() => setActiveTab('documents')} 
+          />
+          <NavItem 
+            icon={<Wallet size={20} />} 
+            label="Quỹ & Tạm ứng" 
+            active={activeTab === 'fund'} 
+            onClick={() => setActiveTab('fund')} 
           />
           <NavItem 
             icon={<Upload size={20} />} 
@@ -80,6 +85,7 @@ function App() {
             activeTab === 'customers' ? 'Quản lý Khách Hàng / Đối tác' :
             activeTab === 'products' ? 'Quản lý Sản Phẩm / Tồn kho' :
             activeTab === 'documents' ? 'Quản lý Hồ sơ Chứng từ' :
+            activeTab === 'fund' ? 'Quản lý Quỹ & Tạm ứng' :
             activeTab === 'settings' ? 'Cài đặt Hệ thống' :
             'Tổng quan (Dashboard)'
           }</h2>
@@ -89,6 +95,7 @@ function App() {
           {activeTab === 'customers' && <Customers />}
           {activeTab === 'products' && <Products />}
           {activeTab === 'documents' && <Documents />}
+          {activeTab === 'fund' && <Fund />}
           {activeTab === 'xml' && <XMLImport />}
           {activeTab === 'create-quote' && <CreateQuotation />}
           {activeTab === 'settings' && <Settings />}
