@@ -12,6 +12,7 @@ import Settings from './pages/Settings';
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [prefilledProducts, setPrefilledProducts] = useState<number[]>([]);
 
   // Đóng menu khi màn hình lớn hơn lg
   useEffect(() => {
@@ -138,11 +139,21 @@ function App() {
         <div className="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-6 print:p-0">
           {activeTab === 'dashboard' && <Dashboard />}
           {activeTab === 'customers' && <Customers />}
-          {activeTab === 'products' && <Products />}
+          {activeTab === 'products' && (
+            <Products 
+              onNavigate={(tab) => handleTabClick(tab)} 
+              setPrefilledProducts={setPrefilledProducts} 
+            />
+          )}
           {activeTab === 'documents' && <Documents />}
           {activeTab === 'fund' && <Fund />}
           {activeTab === 'xml' && <XMLImport />}
-          {activeTab === 'create-quote' && <CreateQuotation />}
+          {activeTab === 'create-quote' && (
+            <CreateQuotation 
+              prefilledProducts={prefilledProducts} 
+              clearPrefilled={() => setPrefilledProducts([])} 
+            />
+          )}
           {activeTab === 'settings' && <Settings />}
         </div>
       </main>

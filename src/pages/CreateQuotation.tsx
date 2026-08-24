@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, type Product } from '../db/db';
 import { Printer } from 'lucide-react';
@@ -8,7 +8,12 @@ interface SelectedProduct extends Partial<Product> {
   quantity: number;
 }
 
-export default function CreateQuotation() {
+interface CreateQuotationProps {
+  prefilledProducts?: number[];
+  clearPrefilled?: () => void;
+}
+
+export default function CreateQuotation({ prefilledProducts = [], clearPrefilled }: CreateQuotationProps) {
   const customers = useLiveQuery(() => db.customers.toArray());
   const products = useLiveQuery(() => db.products.toArray());
 
@@ -18,11 +23,27 @@ export default function CreateQuotation() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
+  // Tự động nạp sản phẩm được tick chọn từ trang Tồn Kho
+  useEffect(() => {
+    if (prefilledProducts.length > 0 && products && selectedItems.length === 0) {
+      const itemsToAdd = products
+        .filter(p => prefilledProducts.includes(p.id!))
+        .map(product => ({
+          ...product,
+          tempId: Date.now().toString() + Math.random().toString(),
+          quantity: 1
+        }));
+      
+      setSelectedItems(itemsToAdd);
+      if (clearPrefilled) clearPrefilled();
+    }
+  }, [prefilledProducts, products]);
+
   const handleAddItemFromDB = (productId: number) => {
     const product = products?.find(p => p.id === productId);
     if (!product) return;
     
-    setSelectedItems([...selectedItems, { ...product, tempId: Date.now().toString(), quantity: 1 }]);
+    setSelectedItems(prev => [...prev, { ...product, tempId: Date.now().toString(), quantity: 1 }]);
   };
 
   const handleAddManualRow = () => {
