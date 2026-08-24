@@ -111,10 +111,7 @@ export default function CreateQuotation() {
       <div className="hidden print:block mb-6 text-sm font-[Times_New_Roman]">
         <div className="flex items-start space-x-6 pb-4">
           <div className="w-28 flex-shrink-0">
-            {/* Logo placeholder - Cần thay bằng logo thực tế */}
-            <div className="w-24 h-24 rounded-full border-4 border-red-500 flex items-center justify-center font-bold text-3xl text-blue-800 bg-yellow-50">
-              <span className="text-red-500">P</span><span className="text-blue-800">L</span><span className="text-blue-800 absolute mt-8 text-xl">T</span>
-            </div>
+            <img src="/logo.png" alt="PLT Logo" className="w-24 h-24 object-contain" />
           </div>
           <div className="flex-1 space-y-1">
             <h1 className="text-lg font-bold">CÔNG TY TNHH PHÁT LỘC TECH</h1>
