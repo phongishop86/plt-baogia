@@ -52,54 +52,73 @@ export function parseInvoiceXML(xmlString: string) {
     };
 
     // =====================================================================
-    // SỬ DỤNG NATIVE DOM PARSER CỦA TRÌNH DUYỆT ĐỂ BÓC TÁCH HÀNG HÓA
-    // Đảm bảo chính xác 100% không bị ảnh hưởng bởi lỗi parser JSON
+    // THUẬT TOÁN BOTTOM-UP: QUÉT TỪ TÊN HÀNG HÓA SUY NGƯỢC LÊN NODE CHA
+    // Vô hiệu hóa mọi giới hạn về Tên Thẻ Bọc Ngoài (Wrapper Tag)
     // =====================================================================
     const domParser = new DOMParser();
     const xmlDoc = domParser.parseFromString(xmlString, "text/xml");
 
-    // Helper: Lấy text content của node con bỏ qua Namespace và quét sâu không phân biệt hoa thường
-    const getNodeText = (parent: Element, tagNames: string[]): string => {
-      const allChildren = Array.from(parent.getElementsByTagName("*"));
-      for (const tag of tagNames) {
-        const lowerTag = tag.toLowerCase();
-        const match = allChildren.find(child => {
-          const localName = (child.localName || child.tagName).toLowerCase();
-          return localName === lowerTag || localName.endsWith(':' + lowerTag);
-        });
+    // Lấy tất cả các node trong file XML
+    const allNodes = Array.from(xmlDoc.getElementsByTagName("*"));
+    
+    // Danh sách các thẻ có khả năng là Tên Hàng Hóa (bao phủ 99% các chuẩn cũ/mới)
+    const nameTags = ['thhdv', 'tenhang', 'tensp', 'tenhhdv', 'tendichvu', 'tenhanghoa', 'itemname', 'productname', 'prodname', 'tendv', 'hanghoa', 'dichvu'];
+    
+    const products: any[] = [];
+    
+    // Quét từng node để tìm node chứa Tên Hàng Hóa
+    for (const node of allNodes) {
+      const localName = (node.localName || node.tagName).toLowerCase();
+      
+      // Nếu node này là Tên Hàng Hóa VÀ không chứa node con (là thẻ lá chứa text)
+      if (nameTags.includes(localName) && node.children.length === 0 && node.textContent && node.textContent.trim() !== '') {
         
-        if (match && match.textContent) {
-           return match.textContent.trim();
+        const nameText = node.textContent.trim();
+        const parent = node.parentNode as Element;
+        
+        // Hàm lùng sục thông số (SL, Đơn giá...) bên trong cùng cấp với Tên Hàng Hóa
+        const getSiblingValue = (tags: string[]) => {
+          if (!parent) return '';
+          const siblings = Array.from(parent.children);
+          for (const sibling of siblings) {
+            const siblingName = (sibling.localName || sibling.tagName).toLowerCase();
+            if (tags.includes(siblingName)) {
+              return sibling.textContent?.trim() || '';
+            }
+          }
+          return '';
+        };
+
+        const quantityStr = getSiblingValue(['sluong', 'soluong', 'quantity', 'qty']);
+        const priceStr = getSiblingValue(['dgia', 'dongia', 'price', 'unitprice']);
+        const taxRateStr = getSiblingValue(['tsuat', 'thuesuat', 'vatrate', 'taxrate']);
+        const amountStr = getSiblingValue(['thtien', 'thanhtien', 'ttien', 'amount', 'totalamount']);
+        const codeStr = getSiblingValue(['mhhdv', 'mahang', 'masp', 'itemcode', 'prodcode']);
+        const unitStr = getSiblingValue(['dvtinh', 'donvitinh', 'dvt', 'donvi', 'unitname', 'unit']);
+
+        // Nếu là thẻ 'hanghoa' hoặc 'dichvu', bắt buộc phải có Thành tiền hoặc Số lượng mới coi là sản phẩm
+        // (để tránh nhầm với các thẻ tóm tắt)
+        if (['hanghoa', 'dichvu'].includes(localName) && !quantityStr && !amountStr && !priceStr) {
+          continue;
+        }
+
+        // Đảm bảo không bị trùng lặp (nếu XML bị lặp thẻ)
+        const isDuplicate = products.some(p => p.name === nameText && p.amount === parseFloat(amountStr.replace(',', '.') || '0'));
+        
+        if (!isDuplicate) {
+          products.push({
+            code: codeStr,
+            name: nameText,
+            unit: unitStr,
+            quantity: parseFloat(quantityStr.replace(',', '.') || '1'),
+            unitPrice: parseFloat(priceStr.replace(',', '.') || '0'),
+            taxRate: parseFloat(taxRateStr.replace('%', '') || '0'),
+            amount: parseFloat(amountStr.replace(',', '.') || '0'),
+            stock: 0,
+          });
         }
       }
-      return '';
-    };
-
-    // Tìm tất cả các node HHDV trong toàn bộ file XML
-    // Tìm tất cả các node đóng vai trò là "Dòng hàng hóa" (bất kể chữ hoa hay chữ thường)
-    const allNodes = Array.from(xmlDoc.getElementsByTagName("*"));
-    let itemNodes = allNodes.filter(node => {
-      const name = (node.localName || node.tagName).toLowerCase();
-      return ['hhdv', 'hanghoa', 'chitiet', 'row', 'item'].includes(name);
-    });
-
-    const products = itemNodes.map(node => {
-      const quantityStr = getNodeText(node, ['SLuong', 'SoLuong', 'Quantity', 'Qty']);
-      const priceStr = getNodeText(node, ['DGia', 'DonGia', 'Price', 'UnitPrice']);
-      const taxRateStr = getNodeText(node, ['TSuat', 'ThueSuat', 'VATRate', 'TaxRate']);
-      const amountStr = getNodeText(node, ['ThTien', 'ThanhTien', 'TTien', 'Amount', 'TotalAmount']);
-
-      return {
-        code: getNodeText(node, ['MHHDV', 'MaHang', 'MaSP', 'ItemCode', 'ProdCode']),
-        name: getNodeText(node, ['THHDV', 'TenHang', 'TenSP', 'TenHHDV', 'TenDichVu', 'TenHangHoa', 'ItemName', 'ProductName', 'ProdName']),
-        unit: getNodeText(node, ['DVTinh', 'DonViTinh', 'DVT', 'DonVi', 'UnitName', 'Unit']),
-        quantity: parseFloat(quantityStr.replace(',', '.') || '1'),
-        unitPrice: parseFloat(priceStr.replace(',', '.') || '0'),
-        taxRate: parseFloat(taxRateStr.replace('%', '') || '0'),
-        amount: parseFloat(amountStr.replace(',', '.') || '0'),
-        stock: 0,
-      };
-    }).filter(p => p.name); // Bỏ qua nếu không có tên sản phẩm
+    }
 
     const invoiceInfo = {
       docNumber: (ttChung['KHHDon'] ? ttChung['KHHDon'] + '-' : '') + (ttChung['SHDon'] || ''),
