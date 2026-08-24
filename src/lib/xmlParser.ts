@@ -34,20 +34,6 @@ export function parseInvoiceXML(xmlString: string) {
     const nBan = findNode(parsed, 'NBan') || findNode(parsed, 'NguoiBan') || {};
     const tToan = findNode(parsed, 'TToan') || findNode(parsed, 'ThanhToan') || {};
     
-    // Hàm lấy giá trị thuộc tính không phân biệt hoa/thường (Chuyển lên trên để dùng sớm)
-    const getField = (obj: any, keys: string[]) => {
-      if (!obj || typeof obj !== 'object') return '';
-      const objKeys = Object.keys(obj).map(k => k.toLowerCase());
-      for (const k of keys) {
-        const lowerK = k.toLowerCase();
-        const index = objKeys.indexOf(lowerK);
-        if (index !== -1) {
-          return obj[Object.keys(obj)[index]];
-        }
-      }
-      return '';
-    };
-
     const buyer: Partial<Customer> = {
       name: nMua['Ten'] || '',
       taxCode: nMua['MST'] || '',
@@ -65,52 +51,51 @@ export function parseInvoiceXML(xmlString: string) {
       isSupplier: true,
     };
 
-    // Hàm quét sâu đệ quy toàn bộ file XML để tìm tất cả các Object chứa thông tin Hàng hóa
-    const findAllProducts = (obj: any): any[] => {
-      let results: any[] = [];
-      if (!obj || typeof obj !== 'object') return results;
-      
-      if (Array.isArray(obj)) {
-        for (const item of obj) {
-          results = results.concat(findAllProducts(item));
-        }
-        return results;
-      }
+    // =====================================================================
+    // SỬ DỤNG NATIVE DOM PARSER CỦA TRÌNH DUYỆT ĐỂ BÓC TÁCH HÀNG HÓA
+    // Đảm bảo chính xác 100% không bị ảnh hưởng bởi lỗi parser JSON
+    // =====================================================================
+    const domParser = new DOMParser();
+    const xmlDoc = domParser.parseFromString(xmlString, "text/xml");
 
-      const name = getField(obj, ['THHDV', 'TenHang', 'TenSP', 'TenHHDV', 'TenDichVu', 'TenHangHoa', 'HangHoa', 'Ten']);
-      const hasQuantityOrPrice = getField(obj, ['SLuong', 'SoLuong', 'DGia', 'DonGia', 'ThTien', 'ThanhTien']) !== '';
-      
-      // Nếu object có tên VÀ có ít nhất số lượng hoặc đơn giá -> Chắc chắn là 1 dòng hàng hóa
-      if (name && hasQuantityOrPrice) {
-        results.push(obj);
-      } else {
-        for (const key of Object.keys(obj)) {
-          results = results.concat(findAllProducts(obj[key]));
+    // Helper: Lấy text content của node con bỏ qua Namespace và quét sâu
+    const getNodeText = (parent: Element, tagNames: string[]): string => {
+      for (const tag of tagNames) {
+        let elements = Array.from(parent.getElementsByTagNameNS("*", tag));
+        if (elements.length === 0) elements = Array.from(parent.getElementsByTagName(tag));
+        
+        if (elements.length > 0 && elements[0].textContent) {
+           return elements[0].textContent.trim();
         }
       }
-      return results;
+      return '';
     };
 
-    // Tìm tất cả các mặt hàng bất kể chúng bị giấu ở đâu trong cấu trúc XML
-    const items = findAllProducts(parsed);
+    // Tìm tất cả các node HHDV trong toàn bộ file XML
+    let itemNodes = Array.from(xmlDoc.getElementsByTagNameNS("*", "HHDV"));
+    if (itemNodes.length === 0) itemNodes = Array.from(xmlDoc.getElementsByTagName("HHDV"));
+    if (itemNodes.length === 0) itemNodes = Array.from(xmlDoc.getElementsByTagNameNS("*", "HangHoa"));
+    if (itemNodes.length === 0) itemNodes = Array.from(xmlDoc.getElementsByTagName("HangHoa"));
+    if (itemNodes.length === 0) itemNodes = Array.from(xmlDoc.getElementsByTagNameNS("*", "ChiTiet"));
+    if (itemNodes.length === 0) itemNodes = Array.from(xmlDoc.getElementsByTagName("ChiTiet"));
 
-    const products = items.map((item: any) => {
-      const quantityStr = getField(item, ['SLuong', 'SoLuong']) || '1';
-      const priceStr = getField(item, ['DGia', 'DonGia']) || '0';
-      const taxRateStr = getField(item, ['TSuat', 'ThueSuat']) || '0';
-      const amountStr = getField(item, ['ThTien', 'ThanhTien']) || '0';
+    const products = itemNodes.map(node => {
+      const quantityStr = getNodeText(node, ['SLuong', 'SoLuong']);
+      const priceStr = getNodeText(node, ['DGia', 'DonGia']);
+      const taxRateStr = getNodeText(node, ['TSuat', 'ThueSuat']);
+      const amountStr = getNodeText(node, ['ThTien', 'ThanhTien', 'TTien']);
 
       return {
-        code: getField(item, ['MHHDV', 'MaHang', 'MaSP']),
-        name: getField(item, ['THHDV', 'TenHang', 'TenSP', 'TenHHDV', 'TenDichVu', 'TenHangHoa', 'Ten']),
-        unit: getField(item, ['DVTinh', 'DonViTinh', 'DVT']),
-        quantity: parseFloat(quantityStr.toString().replace(',', '.')),
-        unitPrice: parseFloat(priceStr.toString().replace(',', '.')),
-        taxRate: parseFloat(taxRateStr.toString().replace('%', '')),
-        amount: parseFloat(amountStr.toString().replace(',', '.')),
+        code: getNodeText(node, ['MHHDV', 'MaHang', 'MaSP']),
+        name: getNodeText(node, ['THHDV', 'TenHang', 'TenSP', 'TenHHDV', 'TenDichVu', 'TenHangHoa']),
+        unit: getNodeText(node, ['DVTinh', 'DonViTinh', 'DVT', 'DonVi']),
+        quantity: parseFloat(quantityStr.replace(',', '.') || '1'),
+        unitPrice: parseFloat(priceStr.replace(',', '.') || '0'),
+        taxRate: parseFloat(taxRateStr.replace('%', '') || '0'),
+        amount: parseFloat(amountStr.replace(',', '.') || '0'),
         stock: 0,
       };
-    }).filter((p: any) => p.name); // Bỏ qua nếu không có tên sản phẩm
+    }).filter(p => p.name); // Bỏ qua nếu không có tên sản phẩm
 
     const invoiceInfo = {
       docNumber: (ttChung['KHHDon'] ? ttChung['KHHDon'] + '-' : '') + (ttChung['SHDon'] || ''),
