@@ -229,24 +229,29 @@ export default function CreateQuotation() {
                   <td className="px-2 py-2 text-sm text-gray-500 text-center print:border print:border-black print:text-black">
                     <div className="flex flex-col items-center">
                       <input 
-                        type="number" 
-                        min="1" 
-                        value={item.quantity}
-                        onChange={(e) => updateItem(item.tempId, 'quantity', Number(e.target.value))}
+                        type="text" 
+                        value={item.quantity ? new Intl.NumberFormat('vi-VN').format(item.quantity) : ''}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, '');
+                          updateItem(item.tempId, 'quantity', Number(val));
+                        }}
                         className="w-16 text-center border rounded p-1 print:border-none print:p-0"
                       />
                       {item.id && (
                         <span className={`text-[10px] print:hidden ${item.quantity > (item.stock || 0) ? 'text-red-500' : 'text-gray-400'}`}>
-                          Tồn: {item.stock || 0}
+                          Tồn: {item.stock ? new Intl.NumberFormat('vi-VN').format(item.stock) : 0}
                         </span>
                       )}
                     </div>
                   </td>
                   <td className="px-2 py-2 text-sm text-gray-500 text-right print:border print:border-black print:text-black">
                     <input 
-                      type="number" 
-                      value={item.unitPrice} 
-                      onChange={e => updateItem(item.tempId, 'unitPrice', Number(e.target.value))}
+                      type="text" 
+                      value={item.unitPrice ? new Intl.NumberFormat('vi-VN').format(item.unitPrice) : ''} 
+                      onChange={e => {
+                        const val = e.target.value.replace(/\D/g, '');
+                        updateItem(item.tempId, 'unitPrice', Number(val));
+                      }}
                       className="w-full border rounded p-1 print:border-none print:p-0 text-right"
                     />
                   </td>
