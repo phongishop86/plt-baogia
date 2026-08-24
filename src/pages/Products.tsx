@@ -1,7 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
 import { useMemo, useState } from 'react';
-import { CheckSquare, FileText } from 'lucide-react';
+import { CheckSquare, FileText, Search, Edit2, Save, X, Filter } from 'lucide-react';
 
 interface ProductsProps {
   onNavigate?: (tab: string) => void;
@@ -11,7 +11,15 @@ interface ProductsProps {
 export default function Products({ onNavigate, setPrefilledProducts }: ProductsProps) {
   const products = useLiveQuery(() => db.products.toArray());
   const documents = useLiveQuery(() => db.documents.toArray());
+  
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterType, setFilterType] = useState<'ALL' | 'PRODUCT' | 'SERVICE'>('ALL');
+  
+  // Trạng thái đang chỉnh sửa
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editType, setEditType] = useState<'PRODUCT' | 'SERVICE'>('PRODUCT');
 
   // Tính toán Tổng Mua Vào và Tổng Bán Ra cho từng sản phẩm
   const productStats = useMemo(() => {
@@ -25,7 +33,6 @@ export default function Products({ onNavigate, setPrefilledProducts }: ProductsP
     documents.forEach(doc => {
       if (!doc.items || !Array.isArray(doc.items)) return;
       doc.items.forEach(item => {
-        // Tìm product bằng tên (cắt khoảng trắng, chuyển chữ thường) để đảm bảo không bị miss
         const normalize = (str?: string) => (str || '').toString().trim().toLowerCase();
         const product = products.find(p => 
           normalize(p.name) === normalize(item.productName) || 
@@ -45,10 +52,19 @@ export default function Products({ onNavigate, setPrefilledProducts }: ProductsP
 
     return products.map(p => ({
       ...p,
+      type: p.type || 'PRODUCT', // Mặc định là PRODUCT nếu chưa phân loại
       totalIn: statsMap[p.id!].totalIn,
       totalOut: statsMap[p.id!].totalOut
-    }));
-  }, [products, documents]);
+    })).filter(p => {
+      // Lọc theo Search Query
+      const matchSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          (p.code && p.code.toLowerCase().includes(searchQuery.toLowerCase()));
+      // Lọc theo Phân loại
+      const matchType = filterType === 'ALL' || p.type === filterType;
+      
+      return matchSearch && matchType;
+    });
+  }, [products, documents, searchQuery, filterType]);
 
   const formatNumber = (val: number) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
@@ -65,70 +81,207 @@ export default function Products({ onNavigate, setPrefilledProducts }: ProductsP
     if (onNavigate) onNavigate('create-quote');
   };
 
+  const startEdit = (product: any) => {
+    setEditingId(product.id!);
+    setEditName(product.name);
+    setEditType(product.type);
+  };
+
+  const saveEdit = async (productId: number, oldName: string) => {
+    try {
+      // 1. Cập nhật trong bảng Product
+      await db.products.update(productId, { name: editName, type: editType });
+      
+      // 2. Nếu tên thay đổi, TỰ ĐỘNG CẬP NHẬT (Cascade) sang toàn bộ Hóa đơn/Báo giá cũ
+      // Để đảm bảo lịch sử thống kê (MUA VÀO/BÁN RA) không bị mất khi sửa tên
+      if (oldName.trim().toLowerCase() !== editName.trim().toLowerCase()) {
+        const allDocs = await db.documents.toArray();
+        for (const doc of allDocs) {
+          let hasChanged = false;
+          if (doc.items && Array.isArray(doc.items)) {
+            doc.items.forEach(item => {
+              if (item.productName.trim().toLowerCase() === oldName.trim().toLowerCase()) {
+                item.productName = editName;
+                hasChanged = true;
+              }
+            });
+            if (hasChanged) {
+              await db.documents.update(doc.id!, { items: doc.items });
+            }
+          }
+        }
+      }
+      setEditingId(null);
+    } catch (err) {
+      console.error("Lỗi khi cập nhật sản phẩm:", err);
+      alert("Có lỗi xảy ra khi lưu thay đổi.");
+    }
+  };
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mt-6">
       <div className="p-4 border-b border-gray-200 bg-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h3 className="font-semibold text-gray-800 flex items-center gap-2">
             <CheckSquare className="w-5 h-5 text-blue-600" />
-            Danh sách Hàng hóa & Tồn kho
+            Danh sách Hàng hóa & Dịch vụ
           </h3>
           <p className="text-sm text-gray-500 mt-1">Dữ liệu được trích xuất tự động từ Hóa đơn điện tử</p>
         </div>
-        {selectedIds.length > 0 && (
-          <button 
-            onClick={handleCreateQuotation}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium transition-colors shadow-sm"
-          >
-            <FileText className="w-4 h-4" />
-            Tạo Báo Giá ({selectedIds.length} SP)
-          </button>
-        )}
+        
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+          {/* Thanh tìm kiếm */}
+          <div className="relative w-full sm:w-64">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="h-4 w-4 text-gray-400" />
+            </div>
+            <input
+              type="text"
+              placeholder="Tìm tên hoặc mã SP..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 w-full rounded-md border border-gray-300 shadow-sm px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
+            />
+          </div>
+
+          {/* Bộ lọc Phân loại */}
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <Filter className="h-4 w-4 text-gray-400 hidden sm:block" />
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value as any)}
+              className="rounded-md border border-gray-300 shadow-sm px-3 py-2 text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 w-full sm:w-auto"
+            >
+              <option value="ALL">Tất cả loại</option>
+              <option value="PRODUCT">Chỉ Hàng hóa (Tồn kho)</option>
+              <option value="SERVICE">Chỉ Dịch vụ (Không tồn kho)</option>
+            </select>
+          </div>
+
+          {/* Nút Báo giá */}
+          {selectedIds.length > 0 && (
+            <button 
+              onClick={handleCreateQuotation}
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors shadow-sm whitespace-nowrap w-full sm:w-auto justify-center"
+            >
+              <FileText className="w-4 h-4" />
+              Tạo Báo Giá ({selectedIds.length})
+            </button>
+          )}
+        </div>
       </div>
+      
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
               <th className="px-4 py-3 text-left w-10"></th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã SP</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tên sản phẩm</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tên sản phẩm / Dịch vụ</th>
+              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Phân loại</th>
               <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">ĐVT</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Đơn giá (Gần nhất)</th>
-              <th className="px-6 py-3 text-center text-xs font-medium text-blue-600 uppercase tracking-wider">Tổng Mua Vào</th>
-              <th className="px-6 py-3 text-center text-xs font-medium text-green-600 uppercase tracking-wider">Tổng Bán Ra</th>
-              <th className="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">Tồn kho hiện tại</th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Đơn giá</th>
+              <th className="px-6 py-3 text-center text-xs font-medium text-blue-600 uppercase tracking-wider">Tổng Mua</th>
+              <th className="px-6 py-3 text-center text-xs font-medium text-green-600 uppercase tracking-wider">Tổng Bán</th>
+              <th className="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">Tồn kho</th>
+              <th className="px-4 py-3 text-center w-16"></th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {productStats.map((product) => (
-              <tr key={product.id} className={`hover:bg-blue-50 transition-colors ${selectedIds.includes(product.id!) ? 'bg-blue-50' : ''}`}>
-                <td className="px-4 py-4 text-center">
-                  <input 
-                    type="checkbox" 
-                    className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-                    disabled={product.stock <= 0}
-                    checked={selectedIds.includes(product.id!)}
-                    onChange={() => handleToggleSelect(product.id!)}
-                    title={product.stock <= 0 ? "Hết hàng không thể chọn" : "Chọn để báo giá"}
-                  />
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.code || '-'}</td>
-                <td className="px-6 py-4 text-sm font-medium text-gray-900 max-w-xs">{product.name}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">{product.unit}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">{formatNumber(product.unitPrice)}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-center font-medium text-blue-600">{product.totalIn}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-center font-medium text-green-600">{product.totalOut}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-center font-bold text-gray-900">
-                  <span className={`px-2 py-1 rounded-full ${product.stock > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                    {product.stock}
-                  </span>
-                </td>
-              </tr>
-            ))}
+            {productStats.map((product) => {
+              const isEditing = editingId === product.id;
+              
+              return (
+                <tr key={product.id} className={`hover:bg-blue-50 transition-colors ${selectedIds.includes(product.id!) ? 'bg-blue-50' : ''}`}>
+                  <td className="px-4 py-4 text-center">
+                    <input 
+                      type="checkbox" 
+                      className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                      disabled={product.type === 'PRODUCT' && product.stock <= 0}
+                      checked={selectedIds.includes(product.id!)}
+                      onChange={() => handleToggleSelect(product.id!)}
+                      title={product.type === 'PRODUCT' && product.stock <= 0 ? "Hết hàng không thể chọn" : "Chọn để báo giá"}
+                    />
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.code || '-'}</td>
+                  
+                  <td className="px-6 py-4 text-sm font-medium text-gray-900 max-w-md">
+                    {isEditing ? (
+                      <textarea
+                        value={editName}
+                        onChange={(e) => {
+                          e.target.style.height = 'auto';
+                          e.target.style.height = e.target.scrollHeight + 'px';
+                          setEditName(e.target.value);
+                        }}
+                        className="w-full min-w-[250px] border border-blue-400 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none overflow-hidden"
+                        rows={1}
+                        autoFocus
+                      />
+                    ) : (
+                      <span className="whitespace-pre-wrap break-words">{product.name}</span>
+                    )}
+                  </td>
+                  
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
+                    {isEditing ? (
+                      <select 
+                        value={editType} 
+                        onChange={e => setEditType(e.target.value as any)}
+                        className="border border-blue-400 rounded-md p-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm w-28"
+                      >
+                        <option value="PRODUCT">Hàng hóa</option>
+                        <option value="SERVICE">Dịch vụ</option>
+                      </select>
+                    ) : (
+                      <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${product.type === 'SERVICE' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'}`}>
+                        {product.type === 'SERVICE' ? 'Dịch vụ' : 'Hàng hóa'}
+                      </span>
+                    )}
+                  </td>
+                  
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">{product.unit}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">{formatNumber(product.unitPrice)}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-center font-medium text-blue-600">{product.totalIn}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-center font-medium text-green-600">{product.totalOut}</td>
+                  
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-center font-bold text-gray-900">
+                    {product.type === 'SERVICE' ? (
+                      <span className="text-gray-400 font-normal">-</span>
+                    ) : (
+                      <span className={`px-2 py-1 rounded-full ${product.stock > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                        {product.stock}
+                      </span>
+                    )}
+                  </td>
+                  
+                  <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    {isEditing ? (
+                      <div className="flex items-center space-x-2">
+                        <button onClick={() => saveEdit(product.id!, product.name)} className="text-green-600 hover:text-green-900" title="Lưu">
+                          <Save className="h-5 w-5" />
+                        </button>
+                        <button onClick={() => setEditingId(null)} className="text-red-600 hover:text-red-900" title="Hủy">
+                          <X className="h-5 w-5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <button onClick={() => startEdit(product)} className="text-gray-400 hover:text-blue-600 transition-colors" title="Chỉnh sửa tên / loại">
+                        <Edit2 className="h-4 w-4" />
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+            
             {productStats.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-6 py-8 text-center text-sm text-gray-500">
-                  Chưa có sản phẩm nào. Hãy import hóa đơn đầu vào.
+                <td colSpan={9} className="px-6 py-12 text-center text-sm text-gray-500">
+                  <div className="flex flex-col items-center">
+                    <FileText className="h-10 w-10 text-gray-300 mb-3" />
+                    <p>Chưa có sản phẩm hoặc không tìm thấy kết quả phù hợp.</p>
+                  </div>
                 </td>
               </tr>
             )}

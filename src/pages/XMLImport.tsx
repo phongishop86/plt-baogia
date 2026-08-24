@@ -56,9 +56,11 @@ export default function XMLImport() {
             for (const item of existingDoc.items) {
               const prod = await db.products.where('name').equals(item.productName).first();
               if (prod) {
-                // Đảo ngược tồn kho (Nhập thì trừ, Bán thì cộng)
-                const reverseQty = existingDoc.type === 'INPUT_INVOICE' ? -item.quantity : item.quantity;
-                await db.products.update(prod.id!, { stock: (prod.stock || 0) + reverseQty });
+                const qty = item.quantity || 0;
+                const isService = prod.type === 'SERVICE';
+                // Reverse the operation
+                const newStock = isService ? (prod.stock || 0) : (existingDoc.type === 'INPUT_INVOICE' ? (prod.stock || 0) - qty : (prod.stock || 0) + qty);
+                await db.products.update(prod.id!, { stock: newStock });
               }
             }
           }
@@ -93,18 +95,25 @@ export default function XMLImport() {
           const qty = prod.quantity || 1;
           
           if (!existing) {
-            newStock = invoiceType === 'INPUT' ? qty : -qty;
+            // Tự động suy luận Hàng hóa hay Dịch vụ dựa vào Tên và ĐVT
+            const isService = prod.name?.toLowerCase().includes('dịch vụ') || 
+                              ['gói', 'tháng', 'năm', 'lần', 'chuyến'].includes(prod.unit?.toLowerCase() || '');
+            
+            newStock = (invoiceType === 'INPUT' && !isService) ? qty : (!isService ? -qty : 0);
+            
             await db.products.add({
               code: prod.code || '',
               name: prod.name || '',
               unit: prod.unit || '',
               unitPrice: prod.unitPrice || 0,
               taxRate: prod.taxRate || 0,
-              stock: newStock
+              stock: newStock,
+              type: isService ? 'SERVICE' : 'PRODUCT'
             });
           } else {
             const currentStock = existing.stock || 0;
-            newStock = invoiceType === 'INPUT' ? currentStock + qty : currentStock - qty;
+            const isService = existing.type === 'SERVICE';
+            newStock = isService ? currentStock : (invoiceType === 'INPUT' ? currentStock + qty : currentStock - qty);
             await db.products.update(existing.id!, { stock: newStock, unitPrice: prod.unitPrice }); // Update price as well
           }
         }
