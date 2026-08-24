@@ -267,19 +267,28 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
             <tbody className="bg-white divide-y divide-gray-200 print:divide-black">
               {selectedItems.map((item, index) => (
                 <tr key={item.tempId} className="print:border print:border-black">
-                  <td className="px-2 py-2 text-sm text-center text-gray-900 print:border print:border-black hidden print:table-cell">
+                  <td className="px-2 py-2 text-sm text-center text-gray-900 print:border print:border-black hidden print:table-cell align-top">
                     {index + 1}
                   </td>
-                  <td className="px-2 py-2 text-sm text-gray-900 print:border print:border-black">
-                    <input 
-                      type="text" 
-                      value={item.name} 
-                      onChange={e => updateItem(item.tempId, 'name', e.target.value)}
-                      className="w-full border-none bg-transparent focus:ring-0 p-0"
-                      placeholder="Nhập tên hàng hóa..."
-                    />
+                  <td className="px-2 py-2 text-sm text-gray-900 print:border print:border-black align-top">
+                    {/* UI Nhập liệu trên Web: Tự động dãn dòng theo nội dung */}
+                    <div className="relative print:hidden">
+                      <div className="invisible whitespace-pre-wrap break-words min-h-[1.5rem] w-full pb-1">
+                        {item.name + ' '}
+                      </div>
+                      <textarea 
+                        value={item.name} 
+                        onChange={e => updateItem(item.tempId, 'name', e.target.value)}
+                        className="absolute inset-0 w-full h-full border-none bg-transparent focus:ring-0 p-0 resize-none overflow-hidden"
+                        placeholder="Nhập tên hàng hóa..."
+                      />
+                    </div>
+                    {/* UI Bản In: Render text thô để chắc chắn không bao giờ bị cắt chữ */}
+                    <div className="hidden print:block whitespace-pre-wrap break-words">
+                      {item.name}
+                    </div>
                   </td>
-                  <td className="px-2 py-2 text-sm text-gray-500 text-center print:border print:border-black print:text-black">
+                  <td className="px-2 py-2 text-sm text-gray-500 text-center print:border print:border-black print:text-black align-top">
                     <input 
                       type="text" 
                       value={item.unit} 
@@ -287,7 +296,7 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
                       className="w-full border-none bg-transparent focus:ring-0 p-0 text-center"
                     />
                   </td>
-                  <td className="px-2 py-2 text-sm text-gray-500 text-center print:border print:border-black print:text-black">
+                  <td className="px-2 py-2 text-sm text-gray-500 text-center print:border print:border-black print:text-black align-top">
                     <div className="flex flex-col items-center">
                       <input 
                         type="text" 
@@ -305,7 +314,7 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
                       )}
                     </div>
                   </td>
-                  <td className="px-2 py-2 text-sm text-gray-500 text-right print:border print:border-black print:text-black">
+                  <td className="px-2 py-2 text-sm text-gray-500 text-right print:border print:border-black print:text-black align-top">
                     <input 
                       type="text" 
                       value={item.unitPrice ? new Intl.NumberFormat('vi-VN').format(item.unitPrice) : ''} 
@@ -316,7 +325,7 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
                       className="w-full border rounded p-1 print:border-none print:p-0 text-right"
                     />
                   </td>
-                  <td className="px-2 py-2 text-sm text-gray-500 print:border print:border-black print:hidden">
+                  <td className="px-2 py-2 text-sm text-gray-500 print:border print:border-black print:hidden align-top">
                     <select 
                       value={item.taxRate} 
                       onChange={e => updateItem(item.tempId, 'taxRate', Number(e.target.value))}
@@ -327,10 +336,10 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
                       <option value="10">10%</option>
                     </select>
                   </td>
-                  <td className="px-4 py-2 text-sm text-gray-900 font-medium text-right print:border print:border-black">
+                  <td className="px-4 py-2 text-sm text-gray-900 font-medium text-right print:border print:border-black align-top pt-3">
                     {formatCurrency(item.quantity * (item.unitPrice || 0))}
                   </td>
-                  <td className="px-4 py-2 text-sm text-right print:hidden">
+                  <td className="px-4 py-2 text-sm text-right print:hidden align-top pt-3">
                     <button onClick={() => handleRemoveItem(item.tempId)} className="text-red-500 hover:text-red-700">Xóa</button>
                   </td>
                 </tr>
