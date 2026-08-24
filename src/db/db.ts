@@ -35,6 +35,7 @@ export interface Document {
   subTotal: number;
   taxAmount: number;
   total: number;
+  status?: 'DRAFT' | 'PENDING' | 'SENT' | 'COMPLETED' | 'CANCELLED'; // Trạng thái chứng từ (Đặc biệt cho Báo giá)
   notes?: string;
   paymentDate?: Date; // Ngày thanh toán (nếu có)
   createdAt?: Date;

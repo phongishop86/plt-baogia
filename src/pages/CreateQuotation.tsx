@@ -83,7 +83,7 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
   const calculateSubTotal = () => selectedItems.reduce((sum, item) => sum + (item.quantity * (item.unitPrice || 0)), 0);
   const calculateTax = () => selectedItems.reduce((sum, item) => sum + (item.quantity * (item.unitPrice || 0) * ((item.taxRate || 0)/100)), 0);
 
-  const handleSaveQuotation = async () => {
+  const handleSaveQuotation = async (status: 'DRAFT' | 'PENDING') => {
     if (!selectedCustomerId || selectedItems.length === 0) {
       alert('Vui lòng chọn khách hàng và ít nhất 1 sản phẩm!');
       return;
@@ -101,6 +101,7 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
       subTotal,
       taxAmount,
       total,
+      status, // 'DRAFT' hoặc 'PENDING'
       items: selectedItems.map(p => ({
         productId: p.id,
         productName: p.name || 'Hàng hóa chưa tên',
@@ -113,7 +114,7 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
       createdAt: new Date()
     });
 
-    alert('Lưu báo giá thành công!');
+    alert(status === 'DRAFT' ? 'Đã lưu nháp báo giá!' : 'Đã lưu báo giá chờ phát hành!');
   };
 
   const handlePrint = () => {
@@ -409,10 +410,16 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
           <span>In Báo Giá</span>
         </button>
         <button 
-          onClick={handleSaveQuotation}
+          onClick={() => handleSaveQuotation('DRAFT')}
+          className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-2 rounded-md font-medium transition-colors"
+        >
+          Lưu Nháp (Draft)
+        </button>
+        <button 
+          onClick={() => handleSaveQuotation('PENDING')}
           className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md font-medium transition-colors"
         >
-          Lưu Báo Giá
+          Lưu & Chờ gửi
         </button>
       </div>
     </div>

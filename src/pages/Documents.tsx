@@ -120,6 +120,7 @@ export default function Documents() {
               <option value="ALL">Tất cả loại Hóa đơn</option>
               <option value="INPUT_INVOICE">Mua vào (Chi phí)</option>
               <option value="OUTPUT_INVOICE">Bán ra (Doanh thu)</option>
+              <option value="QUOTATION">Báo giá</option>
             </select>
             <select 
               value={filterPayment} 
@@ -162,7 +163,7 @@ export default function Documents() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Đối tác</th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Tổng tiền</th>
-                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Thanh toán</th>
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Hành động</th>
               </tr>
             </thead>
@@ -171,22 +172,42 @@ export default function Documents() {
                 <tr key={doc.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">{doc.docNumber}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <span className={`px-2 py-1 text-xs rounded-full ${doc.type === 'INPUT_INVOICE' ? 'bg-blue-100 text-blue-800' : doc.type === 'OUTPUT_INVOICE' ? 'bg-green-100 text-green-800' : 'bg-gray-100'}`}>
-                      {doc.type === 'INPUT_INVOICE' ? 'Mua vào' : doc.type === 'OUTPUT_INVOICE' ? 'Bán ra' : doc.type}
+                    <span className={`px-2 py-1 text-xs rounded-full ${doc.type === 'INPUT_INVOICE' ? 'bg-blue-100 text-blue-800' : doc.type === 'OUTPUT_INVOICE' ? 'bg-green-100 text-green-800' : 'bg-purple-100 text-purple-800'}`}>
+                      {doc.type === 'INPUT_INVOICE' ? 'Mua vào' : doc.type === 'OUTPUT_INVOICE' ? 'Bán ra' : 'Báo giá'}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(doc.date).toLocaleDateString('vi-VN')}</td>
                   <td className="px-6 py-4 text-sm text-gray-900 truncate max-w-[200px]" title={doc.customer?.name}>{doc.customer?.name}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">{formatNumber(doc.total)}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-center">
-                    {doc.paymentDate ? (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                        Đã TT ({new Date(doc.paymentDate).toLocaleDateString('vi-VN')})
-                      </span>
+                    {doc.type === 'QUOTATION' ? (
+                      <select 
+                        value={doc.status || 'DRAFT'}
+                        onChange={async (e) => await db.documents.update(doc.id!, { status: e.target.value as any })}
+                        className={`text-xs font-medium rounded-full px-2 py-1 outline-none cursor-pointer border ${
+                          doc.status === 'DRAFT' ? 'bg-gray-50 text-gray-700 border-gray-200' : 
+                          doc.status === 'PENDING' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                          doc.status === 'SENT' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                          doc.status === 'COMPLETED' ? 'bg-green-50 text-green-700 border-green-200' :
+                          'bg-red-50 text-red-700 border-red-200'
+                        }`}
+                      >
+                        <option value="DRAFT">Nháp (Tạo mới)</option>
+                        <option value="PENDING">Lưu chờ gửi</option>
+                        <option value="SENT">Đã gửi khách</option>
+                        <option value="COMPLETED">Đã chốt (Thành công)</option>
+                        <option value="CANCELLED">Đã hủy</option>
+                      </select>
                     ) : (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">
-                        Chưa TT
-                      </span>
+                      doc.paymentDate ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                          Đã TT ({new Date(doc.paymentDate).toLocaleDateString('vi-VN')})
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">
+                          Chưa TT
+                        </span>
+                      )
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-right space-x-3">
