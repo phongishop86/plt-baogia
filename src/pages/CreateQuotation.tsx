@@ -108,26 +108,38 @@ export default function CreateQuotation() {
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-6 print:shadow-none print:border-none print:p-0">
       
       {/* HEADER CHO IN ẤN (Chỉ hiển thị khi in) */}
-      <div className="hidden print:block mb-8">
-        <div className="flex justify-between items-start border-b-2 border-blue-800 pb-4">
-          <div>
-            <h1 className="text-2xl font-bold text-blue-800">CÔNG TY TNHH PHÁT LỘC TECH</h1>
-            <p className="text-sm">Mã số thuế: 0123456789</p>
-            <p className="text-sm">Địa chỉ: 123 Đường Công Nghệ, Hà Nội</p>
+      <div className="hidden print:block mb-6 text-sm font-[Times_New_Roman]">
+        <div className="flex items-start space-x-6 pb-4">
+          <div className="w-28 flex-shrink-0">
+            {/* Logo placeholder - Cần thay bằng logo thực tế */}
+            <div className="w-24 h-24 rounded-full border-4 border-red-500 flex items-center justify-center font-bold text-3xl text-blue-800 bg-yellow-50">
+              <span className="text-red-500">P</span><span className="text-blue-800">L</span><span className="text-blue-800 absolute mt-8 text-xl">T</span>
+            </div>
           </div>
-          <div className="text-right">
-            <h2 className="text-3xl font-bold text-gray-800 uppercase tracking-widest">BÁO GIÁ</h2>
-            <p className="font-semibold mt-2">Số: {docNumber}</p>
-            <p className="text-sm italic">Ngày {new Date().getDate()} tháng {new Date().getMonth() + 1} năm {new Date().getFullYear()}</p>
+          <div className="flex-1 space-y-1">
+            <h1 className="text-lg font-bold">CÔNG TY TNHH PHÁT LỘC TECH</h1>
+            <p><span className="font-semibold">Địa chỉ:</span> Số 491/1 Trường Chinh, Phường Tân Bình, Thành phố Hồ Chí Minh</p>
+            <p><span className="font-semibold">MST:</span> 0319347662</p>
+            <p><span className="font-semibold">SĐT:</span> 0932685794</p>
+            <p><span className="font-semibold">Email:</span> phatloctech.ltd@gmail.com</p>
+            <p><span className="font-semibold">STK:</span> 115003041055 - VietinBank Long An</p>
           </div>
         </div>
         
-        <div className="mt-6">
-          <h3 className="font-bold text-lg">Kính gửi: {selectedCustomer?.name || '................................'}</h3>
-          <p>Mã số thuế: {selectedCustomer?.taxCode}</p>
-          <p>Địa chỉ: {selectedCustomer?.address}</p>
-          <p>Điện thoại: {selectedCustomer?.phone}</p>
+        <div className="text-center mt-4">
+          <h2 className="text-2xl font-bold uppercase tracking-wider">BẢNG BÁO GIÁ</h2>
+          <p className="mt-1">Số: {docNumber}</p>
         </div>
+
+        <div className="mt-6 space-y-1">
+          <p><span className="font-bold inline-block w-20">Kính gửi:</span> <span className="font-bold">{selectedCustomer?.name || '....................................................................................'}</span></p>
+          <p><span className="font-bold inline-block w-20">Địa chỉ:</span> {selectedCustomer?.address || '....................................................................................'}</p>
+          <p><span className="font-bold inline-block w-20">MST:</span> {selectedCustomer?.taxCode || '...................'}</p>
+        </div>
+        
+        <p className="mt-4 text-justify">
+          Lời đầu tiên chúng tôi xin trân trọng gửi lời cảm ơn chân thành đến quý khách hàng đã quan tâm đến sản phẩm/dịch vụ của công ty chúng tôi. Công ty Phát Lộc Tech xin trân trọng báo giá đến quý đơn vị như sau:
+        </p>
       </div>
 
       <div className="grid grid-cols-2 gap-6 print:hidden">
@@ -180,23 +192,27 @@ export default function CreateQuotation() {
       </div>
 
       {selectedItems.length > 0 && (
-        <div className="mt-4 border rounded-md overflow-hidden print:border-none print:mt-8">
-          <table className="min-w-full divide-y divide-gray-200 print:border-collapse print:border">
-            <thead className="bg-gray-50 print:bg-blue-50">
+        <div className="mt-4 border rounded-md overflow-hidden print:border-none print:mt-2">
+          <table className="min-w-full divide-y divide-gray-200 print:border-collapse print:border-2 print:border-black font-[Times_New_Roman]">
+            <thead className="bg-gray-50 print:bg-gray-200">
               <tr>
-                <th className="px-4 py-2 text-left text-xs font-bold text-gray-700 uppercase print:border">Tên Hàng Hóa</th>
-                <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase print:border w-20">ĐVT</th>
-                <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase print:border w-24">Số lượng</th>
-                <th className="px-4 py-2 text-left text-xs font-bold text-gray-700 uppercase print:border w-32">Đơn Giá</th>
-                <th className="px-2 py-2 text-left text-xs font-bold text-gray-700 uppercase print:border w-20">Thuế</th>
-                <th className="px-4 py-2 text-left text-xs font-bold text-gray-700 uppercase print:border w-32">Thành tiền</th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase print:hidden w-16"></th>
+                <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 uppercase print:border print:border-black w-12 hidden print:table-cell">STT</th>
+                <th className="px-4 py-2 text-center text-xs font-bold text-gray-700 uppercase print:border print:border-black">Tên hàng hóa, dịch vụ</th>
+                <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 uppercase print:border print:border-black w-20">ĐVT</th>
+                <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 uppercase print:border print:border-black w-24">Số lượng</th>
+                <th className="px-4 py-2 text-center text-xs font-bold text-gray-700 uppercase print:border print:border-black w-32">Đơn Giá</th>
+                <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 uppercase print:border print:border-black w-20 print:hidden">Thuế</th>
+                <th className="px-4 py-2 text-center text-xs font-bold text-gray-700 uppercase print:border print:border-black w-32">Thành tiền</th>
+                <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase print:hidden w-16"></th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {selectedItems.map(item => (
-                <tr key={item.tempId} className="print:border">
-                  <td className="px-2 py-2 text-sm text-gray-900 print:border">
+            <tbody className="bg-white divide-y divide-gray-200 print:divide-black">
+              {selectedItems.map((item, index) => (
+                <tr key={item.tempId} className="print:border print:border-black">
+                  <td className="px-2 py-2 text-sm text-center text-gray-900 print:border print:border-black hidden print:table-cell">
+                    {index + 1}
+                  </td>
+                  <td className="px-2 py-2 text-sm text-gray-900 print:border print:border-black">
                     <input 
                       type="text" 
                       value={item.name} 
@@ -205,22 +221,22 @@ export default function CreateQuotation() {
                       placeholder="Nhập tên hàng hóa..."
                     />
                   </td>
-                  <td className="px-2 py-2 text-sm text-gray-500 print:border">
+                  <td className="px-2 py-2 text-sm text-gray-500 text-center print:border print:border-black print:text-black">
                     <input 
                       type="text" 
                       value={item.unit} 
                       onChange={e => updateItem(item.tempId, 'unit', e.target.value)}
-                      className="w-full border-none bg-transparent focus:ring-0 p-0"
+                      className="w-full border-none bg-transparent focus:ring-0 p-0 text-center"
                     />
                   </td>
-                  <td className="px-2 py-2 text-sm text-gray-500 print:border">
-                    <div className="flex flex-col">
+                  <td className="px-2 py-2 text-sm text-gray-500 text-center print:border print:border-black print:text-black">
+                    <div className="flex flex-col items-center">
                       <input 
                         type="number" 
                         min="1" 
                         value={item.quantity}
                         onChange={(e) => updateItem(item.tempId, 'quantity', Number(e.target.value))}
-                        className="w-full border rounded p-1 print:border-none print:p-0"
+                        className="w-16 text-center border rounded p-1 print:border-none print:p-0"
                       />
                       {item.id && (
                         <span className={`text-[10px] print:hidden ${item.quantity > (item.stock || 0) ? 'text-red-500' : 'text-gray-400'}`}>
@@ -229,15 +245,15 @@ export default function CreateQuotation() {
                       )}
                     </div>
                   </td>
-                  <td className="px-2 py-2 text-sm text-gray-500 print:border">
+                  <td className="px-2 py-2 text-sm text-gray-500 text-right print:border print:border-black print:text-black">
                     <input 
                       type="number" 
                       value={item.unitPrice} 
                       onChange={e => updateItem(item.tempId, 'unitPrice', Number(e.target.value))}
-                      className="w-full border rounded p-1 print:border-none print:p-0"
+                      className="w-full border rounded p-1 print:border-none print:p-0 text-right"
                     />
                   </td>
-                  <td className="px-2 py-2 text-sm text-gray-500 print:border">
+                  <td className="px-2 py-2 text-sm text-gray-500 print:border print:border-black print:hidden">
                     <select 
                       value={item.taxRate} 
                       onChange={e => updateItem(item.tempId, 'taxRate', Number(e.target.value))}
@@ -248,7 +264,7 @@ export default function CreateQuotation() {
                       <option value="10">10%</option>
                     </select>
                   </td>
-                  <td className="px-4 py-2 text-sm text-gray-900 font-medium print:border">
+                  <td className="px-4 py-2 text-sm text-gray-900 font-medium text-right print:border print:border-black">
                     {formatCurrency(item.quantity * (item.unitPrice || 0))}
                   </td>
                   <td className="px-4 py-2 text-sm text-right print:hidden">
@@ -256,13 +272,30 @@ export default function CreateQuotation() {
                   </td>
                 </tr>
               ))}
+              <tr className="hidden print:table-row print:font-bold">
+                <td colSpan={5} className="px-4 py-2 text-center print:border print:border-black uppercase">
+                  VAT {selectedItems.length > 0 ? selectedItems[0].taxRate : '0'}%
+                </td>
+                <td className="px-4 py-2 text-right print:border print:border-black">
+                  {formatCurrency(calculateTax())}
+                </td>
+              </tr>
+              <tr className="hidden print:table-row print:font-bold">
+                <td colSpan={5} className="px-4 py-2 text-center print:border print:border-black uppercase">
+                  Tổng cộng
+                </td>
+                <td className="px-4 py-2 text-right print:border print:border-black">
+                  {formatCurrency(calculateSubTotal() + calculateTax())}
+                </td>
+              </tr>
             </tbody>
           </table>
           
-          <div className="bg-gray-50 p-4 flex justify-end print:bg-white print:p-0 print:mt-4">
+          {/* Footer hiển thị trên Web (Không in) */}
+          <div className="bg-gray-50 p-4 flex justify-end print:hidden">
             <div className="text-right space-y-2">
               <p className="text-sm text-gray-600">Cộng tiền hàng: <span className="text-gray-900 font-medium ml-4 w-32 inline-block">{formatCurrency(calculateSubTotal())}</span></p>
-              <p className="text-sm text-gray-600 border-b pb-2 print:border-none print:pb-0">Tiền thuế GTGT: <span className="text-gray-900 font-medium ml-4 w-32 inline-block">{formatCurrency(calculateTax())}</span></p>
+              <p className="text-sm text-gray-600 border-b pb-2">Tiền thuế GTGT: <span className="text-gray-900 font-medium ml-4 w-32 inline-block">{formatCurrency(calculateTax())}</span></p>
               <p className="text-lg font-bold text-blue-800 pt-2">Tổng cộng: <span className="ml-4 w-32 inline-block">{formatCurrency(calculateSubTotal() + calculateTax())}</span></p>
             </div>
           </div>
@@ -270,14 +303,28 @@ export default function CreateQuotation() {
       )}
 
       {/* FOOTER CHO IN ẤN */}
-      <div className="hidden print:flex justify-between mt-16 px-10">
-        <div className="text-center">
-          <p className="font-bold">ĐẠI DIỆN KHÁCH HÀNG</p>
-          <p className="text-sm italic">(Ký, ghi rõ họ tên)</p>
-        </div>
-        <div className="text-center">
-          <p className="font-bold">ĐẠI DIỆN CÔNG TY</p>
-          <p className="text-sm italic">(Ký, ghi rõ họ tên)</p>
+      <div className="hidden print:block mt-6 text-sm font-[Times_New_Roman]">
+        <div className="font-bold underline mb-2">Chính sách công ty:</div>
+        <div className="font-bold text-xs mb-1">Giá trên bao gồm thuế VAT {selectedItems.length > 0 ? selectedItems[0].taxRate : '0'}%</div>
+        <div className="font-bold text-xs mb-1">Xuất xứ, quy cách và bảo hành:</div>
+        <ul className="list-none text-xs space-y-1 mb-2">
+          <li>-Hàng hóa chính hãng và mới 100%</li>
+          <li>-Xuất xứ theo đúng tiêu chuẩn nhà sản xuất</li>
+          <li>-Thiết bị bảo hành theo quy định và thời gian của hãng kể từ ngày mua</li>
+          <li>-Thi công hệ thống bảo hành 12 tháng</li>
+        </ul>
+        <div className="font-bold text-xs mb-1">Thời gian giao hàng kể từ khi người mua xác nhận đơn hàng: <span className="font-normal">Từ 05-07 ngày tùy theo khu vực</span></div>
+        <div className="font-bold text-xs mb-1 mt-2">Thanh toán:</div>
+        <ul className="list-none text-xs space-y-1 mb-4">
+          <li>-Chuyển khoản hoặc tiền mặt</li>
+          <li>-Thanh toán 100% trước khi nhận hàng hoặc theo thỏa thuận 2 bên</li>
+        </ul>
+
+        <div className="flex justify-end mt-8 pr-16">
+          <div className="text-center">
+            <p className="font-bold">Đại diện công ty</p>
+            <p className="text-sm italic">(Ký và ghi họ tên)</p>
+          </div>
         </div>
       </div>
 

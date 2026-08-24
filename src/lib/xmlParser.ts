@@ -10,13 +10,35 @@ export function parseInvoiceXML(xmlString: string) {
   const parsed = parser.parse(xmlString);
   
   try {
-    // Navigate through Circular 78 XML structure
-    const dLieu = parsed['HDon']['DLHDon'];
-    const ndHDon = dLieu['NDHDon'];
-    const ttChung = ndHDon['TTChung'];
-    const nMua = ndHDon['NMua'] || {};
-    const nBan = ndHDon['NBan'] || {};
-    const dshhdv = ndHDon['DSHHDV']['HHDV'];
+    // Find HDon regardless of root (TDiep or direct HDon)
+    let hdon = parsed['HDon'] || (parsed['TDiep'] && parsed['TDiep']['DLieu'] && parsed['TDiep']['DLieu']['HDon']);
+    
+    let ndHDonNode: any = null;
+    
+    if (!hdon) {
+      // Sometimes it's wrapped in other tags or namespaces. Let's do a loose search for NDHDon
+      const findNDHDon = (obj: any): any => {
+        if (!obj || typeof obj !== 'object') return null;
+        if (obj['NDHDon']) return obj['NDHDon'];
+        for (const key of Object.keys(obj)) {
+          const found = findNDHDon(obj[key]);
+          if (found) return found;
+        }
+        return null;
+      };
+      const ndHDon = findNDHDon(parsed);
+      if (!ndHDon) throw new Error("Không tìm thấy NDHDon trong XML. Đây có thể không phải Hóa đơn TT78.");
+      
+      ndHDonNode = ndHDon;
+    } else {
+      ndHDonNode = hdon['DLHDon']['NDHDon'];
+    }
+
+    const ttChung = ndHDonNode['TTChung'] || {};
+    const nMua = ndHDonNode['NMua'] || {};
+    const nBan = ndHDonNode['NBan'] || {};
+    const dshhdv = (ndHDonNode['DSHHDV'] && ndHDonNode['DSHHDV']['HHDV']) || [];
+    const tToan = ndHDonNode['TToan'] || {};
 
     const buyer: Partial<Customer> = {
       name: nMua['Ten'] || '',
@@ -42,22 +64,22 @@ export function parseInvoiceXML(xmlString: string) {
       unit: item['DVTinh'] || '',
       quantity: parseFloat(item['SLuong'] || '1'),
       unitPrice: parseFloat(item['DGia'] || '0'),
-      taxRate: parseFloat(item['TSuat']?.replace('%', '') || '0'),
+      taxRate: parseFloat(item['TSuat']?.toString().replace('%', '') || '0'),
       amount: parseFloat(item['ThTien'] || '0'),
-      stock: 0, // Mặc định là 0 khi import từ XML (nếu chưa có trong DB)
+      stock: 0,
     }));
 
     const invoiceInfo = {
       docNumber: ttChung['SHDon'] || '',
       date: new Date(ttChung['NLap'] || Date.now()),
-      subTotal: parseFloat(ndHDon['TToan']['TgTCThue'] || '0'),
-      taxAmount: parseFloat(ndHDon['TToan']['TgTThue'] || '0'),
-      total: parseFloat(ndHDon['TToan']['TgTTTBSo'] || '0'),
+      subTotal: parseFloat(tToan['TgTCThue'] || '0'),
+      taxAmount: parseFloat(tToan['TgTThue'] || '0'),
+      total: parseFloat(tToan['TgTTTBSo'] || '0'),
     };
 
     return { buyer, seller, products, invoiceInfo };
   } catch (error) {
     console.error("Error parsing e-invoice XML:", error);
-    throw new Error("Invalid e-invoice XML format (Circular 78/Decree 123).");
+    throw new Error("Lỗi khi đọc file XML Hóa đơn (Chỉ hỗ trợ Hóa đơn điện tử TT78).");
   }
 }
