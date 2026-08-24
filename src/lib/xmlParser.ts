@@ -11,30 +11,6 @@ export function parseInvoiceXML(xmlString: string) {
   const parsed = parser.parse(xmlString);
   
   try {
-    // Find HDon regardless of root (TDiep or direct HDon)
-    let hdon = parsed['HDon'] || (parsed['TDiep'] && parsed['TDiep']['DLieu'] && parsed['TDiep']['DLieu']['HDon']);
-    
-    let ndHDonNode: any = null;
-    
-    if (!hdon) {
-      // Sometimes it's wrapped in other tags or namespaces. Let's do a loose search for NDHDon
-      const findNDHDon = (obj: any): any => {
-        if (!obj || typeof obj !== 'object') return null;
-        if (obj['NDHDon']) return obj['NDHDon'];
-        for (const key of Object.keys(obj)) {
-          const found = findNDHDon(obj[key]);
-          if (found) return found;
-        }
-        return null;
-      };
-      const ndHDon = findNDHDon(parsed);
-      if (!ndHDon) throw new Error("Không tìm thấy NDHDon trong XML. Đây có thể không phải Hóa đơn TT78.");
-      
-      ndHDonNode = ndHDon;
-    } else {
-      ndHDonNode = hdon['DLHDon']['NDHDon'];
-    }
-
     const findNode = (obj: any, targetKey: string): any => {
       if (!obj || typeof obj !== 'object') return null;
       if (obj[targetKey]) return obj[targetKey];
@@ -45,17 +21,19 @@ export function parseInvoiceXML(xmlString: string) {
       return null;
     };
 
-    const ttChung = findNode(ndHDonNode, 'TTChung') || {};
-    const nMua = findNode(ndHDonNode, 'NMua') || {};
-    const nBan = findNode(ndHDonNode, 'NBan') || {};
-    const tToan = findNode(ndHDonNode, 'TToan') || {};
+    // Tìm kiếm trực tiếp từ toàn bộ cấu trúc file XML (parsed) 
+    // thay vì trông chờ vào HDon hay NDHDon vì mỗi nhà mạng bọc 1 kiểu khác nhau
+    const ttChung = findNode(parsed, 'TTChung') || {};
+    const nMua = findNode(parsed, 'NMua') || {};
+    const nBan = findNode(parsed, 'NBan') || {};
+    const tToan = findNode(parsed, 'TToan') || {};
     
     // Đôi khi cấu trúc có thể là DSHHDV -> HHDV, hoặc chỉ có HHDV (dù sai chuẩn nhưng vẫn có thể xảy ra)
-    let dshhdv = findNode(ndHDonNode, 'DSHHDV');
+    let dshhdv = findNode(parsed, 'DSHHDV');
     if (dshhdv && dshhdv['HHDV']) {
       dshhdv = dshhdv['HHDV'];
     } else {
-      dshhdv = findNode(ndHDonNode, 'HHDV') || [];
+      dshhdv = findNode(parsed, 'HHDV') || [];
     }
 
     const buyer: Partial<Customer> = {
