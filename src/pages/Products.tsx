@@ -118,6 +118,20 @@ export default function Products({ onNavigate, setPrefilledProducts }: ProductsP
     }
   };
 
+  const handleBulkChangeType = async () => {
+    const newType = activeTab === 'PRODUCT' ? 'SERVICE' : 'PRODUCT';
+    const message = activeTab === 'PRODUCT' 
+      ? `Chuyển ${selectedIds.length} mặt hàng đã chọn sang nhóm Chi phí/Dịch vụ?\n(Sẽ không hiển thị trong tồn kho và không xuất báo giá được)`
+      : `Chuyển ${selectedIds.length} mặt hàng đã chọn sang nhóm Hàng hóa?\n(Sẽ ghi nhận tồn kho và có thể xuất báo giá)`;
+      
+    if (confirm(message)) {
+      for (const id of selectedIds) {
+        await db.products.update(id, { type: newType });
+      }
+      setSelectedIds([]);
+    }
+  };
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mt-6">
       <div className="p-4 border-b border-gray-200 bg-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -164,15 +178,27 @@ export default function Products({ onNavigate, setPrefilledProducts }: ProductsP
             </button>
           </div>
 
-          {/* Nút Báo giá */}
+          {/* Nút Báo giá & Chuyển đổi */}
           {selectedIds.length > 0 && (
-            <button 
-              onClick={handleCreateQuotation}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors shadow-sm whitespace-nowrap w-full sm:w-auto justify-center"
-            >
-              <FileText className="w-4 h-4" />
-              Tạo Báo Giá ({selectedIds.length})
-            </button>
+            <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+              {activeTab === 'PRODUCT' && (
+                <button 
+                  onClick={handleCreateQuotation}
+                  className="flex-1 sm:flex-none items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors shadow-sm whitespace-nowrap justify-center flex"
+                >
+                  <FileText className="w-4 h-4" />
+                  Báo Giá ({selectedIds.length})
+                </button>
+              )}
+              <button 
+                onClick={handleBulkChangeType}
+                className={`flex-1 sm:flex-none items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors shadow-sm whitespace-nowrap justify-center flex ${
+                  activeTab === 'PRODUCT' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'bg-gray-600 hover:bg-gray-700 text-white'
+                }`}
+              >
+                {activeTab === 'PRODUCT' ? 'Chuyển thành Chi Phí' : 'Chuyển thành Hàng Hóa'}
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -181,7 +207,7 @@ export default function Products({ onNavigate, setPrefilledProducts }: ProductsP
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              {activeTab === 'PRODUCT' && <th className="px-4 py-3 text-left w-10"></th>}
+              <th className="px-4 py-3 text-left w-10"></th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã SP</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tên sản phẩm / Dịch vụ</th>
               <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Phân loại</th>
@@ -199,18 +225,16 @@ export default function Products({ onNavigate, setPrefilledProducts }: ProductsP
               
               return (
                 <tr key={product.id} className={`hover:bg-blue-50 transition-colors ${selectedIds.includes(product.id!) ? 'bg-blue-50' : ''}`}>
-                  {activeTab === 'PRODUCT' && (
-                    <td className="px-4 py-4 text-center">
-                      <input 
-                        type="checkbox" 
-                        className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-                        disabled={product.stock <= 0}
-                        checked={selectedIds.includes(product.id!)}
-                        onChange={() => handleToggleSelect(product.id!)}
-                        title={product.stock <= 0 ? "Hết hàng không thể chọn" : "Chọn để báo giá"}
-                      />
-                    </td>
-                  )}
+                  <td className="px-4 py-4 text-center">
+                    <input 
+                      type="checkbox" 
+                      className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                      disabled={activeTab === 'PRODUCT' && product.stock <= 0}
+                      checked={selectedIds.includes(product.id!)}
+                      onChange={() => handleToggleSelect(product.id!)}
+                      title={activeTab === 'PRODUCT' && product.stock <= 0 ? "Hết hàng không thể chọn" : "Chọn để thao tác"}
+                    />
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.code || '-'}</td>
                   
                   <td className="px-6 py-4 text-sm font-medium text-gray-900 max-w-md">
