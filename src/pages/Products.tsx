@@ -1,7 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
 import { useMemo, useState } from 'react';
-import { CheckSquare, FileText, Search, Edit2, Save, X, Filter } from 'lucide-react';
+import { CheckSquare, FileText, Search, Edit2, Save, X } from 'lucide-react';
 
 interface ProductsProps {
   onNavigate?: (tab: string) => void;
@@ -14,7 +14,7 @@ export default function Products({ onNavigate, setPrefilledProducts }: ProductsP
   
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterType, setFilterType] = useState<'ALL' | 'PRODUCT' | 'SERVICE'>('ALL');
+  const [activeTab, setActiveTab] = useState<'PRODUCT' | 'SERVICE'>('PRODUCT'); // Tab phân chia
   
   // Trạng thái đang chỉnh sửa
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -59,12 +59,12 @@ export default function Products({ onNavigate, setPrefilledProducts }: ProductsP
       // Lọc theo Search Query
       const matchSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           (p.code && p.code.toLowerCase().includes(searchQuery.toLowerCase()));
-      // Lọc theo Phân loại
-      const matchType = filterType === 'ALL' || p.type === filterType;
+      // Lọc theo Tab đang chọn
+      const matchType = p.type === activeTab;
       
       return matchSearch && matchType;
     });
-  }, [products, documents, searchQuery, filterType]);
+  }, [products, documents, searchQuery, activeTab]);
 
   const formatNumber = (val: number) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
@@ -144,18 +144,24 @@ export default function Products({ onNavigate, setPrefilledProducts }: ProductsP
             />
           </div>
 
-          {/* Bộ lọc Phân loại */}
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <Filter className="h-4 w-4 text-gray-400 hidden sm:block" />
-            <select
-              value={filterType}
-              onChange={(e) => setFilterType(e.target.value as any)}
-              className="rounded-md border border-gray-300 shadow-sm px-3 py-2 text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 w-full sm:w-auto"
+          {/* Tabs chuyển đổi */}
+          <div className="flex bg-gray-100 p-1 rounded-lg w-full sm:w-auto overflow-hidden">
+            <button
+              onClick={() => { setActiveTab('PRODUCT'); setSelectedIds([]); }}
+              className={`flex-1 sm:flex-none px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                activeTab === 'PRODUCT' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+              }`}
             >
-              <option value="ALL">Tất cả loại</option>
-              <option value="PRODUCT">Chỉ Hàng hóa (Tồn kho)</option>
-              <option value="SERVICE">Chỉ Dịch vụ (Không tồn kho)</option>
-            </select>
+              📦 Hàng hóa (Tồn kho)
+            </button>
+            <button
+              onClick={() => { setActiveTab('SERVICE'); setSelectedIds([]); }}
+              className={`flex-1 sm:flex-none px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                activeTab === 'SERVICE' ? 'bg-white text-purple-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              ⚙️ Dịch vụ / Chi phí
+            </button>
           </div>
 
           {/* Nút Báo giá */}
@@ -175,15 +181,15 @@ export default function Products({ onNavigate, setPrefilledProducts }: ProductsP
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-4 py-3 text-left w-10"></th>
+              {activeTab === 'PRODUCT' && <th className="px-4 py-3 text-left w-10"></th>}
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã SP</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tên sản phẩm / Dịch vụ</th>
               <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Phân loại</th>
               <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">ĐVT</th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Đơn giá</th>
               <th className="px-6 py-3 text-center text-xs font-medium text-blue-600 uppercase tracking-wider">Tổng Mua</th>
-              <th className="px-6 py-3 text-center text-xs font-medium text-green-600 uppercase tracking-wider">Tổng Bán</th>
-              <th className="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">Tồn kho</th>
+              {activeTab === 'PRODUCT' && <th className="px-6 py-3 text-center text-xs font-medium text-green-600 uppercase tracking-wider">Tổng Bán</th>}
+              {activeTab === 'PRODUCT' && <th className="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">Tồn kho</th>}
               <th className="px-4 py-3 text-center w-16"></th>
             </tr>
           </thead>
@@ -193,16 +199,18 @@ export default function Products({ onNavigate, setPrefilledProducts }: ProductsP
               
               return (
                 <tr key={product.id} className={`hover:bg-blue-50 transition-colors ${selectedIds.includes(product.id!) ? 'bg-blue-50' : ''}`}>
-                  <td className="px-4 py-4 text-center">
-                    <input 
-                      type="checkbox" 
-                      className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-                      disabled={product.type === 'PRODUCT' && product.stock <= 0}
-                      checked={selectedIds.includes(product.id!)}
-                      onChange={() => handleToggleSelect(product.id!)}
-                      title={product.type === 'PRODUCT' && product.stock <= 0 ? "Hết hàng không thể chọn" : "Chọn để báo giá"}
-                    />
-                  </td>
+                  {activeTab === 'PRODUCT' && (
+                    <td className="px-4 py-4 text-center">
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                        disabled={product.stock <= 0}
+                        checked={selectedIds.includes(product.id!)}
+                        onChange={() => handleToggleSelect(product.id!)}
+                        title={product.stock <= 0 ? "Hết hàng không thể chọn" : "Chọn để báo giá"}
+                      />
+                    </td>
+                  )}
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.code || '-'}</td>
                   
                   <td className="px-6 py-4 text-sm font-medium text-gray-900 max-w-md">
@@ -231,11 +239,11 @@ export default function Products({ onNavigate, setPrefilledProducts }: ProductsP
                         className="border border-blue-400 rounded-md p-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm w-28"
                       >
                         <option value="PRODUCT">Hàng hóa</option>
-                        <option value="SERVICE">Dịch vụ</option>
+                        <option value="SERVICE">Chi phí / Dịch vụ</option>
                       </select>
                     ) : (
                       <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${product.type === 'SERVICE' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'}`}>
-                        {product.type === 'SERVICE' ? 'Dịch vụ' : 'Hàng hóa'}
+                        {product.type === 'SERVICE' ? 'Dịch vụ nội bộ' : 'Hàng hóa'}
                       </span>
                     )}
                   </td>
@@ -243,17 +251,18 @@ export default function Products({ onNavigate, setPrefilledProducts }: ProductsP
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">{product.unit}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">{formatNumber(product.unitPrice)}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-center font-medium text-blue-600">{product.totalIn}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-center font-medium text-green-600">{product.totalOut}</td>
                   
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-center font-bold text-gray-900">
-                    {product.type === 'SERVICE' ? (
-                      <span className="text-gray-400 font-normal">-</span>
-                    ) : (
+                  {activeTab === 'PRODUCT' && (
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-center font-medium text-green-600">{product.totalOut}</td>
+                  )}
+                  
+                  {activeTab === 'PRODUCT' && (
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-center font-bold text-gray-900">
                       <span className={`px-2 py-1 rounded-full ${product.stock > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                         {product.stock}
                       </span>
-                    )}
-                  </td>
+                    </td>
+                  )}
                   
                   <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
                     {isEditing ? (
