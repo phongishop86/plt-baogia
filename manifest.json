@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "PLT ERP & Báo Giá",
+  "version": "1.0.0",
+  "description": "Chrome Extension cho kế toán, quản lý đơn hàng, xuất chứng từ và hóa đơn điện tử",
+  "permissions": [
+    "sidePanel",
+    "storage",
+    "unlimitedStorage"
+  ],
+  "action": {
+    "default_title": "Mở ERP Side Panel"
+  },
+  "side_panel": {
+    "default_path": "index.html"
+  },
+  "background": {
+    "service_worker": "src/background/index.ts",
+    "type": "module"
+  }
+}
