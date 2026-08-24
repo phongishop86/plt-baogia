@@ -16,14 +16,21 @@ export default function Products() {
     });
 
     documents.forEach(doc => {
+      if (!doc.items || !Array.isArray(doc.items)) return;
       doc.items.forEach(item => {
-        // Tìm product bằng tên (do lúc import hóa đơn cũ không có ID)
-        const product = products.find(p => p.name === item.productName || p.code === item.productId?.toString());
+        // Tìm product bằng tên (cắt khoảng trắng, chuyển chữ thường) để đảm bảo không bị miss
+        const normalize = (str?: string) => (str || '').toString().trim().toLowerCase();
+        const product = products.find(p => 
+          normalize(p.name) === normalize(item.productName) || 
+          (p.code && p.code === item.productId?.toString())
+        );
+        
         if (product && product.id) {
+          const qty = Number(item.quantity) || 0;
           if (doc.type === 'INPUT_INVOICE') {
-            statsMap[product.id].totalIn += item.quantity;
+            statsMap[product.id].totalIn += qty;
           } else if (doc.type === 'OUTPUT_INVOICE' || doc.type === 'DELIVERY_NOTE') {
-            statsMap[product.id].totalOut += item.quantity;
+            statsMap[product.id].totalOut += qty;
           }
         }
       });
