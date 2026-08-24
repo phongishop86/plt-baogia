@@ -53,18 +53,39 @@ export function parseInvoiceXML(xmlString: string) {
       isSupplier: true,
     };
 
+    // Hàm lấy giá trị thuộc tính không phân biệt hoa/thường
+    const getField = (obj: any, keys: string[]) => {
+      if (!obj || typeof obj !== 'object') return '';
+      const objKeys = Object.keys(obj).map(k => k.toLowerCase());
+      for (const k of keys) {
+        const lowerK = k.toLowerCase();
+        const index = objKeys.indexOf(lowerK);
+        if (index !== -1) {
+          return obj[Object.keys(obj)[index]];
+        }
+      }
+      return '';
+    };
+
     // Đảm bảo dshhdv luôn là mảng, nếu trống thì trả về mảng rỗng
     const items = Array.isArray(dshhdv) ? dshhdv : (dshhdv ? [dshhdv] : []);
-    const products = items.map((item: any) => ({
-      code: item['MHHDV'] || '',
-      name: item['THHDV'] || '',
-      unit: item['DVTinh'] || '',
-      quantity: parseFloat(item['SLuong'] || '1'),
-      unitPrice: parseFloat(item['DGia'] || '0'),
-      taxRate: parseFloat(item['TSuat']?.toString().replace('%', '') || '0'),
-      amount: parseFloat(item['ThTien'] || '0'),
-      stock: 0,
-    }));
+    const products = items.map((item: any) => {
+      const quantityStr = getField(item, ['SLuong', 'SoLuong']) || '1';
+      const priceStr = getField(item, ['DGia', 'DonGia']) || '0';
+      const taxRateStr = getField(item, ['TSuat', 'ThueSuat']) || '0';
+      const amountStr = getField(item, ['ThTien', 'ThanhTien']) || '0';
+
+      return {
+        code: getField(item, ['MHHDV', 'MaHang', 'MaSP']),
+        name: getField(item, ['THHDV', 'TenHang', 'TenSP', 'TenHHDV']),
+        unit: getField(item, ['DVTinh', 'DonViTinh', 'DVT']),
+        quantity: parseFloat(quantityStr.toString().replace(',', '.')),
+        unitPrice: parseFloat(priceStr.toString().replace(',', '.')),
+        taxRate: parseFloat(taxRateStr.toString().replace('%', '')),
+        amount: parseFloat(amountStr.toString().replace(',', '.')),
+        stock: 0,
+      };
+    }).filter((p: any) => p.name); // Bỏ qua nếu không có tên sản phẩm
 
     const invoiceInfo = {
       docNumber: (ttChung['KHHDon'] ? ttChung['KHHDon'] + '-' : '') + (ttChung['SHDon'] || ''),
