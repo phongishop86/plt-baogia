@@ -15,6 +15,8 @@ export default function CreateQuotation() {
   const [selectedCustomerId, setSelectedCustomerId] = useState<number | ''>('');
   const [selectedItems, setSelectedItems] = useState<SelectedProduct[]>([]);
   const [docNumber, setDocNumber] = useState(`BG-${Date.now().toString().slice(-6)}`);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const handleAddItemFromDB = (productId: number) => {
     const product = products?.find(p => p.id === productId);
@@ -102,6 +104,17 @@ export default function CreateQuotation() {
   };
 
   const formatCurrency = (val: number) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
+  
+  // Chỉ lấy sản phẩm có tồn kho > 0
+  const availableProducts = products?.filter(p => (p.stock || 0) > 0) || [];
+  const searchNormalized = searchQuery.trim().toLowerCase();
+  
+  // Thuật toán tìm kiếm tương đối
+  const filteredProducts = availableProducts.filter(p => {
+    if (!searchNormalized) return true;
+    return (p.name?.toLowerCase().includes(searchNormalized) || p.code?.toLowerCase().includes(searchNormalized));
+  });
+
   const selectedCustomer = customers?.find(c => c.id === selectedCustomerId);
 
   return (
@@ -165,20 +178,47 @@ export default function CreateQuotation() {
       </div>
 
       <div className="print:hidden flex space-x-4">
-        <div className="flex-1">
-          <select 
+        <div className="flex-1 relative">
+          <input 
+            type="text"
+            value={searchQuery}
             onChange={(e) => {
-              if (e.target.value) handleAddItemFromDB(Number(e.target.value));
-              e.target.value = '';
+              setSearchQuery(e.target.value);
+              setIsDropdownOpen(true);
             }}
-            className="w-full border-gray-300 rounded-md shadow-sm border p-2"
-            defaultValue=""
-          >
-            <option value="" disabled>-- Chọn sản phẩm từ kho --</option>
-            {products?.map(p => (
-              <option key={p.id} value={p.id}>{p.code} - {p.name} (Tồn: {p.stock || 0})</option>
-            ))}
-          </select>
+            onFocus={() => setIsDropdownOpen(true)}
+            onBlur={() => setTimeout(() => setIsDropdownOpen(false), 200)}
+            placeholder="🔍 Gõ tên hoặc mã sản phẩm để tìm kiếm..."
+            className="w-full border-gray-300 rounded-md shadow-sm border p-2 focus:ring-blue-500 focus:border-blue-500"
+          />
+          {isDropdownOpen && (
+            <ul className="absolute z-10 w-full bg-white border border-gray-300 shadow-lg max-h-60 rounded-md py-1 text-base overflow-auto focus:outline-none sm:text-sm mt-1">
+              {filteredProducts.length === 0 ? (
+                <li className="text-gray-500 relative cursor-default select-none py-2 px-3">
+                  Không tìm thấy sản phẩm hoặc sản phẩm đã hết hàng.
+                </li>
+              ) : (
+                filteredProducts.map(p => (
+                  <li 
+                    key={p.id} 
+                    onClick={() => {
+                      handleAddItemFromDB(p.id!);
+                      setSearchQuery('');
+                      setIsDropdownOpen(false);
+                    }}
+                    className="text-gray-900 cursor-pointer select-none relative py-2 px-3 hover:bg-blue-50 border-b border-gray-100 last:border-0"
+                  >
+                    <span className="block font-medium truncate">{p.name}</span>
+                    <span className="block text-xs text-gray-500 mt-0.5">
+                      Mã: <span className="font-medium text-gray-700">{p.code || '-'}</span> | 
+                      Tồn: <span className="font-medium text-green-600">{p.stock}</span> | 
+                      Giá: {new Intl.NumberFormat('vi-VN').format(p.unitPrice)} ₫
+                    </span>
+                  </li>
+                ))
+              )}
+            </ul>
+          )}
         </div>
         <button 
           onClick={handleAddManualRow}
