@@ -62,7 +62,7 @@ export function parseInvoiceXML(xmlString: string) {
     const allNodes = Array.from(xmlDoc.getElementsByTagName("*"));
     
     // Danh sách các thẻ có khả năng là Tên Hàng Hóa (bao phủ 99% các chuẩn cũ/mới)
-    const nameTags = ['thhdv', 'tenhang', 'tensp', 'tenhhdv', 'tendichvu', 'tenhanghoa', 'itemname', 'productname', 'prodname', 'tendv', 'hanghoa', 'dichvu'];
+    const nameTags = ['thhdvu', 'thhdv', 'tenhang', 'tensp', 'tenhhdv', 'tendichvu', 'tenhanghoa', 'itemname', 'productname', 'prodname', 'tendv', 'hanghoa', 'dichvu'];
     
     const products: any[] = [];
     
@@ -93,7 +93,7 @@ export function parseInvoiceXML(xmlString: string) {
         const priceStr = getSiblingValue(['dgia', 'dongia', 'price', 'unitprice']);
         const taxRateStr = getSiblingValue(['tsuat', 'thuesuat', 'vatrate', 'taxrate']);
         const amountStr = getSiblingValue(['thtien', 'thanhtien', 'ttien', 'amount', 'totalamount']);
-        const codeStr = getSiblingValue(['mhhdv', 'mahang', 'masp', 'itemcode', 'prodcode']);
+        const codeStr = getSiblingValue(['mhhdvu', 'mhhdv', 'mahang', 'masp', 'itemcode', 'prodcode']);
         const unitStr = getSiblingValue(['dvtinh', 'donvitinh', 'dvt', 'donvi', 'unitname', 'unit']);
 
         // Nếu là thẻ 'hanghoa' hoặc 'dichvu', bắt buộc phải có Thành tiền hoặc Số lượng mới coi là sản phẩm
