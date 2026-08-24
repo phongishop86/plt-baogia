@@ -34,10 +34,6 @@ export function parseInvoiceXML(xmlString: string) {
     const nBan = findNode(parsed, 'NBan') || findNode(parsed, 'NguoiBan') || {};
     const tToan = findNode(parsed, 'TToan') || findNode(parsed, 'ThanhToan') || {};
     
-    // Đôi khi cấu trúc có thể là DSHHDV -> HHDV, hoặc ChiTietHoaDon -> ChiTiet
-    let dshhdvNode = findNode(parsed, 'DSHHDV') || findNode(parsed, 'DanhSachHangHoa') || findNode(parsed, 'ChiTietHoaDon');
-    let dshhdv = null;
-    
     // Hàm lấy giá trị thuộc tính không phân biệt hoa/thường (Chuyển lên trên để dùng sớm)
     const getField = (obj: any, keys: string[]) => {
       if (!obj || typeof obj !== 'object') return '';
@@ -51,13 +47,6 @@ export function parseInvoiceXML(xmlString: string) {
       }
       return '';
     };
-
-    if (dshhdvNode) {
-      dshhdv = getField(dshhdvNode, ['HHDV', 'HangHoa', 'ChiTiet', 'Row']);
-      if (!dshhdv) dshhdv = dshhdvNode; // Đề phòng cấu trúc mảng trực tiếp
-    } else {
-      dshhdv = findNode(parsed, 'HHDV') || findNode(parsed, 'ChiTiet') || [];
-    }
 
     const buyer: Partial<Customer> = {
       name: nMua['Ten'] || '',
@@ -76,8 +65,35 @@ export function parseInvoiceXML(xmlString: string) {
       isSupplier: true,
     };
 
-    // Đảm bảo dshhdv luôn là mảng, nếu trống thì trả về mảng rỗng
-    const items = Array.isArray(dshhdv) ? dshhdv : (dshhdv ? [dshhdv] : []);
+    // Hàm quét sâu đệ quy toàn bộ file XML để tìm tất cả các Object chứa thông tin Hàng hóa
+    const findAllProducts = (obj: any): any[] => {
+      let results: any[] = [];
+      if (!obj || typeof obj !== 'object') return results;
+      
+      if (Array.isArray(obj)) {
+        for (const item of obj) {
+          results = results.concat(findAllProducts(item));
+        }
+        return results;
+      }
+
+      const name = getField(obj, ['THHDV', 'TenHang', 'TenSP', 'TenHHDV', 'TenDichVu', 'TenHangHoa', 'HangHoa', 'Ten']);
+      const hasQuantityOrPrice = getField(obj, ['SLuong', 'SoLuong', 'DGia', 'DonGia', 'ThTien', 'ThanhTien']) !== '';
+      
+      // Nếu object có tên VÀ có ít nhất số lượng hoặc đơn giá -> Chắc chắn là 1 dòng hàng hóa
+      if (name && hasQuantityOrPrice) {
+        results.push(obj);
+      } else {
+        for (const key of Object.keys(obj)) {
+          results = results.concat(findAllProducts(obj[key]));
+        }
+      }
+      return results;
+    };
+
+    // Tìm tất cả các mặt hàng bất kể chúng bị giấu ở đâu trong cấu trúc XML
+    const items = findAllProducts(parsed);
+
     const products = items.map((item: any) => {
       const quantityStr = getField(item, ['SLuong', 'SoLuong']) || '1';
       const priceStr = getField(item, ['DGia', 'DonGia']) || '0';
@@ -86,7 +102,7 @@ export function parseInvoiceXML(xmlString: string) {
 
       return {
         code: getField(item, ['MHHDV', 'MaHang', 'MaSP']),
-        name: getField(item, ['THHDV', 'TenHang', 'TenSP', 'TenHHDV']),
+        name: getField(item, ['THHDV', 'TenHang', 'TenSP', 'TenHHDV', 'TenDichVu', 'TenHangHoa', 'Ten']),
         unit: getField(item, ['DVTinh', 'DonViTinh', 'DVT']),
         quantity: parseFloat(quantityStr.toString().replace(',', '.')),
         unitPrice: parseFloat(priceStr.toString().replace(',', '.')),
