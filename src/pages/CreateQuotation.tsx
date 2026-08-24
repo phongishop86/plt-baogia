@@ -109,9 +109,9 @@ export default function CreateQuotation() {
       
       {/* HEADER CHO IN ẤN (Chỉ hiển thị khi in) */}
       <div className="hidden print:block mb-6 text-sm font-[Times_New_Roman]">
-        <div className="flex items-start space-x-6 pb-4">
-          <div className="w-28 flex-shrink-0">
-            <img src="/logo.png" alt="PLT Logo" className="w-24 h-24 object-contain" />
+        <div className="flex items-center space-x-6 pb-4 border-b border-gray-300 mb-4">
+          <div className="w-40 flex-shrink-0">
+            <img src="/PLT-logo.png" alt="PLT Logo" className="w-full h-auto max-h-32 object-contain" />
           </div>
           <div className="flex-1 space-y-1">
             <h1 className="text-lg font-bold">CÔNG TY TNHH PHÁT LỘC TECH</h1>
