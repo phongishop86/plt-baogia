@@ -5,95 +5,132 @@ import { db } from '../db/db';
 
 export default function XMLImport() {
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<any>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [results, setResults] = useState<any[]>([]);
+  const [invoiceType, setInvoiceType] = useState<'INPUT' | 'OUTPUT'>('OUTPUT');
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
 
     setLoading(true);
-    setError(null);
-    setResult(null);
+    const newResults: any[] = [];
 
-    try {
-      const text = await file.text();
-      const parsed = parseInvoiceXML(text);
-      
-      // Save to Dexie
-      const { customer, products, invoiceInfo } = parsed;
-      
-      // 1. Save or get Customer
-      let customerId: number;
-      const existingCustomer = await db.customers.where('taxCode').equals(customer.taxCode || '').first();
-      if (existingCustomer && existingCustomer.id) {
-        customerId = existingCustomer.id;
-      } else {
-        customerId = await db.customers.add(customer as any);
-      }
-
-      // 2. Save Products
-      for (const prod of products) {
-        const existing = await db.products.where('code').equals(prod.code || '').first();
-        if (!existing) {
-          await db.products.add(prod as any);
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      try {
+        const text = await file.text();
+        const parsed = parseInvoiceXML(text);
+        
+        const { buyer, seller, products, invoiceInfo } = parsed;
+        
+        // Determine the counterpart based on invoice type
+        // INPUT invoice (Mua vào): the counterpart is the Seller (Nhà cung cấp)
+        // OUTPUT invoice (Bán ra): the counterpart is the Buyer (Khách hàng)
+        const counterpart = invoiceType === 'INPUT' ? seller : buyer;
+        
+        // 1. Save or get Counterpart (Customer/Partner)
+        let customerId: number;
+        const existingCustomer = await db.customers.where('taxCode').equals(counterpart.taxCode || '').first();
+        if (existingCustomer && existingCustomer.id) {
+          customerId = existingCustomer.id;
+        } else {
+          customerId = await db.customers.add(counterpart as any);
         }
+
+        // 2. Save Products and Update Stock
+        for (const prod of products) {
+          if (!prod.code && !prod.name) continue;
+          
+          const existing = await db.products.where('code').equals(prod.code || '').first();
+          let newStock = 0;
+          const qty = prod.quantity || 1;
+          
+          if (!existing) {
+            newStock = invoiceType === 'INPUT' ? qty : -qty;
+            await db.products.add({
+              code: prod.code,
+              name: prod.name,
+              unit: prod.unit,
+              unitPrice: prod.unitPrice,
+              taxRate: prod.taxRate,
+              stock: newStock
+            });
+          } else {
+            const currentStock = existing.stock || 0;
+            newStock = invoiceType === 'INPUT' ? currentStock + qty : currentStock - qty;
+            await db.products.update(existing.id!, { stock: newStock, unitPrice: prod.unitPrice }); // Update price as well
+          }
+        }
+        
+        // 3. Save Document
+        await db.documents.add({
+          type: invoiceType === 'INPUT' ? 'INPUT_INVOICE' : 'OUTPUT_INVOICE',
+          docNumber: invoiceInfo.docNumber,
+          customerId,
+          date: invoiceInfo.date,
+          subTotal: invoiceInfo.subTotal,
+          taxAmount: invoiceInfo.taxAmount,
+          total: invoiceInfo.total,
+          items: products.map((p: any) => ({
+            productName: p.name || '',
+            unit: p.unit || '',
+            quantity: p.quantity || 1, 
+            unitPrice: p.unitPrice || 0,
+            taxRate: p.taxRate || 0,
+            amount: p.amount || (p.quantity * p.unitPrice)
+          })),
+          createdAt: new Date()
+        });
+
+        newResults.push({ file: file.name, status: 'success', docNumber: invoiceInfo.docNumber });
+      } catch (err: any) {
+        newResults.push({ file: file.name, status: 'error', message: err.message || 'Lỗi xử lý file XML' });
       }
-
-      // 3. Save Document
-      await db.documents.add({
-        type: 'INVOICE',
-        docNumber: invoiceInfo.docNumber,
-        customerId,
-        date: invoiceInfo.date,
-        subTotal: invoiceInfo.subTotal,
-        taxAmount: invoiceInfo.taxAmount,
-        total: invoiceInfo.total,
-        items: products.map(p => ({
-          productName: p.name || '',
-          unit: p.unit || '',
-          quantity: 1, // Default from XML might need refinement
-          unitPrice: p.unitPrice || 0,
-          taxRate: p.taxRate || 0,
-          amount: p.unitPrice || 0
-        })),
-        createdAt: new Date()
-      });
-
-      setResult({ message: 'Nhập XML hóa đơn thành công!', docNumber: invoiceInfo.docNumber });
-    } catch (err: any) {
-      setError(err.message || 'Lỗi xử lý file XML.');
-    } finally {
-      setLoading(false);
     }
+
+    setResults(prev => [...newResults, ...prev]);
+    setLoading(false);
   };
 
   return (
-    <div className="max-w-2xl mx-auto mt-10 p-8 bg-white border border-gray-200 rounded-xl shadow-sm">
-      <div className="text-center">
-        <Upload className="mx-auto h-12 w-12 text-gray-400" />
-        <h3 className="mt-2 text-lg font-semibold text-gray-900">Upload Hóa đơn XML</h3>
-        <p className="mt-1 text-sm text-gray-500">Kéo thả hoặc chọn file XML Hóa đơn điện tử (TT78)</p>
+    <div className="max-w-3xl mx-auto mt-8 p-8 bg-white border border-gray-200 rounded-xl shadow-sm">
+      <div className="text-center mb-8">
+        <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+        <h3 className="text-xl font-semibold text-gray-900">Import Hóa Đơn Điện Tử (XML hàng loạt)</h3>
+        <p className="mt-2 text-sm text-gray-500">Kéo thả hoặc chọn nhiều file XML chuẩn Thông tư 78</p>
       </div>
       
-      <div className="mt-6 flex justify-center">
-        <label className="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors">
-          <span>Chọn File XML</span>
-          <input type="file" accept=".xml" className="hidden" onChange={handleFileUpload} disabled={loading} />
+      <div className="flex flex-col items-center justify-center space-y-6">
+        <div className="flex items-center space-x-4">
+          <label className="font-medium text-gray-700">Loại Hóa Đơn:</label>
+          <select 
+            value={invoiceType} 
+            onChange={(e) => setInvoiceType(e.target.value as 'INPUT' | 'OUTPUT')}
+            className="border-gray-300 rounded-md shadow-sm border p-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="OUTPUT">Hóa đơn Bán ra (Ghi nhận Doanh thu & Giảm kho)</option>
+            <option value="INPUT">Hóa đơn Mua vào (Ghi nhận Chi phí & Tăng kho)</option>
+          </select>
+        </div>
+
+        <label className="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-md transition-colors font-medium">
+          <span>Chọn Các File XML</span>
+          <input type="file" accept=".xml" multiple className="hidden" onChange={handleFileUpload} disabled={loading} />
         </label>
       </div>
 
-      {loading && <p className="mt-4 text-center text-blue-600">Đang xử lý...</p>}
+      {loading && <p className="mt-6 text-center text-blue-600 font-medium">Đang xử lý các file...</p>}
       
-      {error && (
-        <div className="mt-4 p-4 bg-red-50 text-red-700 rounded-md border border-red-200">
-          {error}
-        </div>
-      )}
-
-      {result && (
-        <div className="mt-4 p-4 bg-green-50 text-green-700 rounded-md border border-green-200">
-          {result.message} (Số HĐ: {result.docNumber})
+      {results.length > 0 && (
+        <div className="mt-8">
+          <h4 className="font-medium text-gray-900 mb-4">Kết quả Import:</h4>
+          <div className="space-y-3">
+            {results.map((res, idx) => (
+              <div key={idx} className={`p-4 rounded-md border ${res.status === 'success' ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'}`}>
+                <span className="font-semibold">{res.file}:</span> {res.status === 'success' ? `Thành công (Số HĐ: ${res.docNumber})` : `Lỗi - ${res.message}`}
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

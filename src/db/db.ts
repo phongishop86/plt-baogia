@@ -7,6 +7,7 @@ export interface Customer {
   address: string;
   phone?: string;
   email?: string;
+  isSupplier?: boolean; // Nếu là đối tác cung cấp (Mua vào)
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -25,7 +26,7 @@ export interface Product {
 
 export interface Document {
   id?: number;
-  type: 'QUOTATION' | 'DELIVERY_NOTE' | 'PAYMENT_REQUEST' | 'INVOICE';
+  type: 'QUOTATION' | 'DELIVERY_NOTE' | 'PAYMENT_REQUEST' | 'INVOICE' | 'INPUT_INVOICE' | 'OUTPUT_INVOICE';
   docNumber: string;
   customerId: number;
   date: Date;

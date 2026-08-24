@@ -1,40 +1,75 @@
-import { useEffect, useState } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
-import { Users, FileText, Box } from 'lucide-react';
+import { Users, FileText, Box, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
 
 export default function Dashboard() {
-  const [stats, setStats] = useState({ customers: 0, products: 0, documents: 0 });
+  const stats = useLiveQuery(async () => {
+    const customers = await db.customers.count();
+    const products = await db.products.count();
+    const documents = await db.documents.toArray();
+    
+    let revenue = 0;
+    let cost = 0;
+    
+    documents.forEach(doc => {
+      if (doc.type === 'OUTPUT_INVOICE') {
+        revenue += doc.subTotal; // Lấy doanh thu chưa thuế
+      } else if (doc.type === 'INPUT_INVOICE') {
+        cost += doc.subTotal; // Lấy chi phí chưa thuế
+      }
+    });
 
-  useEffect(() => {
-    async function loadStats() {
-      const customers = await db.customers.count();
-      const products = await db.products.count();
-      const documents = await db.documents.count();
-      setStats({ customers, products, documents });
-    }
-    loadStats();
-  }, []);
+    const profit = revenue - cost;
+
+    return { customers, products, documents: documents.length, revenue, cost, profit };
+  });
+
+  const formatCurrency = (val: number) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
+
+  if (!stats) return <div className="p-8 text-center text-gray-500">Đang tải dữ liệu...</div>;
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-3 gap-6">
-        <StatCard title="Khách hàng" value={stats.customers} icon={<Users size={24} className="text-blue-500" />} />
-        <StatCard title="Sản phẩm" value={stats.products} icon={<Box size={24} className="text-green-500" />} />
-        <StatCard title="Chứng từ" value={stats.documents} icon={<FileText size={24} className="text-purple-500" />} />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <StatCard title="Khách hàng / Đối tác" value={stats.customers.toString()} icon={<Users size={24} className="text-blue-500" />} />
+        <StatCard title="Sản phẩm" value={stats.products.toString()} icon={<Box size={24} className="text-purple-500" />} />
+        <StatCard title="Tổng số Chứng từ" value={stats.documents.toString()} icon={<FileText size={24} className="text-gray-500" />} />
+      </div>
+      
+      <h3 className="text-lg font-semibold text-gray-800 mt-8 mb-4 border-b pb-2">Tài chính (Tạm tính)</h3>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <StatCard 
+          title="Tổng Doanh thu (Bán ra)" 
+          value={formatCurrency(stats.revenue)} 
+          icon={<TrendingUp size={24} className="text-green-500" />} 
+          bgColor="bg-green-50"
+        />
+        <StatCard 
+          title="Tổng Chi phí (Mua vào)" 
+          value={formatCurrency(stats.cost)} 
+          icon={<TrendingDown size={24} className="text-red-500" />} 
+          bgColor="bg-red-50"
+        />
+        <StatCard 
+          title="Lợi nhuận tạm tính" 
+          value={formatCurrency(stats.profit)} 
+          icon={<DollarSign size={24} className={stats.profit >= 0 ? "text-blue-600" : "text-red-600"} />} 
+          bgColor={stats.profit >= 0 ? "bg-blue-50" : "bg-red-50"}
+        />
       </div>
     </div>
   );
 }
 
-function StatCard({ title, value, icon }: { title: string, value: number, icon: React.ReactNode }) {
+function StatCard({ title, value, icon, bgColor = "bg-gray-50" }: { title: string, value: string, icon: React.ReactNode, bgColor?: string }) {
   return (
     <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex items-center space-x-4">
-      <div className="p-3 bg-gray-50 rounded-lg">
+      <div className={`p-4 rounded-xl ${bgColor}`}>
         {icon}
       </div>
       <div>
         <p className="text-sm text-gray-500 font-medium">{title}</p>
-        <p className="text-2xl font-bold text-gray-900">{value}</p>
+        <p className="text-xl font-bold text-gray-900 mt-1">{value}</p>
       </div>
     </div>
   );
