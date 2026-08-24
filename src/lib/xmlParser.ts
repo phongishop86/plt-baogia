@@ -13,7 +13,13 @@ export function parseInvoiceXML(xmlString: string) {
   try {
     const findNode = (obj: any, targetKey: string): any => {
       if (!obj || typeof obj !== 'object') return null;
-      if (obj[targetKey]) return obj[targetKey];
+      
+      const lowerTarget = targetKey.toLowerCase();
+      // Thử tìm ở cấp hiện tại trước
+      for (const key of Object.keys(obj)) {
+        if (key.toLowerCase() === lowerTarget) return obj[key];
+      }
+      // Nếu không có, đào sâu xuống
       for (const key of Object.keys(obj)) {
         const found = findNode(obj[key], targetKey);
         if (found) return found;
@@ -23,17 +29,34 @@ export function parseInvoiceXML(xmlString: string) {
 
     // Tìm kiếm trực tiếp từ toàn bộ cấu trúc file XML (parsed) 
     // thay vì trông chờ vào HDon hay NDHDon vì mỗi nhà mạng bọc 1 kiểu khác nhau
-    const ttChung = findNode(parsed, 'TTChung') || {};
-    const nMua = findNode(parsed, 'NMua') || {};
-    const nBan = findNode(parsed, 'NBan') || {};
-    const tToan = findNode(parsed, 'TToan') || {};
+    const ttChung = findNode(parsed, 'TTChung') || findNode(parsed, 'ThongTinChung') || {};
+    const nMua = findNode(parsed, 'NMua') || findNode(parsed, 'NguoiMua') || {};
+    const nBan = findNode(parsed, 'NBan') || findNode(parsed, 'NguoiBan') || {};
+    const tToan = findNode(parsed, 'TToan') || findNode(parsed, 'ThanhToan') || {};
     
-    // Đôi khi cấu trúc có thể là DSHHDV -> HHDV, hoặc chỉ có HHDV (dù sai chuẩn nhưng vẫn có thể xảy ra)
-    let dshhdv = findNode(parsed, 'DSHHDV');
-    if (dshhdv && dshhdv['HHDV']) {
-      dshhdv = dshhdv['HHDV'];
+    // Đôi khi cấu trúc có thể là DSHHDV -> HHDV, hoặc ChiTietHoaDon -> ChiTiet
+    let dshhdvNode = findNode(parsed, 'DSHHDV') || findNode(parsed, 'DanhSachHangHoa') || findNode(parsed, 'ChiTietHoaDon');
+    let dshhdv = null;
+    
+    // Hàm lấy giá trị thuộc tính không phân biệt hoa/thường (Chuyển lên trên để dùng sớm)
+    const getField = (obj: any, keys: string[]) => {
+      if (!obj || typeof obj !== 'object') return '';
+      const objKeys = Object.keys(obj).map(k => k.toLowerCase());
+      for (const k of keys) {
+        const lowerK = k.toLowerCase();
+        const index = objKeys.indexOf(lowerK);
+        if (index !== -1) {
+          return obj[Object.keys(obj)[index]];
+        }
+      }
+      return '';
+    };
+
+    if (dshhdvNode) {
+      dshhdv = getField(dshhdvNode, ['HHDV', 'HangHoa', 'ChiTiet', 'Row']);
+      if (!dshhdv) dshhdv = dshhdvNode; // Đề phòng cấu trúc mảng trực tiếp
     } else {
-      dshhdv = findNode(parsed, 'HHDV') || [];
+      dshhdv = findNode(parsed, 'HHDV') || findNode(parsed, 'ChiTiet') || [];
     }
 
     const buyer: Partial<Customer> = {
@@ -51,20 +74,6 @@ export function parseInvoiceXML(xmlString: string) {
       phone: nBan['SDThoai'] || '',
       email: nBan['DCTDTu'] || '',
       isSupplier: true,
-    };
-
-    // Hàm lấy giá trị thuộc tính không phân biệt hoa/thường
-    const getField = (obj: any, keys: string[]) => {
-      if (!obj || typeof obj !== 'object') return '';
-      const objKeys = Object.keys(obj).map(k => k.toLowerCase());
-      for (const k of keys) {
-        const lowerK = k.toLowerCase();
-        const index = objKeys.indexOf(lowerK);
-        if (index !== -1) {
-          return obj[Object.keys(obj)[index]];
-        }
-      }
-      return '';
     };
 
     // Đảm bảo dshhdv luôn là mảng, nếu trống thì trả về mảng rỗng
