@@ -32,6 +32,7 @@ export function parseInvoiceXML(xmlString: string) {
       unit: item['DVTinh'] || '',
       unitPrice: parseFloat(item['DGia'] || '0'),
       taxRate: parseFloat(item['TSuat']?.replace('%', '') || '0'),
+      stock: 0, // Mặc định là 0 khi import từ XML
     }));
 
     const invoiceInfo = {

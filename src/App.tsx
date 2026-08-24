@@ -5,6 +5,7 @@ import Customers from './pages/Customers';
 import Products from './pages/Products';
 import Documents from './pages/Documents';
 import XMLImport from './pages/XMLImport';
+import CreateQuotation from './pages/CreateQuotation';
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -51,6 +52,12 @@ function App() {
             active={activeTab === 'xml'} 
             onClick={() => setActiveTab('xml')} 
           />
+          <NavItem 
+            icon={<FileText size={20} className="text-blue-500" />} 
+            label="Tạo Báo Giá" 
+            active={activeTab === 'create-quote'} 
+            onClick={() => setActiveTab('create-quote')} 
+          />
         </nav>
       </aside>
 
@@ -59,6 +66,7 @@ function App() {
         <header className="h-14 bg-white border-b border-gray-200 flex items-center px-6">
           <h2 className="text-xl font-semibold capitalize">{
             activeTab === 'xml' ? 'Nhập Hóa Đơn Điện Tử (XML)' : 
+            activeTab === 'create-quote' ? 'Tạo Báo Giá Mới' :
             activeTab === 'customers' ? 'Quản lý Khách Hàng' :
             activeTab === 'products' ? 'Quản lý Sản Phẩm' :
             activeTab === 'documents' ? 'Quản lý Chứng Từ' :
@@ -71,6 +79,7 @@ function App() {
           {activeTab === 'products' && <Products />}
           {activeTab === 'documents' && <Documents />}
           {activeTab === 'xml' && <XMLImport />}
+          {activeTab === 'create-quote' && <CreateQuotation />}
         </div>
       </main>
     </div>

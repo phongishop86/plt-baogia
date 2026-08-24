@@ -18,6 +18,7 @@ export interface Product {
   unit: string;
   unitPrice: number;
   taxRate: number; // e.g. 8 or 10
+  stock: number; // Tồn kho
   createdAt?: Date;
   updatedAt?: Date;
 }
