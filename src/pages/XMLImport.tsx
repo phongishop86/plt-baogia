@@ -6,7 +6,8 @@ import { db } from '../db/db';
 export default function XMLImport() {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<any[]>([]);
-  const [invoiceType, setInvoiceType] = useState<'INPUT' | 'OUTPUT'>('OUTPUT');
+  // MST của Phát Lộc Tech để tự động phân loại hóa đơn
+  const PLT_TAX_CODE = '0319347662';
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -21,10 +22,21 @@ export default function XMLImport() {
         const text = await file.text();
         const parsed = parseInvoiceXML(text);
         
+        if (!parsed.invoiceInfo.docNumber || parsed.invoiceInfo.docNumber.trim() === '') {
+          throw new Error("Không tìm thấy Số hóa đơn trong file XML.");
+        }
+
         const { buyer, seller, products, invoiceInfo } = parsed;
         
-        if (!invoiceInfo.docNumber || invoiceInfo.docNumber.trim() === '') {
-          throw new Error("Không tìm thấy Số hóa đơn trong file XML (File không đúng chuẩn hoặc bị thiếu dữ liệu).");
+        // Tự động phân loại hóa đơn dựa vào MST của PLT
+        let invoiceType: 'INPUT' | 'OUTPUT';
+        if (seller.taxCode === PLT_TAX_CODE) {
+          invoiceType = 'OUTPUT'; // PLT là người bán -> Hóa đơn bán ra
+        } else if (buyer.taxCode === PLT_TAX_CODE) {
+          invoiceType = 'INPUT'; // PLT là người mua -> Hóa đơn mua vào
+        } else {
+          // Nếu không khớp, mặc định hỏi hoặc báo lỗi. Ở đây tạm cho vào INPUT và cảnh báo
+          throw new Error(`MST trong hóa đơn không khớp với PLT (${PLT_TAX_CODE}). Mua: ${buyer.taxCode}, Bán: ${seller.taxCode}`);
         }
         
         // Check for duplicates
@@ -38,7 +50,6 @@ export default function XMLImport() {
           throw new Error(`Hóa đơn số ${invoiceInfo.docNumber} đã tồn tại trong hệ thống.`);
         }
         
-        // Determine the counterpart based on invoice type
         // INPUT invoice (Mua vào): the counterpart is the Seller (Nhà cung cấp)
         // OUTPUT invoice (Bán ra): the counterpart is the Buyer (Khách hàng)
         const counterpart = invoiceType === 'INPUT' ? seller : buyer;
@@ -116,22 +127,11 @@ export default function XMLImport() {
       </div>
       
       <div className="flex flex-col items-center justify-center space-y-6">
-        <div className="flex items-center space-x-4">
-          <label className="font-medium text-gray-700">Loại Hóa Đơn:</label>
-          <select 
-            value={invoiceType} 
-            onChange={(e) => setInvoiceType(e.target.value as 'INPUT' | 'OUTPUT')}
-            className="border-gray-300 rounded-md shadow-sm border p-2 focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="OUTPUT">Hóa đơn Bán ra (Ghi nhận Doanh thu & Giảm kho)</option>
-            <option value="INPUT">Hóa đơn Mua vào (Ghi nhận Chi phí & Tăng kho)</option>
-          </select>
-        </div>
-
         <label className="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-md transition-colors font-medium">
-          <span>Chọn Các File XML</span>
+          <span>Chọn Các File XML (Bán ra & Mua vào)</span>
           <input type="file" accept=".xml" multiple className="hidden" onChange={handleFileUpload} disabled={loading} />
         </label>
+        <p className="text-sm text-gray-500 italic">Hệ thống sẽ tự động phân loại hóa đơn Bán ra hay Mua vào dựa trên Mã số thuế của công ty (0319347662).</p>
       </div>
 
       {loading && <p className="mt-6 text-center text-blue-600 font-medium">Đang xử lý các file...</p>}
