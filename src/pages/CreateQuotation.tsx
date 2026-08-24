@@ -300,28 +300,28 @@ export default function CreateQuotation() {
       )}
 
       {/* FOOTER CHO IN ẤN */}
-      <div className="hidden print:block mt-6 text-sm font-[Times_New_Roman]">
-        <div className="font-bold underline mb-2">Chính sách công ty:</div>
-        <div className="font-bold text-xs mb-1">Giá trên bao gồm thuế VAT {selectedItems.length > 0 ? selectedItems[0].taxRate : '0'}%</div>
-        <div className="font-bold text-xs mb-1">Xuất xứ, quy cách và bảo hành:</div>
-        <ul className="list-none text-xs space-y-1 mb-2">
-          <li>-Hàng hóa chính hãng và mới 100%</li>
-          <li>-Xuất xứ theo đúng tiêu chuẩn nhà sản xuất</li>
-          <li>-Thiết bị bảo hành theo quy định và thời gian của hãng kể từ ngày mua</li>
-          <li>-Thi công hệ thống bảo hành 12 tháng</li>
-        </ul>
-        <div className="font-bold text-xs mb-1">Thời gian giao hàng kể từ khi người mua xác nhận đơn hàng: <span className="font-normal">Từ 05-07 ngày tùy theo khu vực</span></div>
-        <div className="font-bold text-xs mb-1 mt-2">Thanh toán:</div>
-        <ul className="list-none text-xs space-y-1 mb-4">
-          <li>-Chuyển khoản hoặc tiền mặt</li>
-          <li>-Thanh toán 100% trước khi nhận hàng hoặc theo thỏa thuận 2 bên</li>
-        </ul>
+      <div className="hidden print:flex justify-between items-start mt-6 text-sm font-[Times_New_Roman]">
+        <div className="flex-1 pr-4">
+          <div className="font-bold underline mb-2 text-base">Chính sách công ty:</div>
+          <div className="font-bold text-xs mb-1">Giá trên bao gồm thuế VAT {selectedItems.length > 0 ? selectedItems[0].taxRate : '0'}%</div>
+          <div className="font-bold text-xs mb-1">Xuất xứ, quy cách và bảo hành:</div>
+          <ul className="list-none text-xs space-y-1 mb-2">
+            <li>-Hàng hóa chính hãng và mới 100%</li>
+            <li>-Xuất xứ theo đúng tiêu chuẩn nhà sản xuất</li>
+            <li>-Thiết bị bảo hành theo quy định và thời gian của hãng kể từ ngày mua</li>
+            <li>-Thi công hệ thống bảo hành 12 tháng</li>
+          </ul>
+          <div className="font-bold text-xs mb-1">Thời gian giao hàng kể từ khi người mua xác nhận đơn hàng: <span className="font-normal">Từ 05-07 ngày tùy theo khu vực</span></div>
+          <div className="font-bold text-xs mb-1 mt-2">Thanh toán:</div>
+          <ul className="list-none text-xs space-y-1 mb-4">
+            <li>-Chuyển khoản hoặc tiền mặt</li>
+            <li>-Thanh toán 100% trước khi nhận hàng hoặc theo thỏa thuận 2 bên</li>
+          </ul>
+        </div>
 
-        <div className="flex justify-end mt-8 pr-16">
-          <div className="text-center">
-            <p className="font-bold">Đại diện công ty</p>
-            <p className="text-sm italic">(Ký và ghi họ tên)</p>
-          </div>
+        <div className="w-64 flex flex-col items-center pt-8">
+          <p className="font-bold text-base">Đại diện công ty</p>
+          <p className="text-sm italic">(Ký và ghi họ tên)</p>
         </div>
       </div>
 

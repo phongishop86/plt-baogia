@@ -34,3 +34,17 @@
     color: hsl(var(--foreground));
   }
 }
+
+@media print {
+  @page {
+    size: auto;
+    margin: 10mm; /* Đặt lề nhỏ để trình duyệt không chèn Date/URL vào Header/Footer */
+  }
+  
+  /* Đảm bảo nền trắng khi in */
+  body {
+    background-color: white !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
