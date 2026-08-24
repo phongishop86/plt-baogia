@@ -48,7 +48,20 @@ export default function XMLImport() {
           .first();
           
         if (existingDoc) {
-          throw new Error(`Hóa đơn số ${invoiceInfo.docNumber} đã tồn tại trong hệ thống.`);
+          // Xóa hóa đơn cũ đi để ghi đè lại (rất hữu ích khi người dùng import lại để cập nhật)
+          await db.documents.delete(existingDoc.id!);
+          
+          // Phục hồi lại tồn kho của các mặt hàng trong hóa đơn cũ trước khi xóa
+          if (existingDoc.items && existingDoc.items.length > 0) {
+            for (const item of existingDoc.items) {
+              const prod = await db.products.where('name').equals(item.productName).first();
+              if (prod) {
+                // Đảo ngược tồn kho (Nhập thì trừ, Bán thì cộng)
+                const reverseQty = existingDoc.type === 'INPUT_INVOICE' ? -item.quantity : item.quantity;
+                await db.products.update(prod.id!, { stock: (prod.stock || 0) + reverseQty });
+              }
+            }
+          }
         }
         
         // INPUT invoice (Mua vào): the counterpart is the Seller (Nhà cung cấp)

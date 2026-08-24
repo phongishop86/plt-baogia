@@ -119,6 +119,59 @@ export function parseInvoiceXML(xmlString: string) {
         }
       }
     }
+    // =====================================================================
+    // REGEX FALLBACK: VŨ KHÍ TỐI THƯỢNG NẾU DOMPARSER THẤT BẠI
+    // =====================================================================
+    if (products.length === 0) {
+      console.log("DOMParser failed, triggering Regex Fallback...");
+      // Tìm tất cả các thẻ có tên giống Tên Hàng Hóa và lấy nội dung
+      const regexStr = `<(?:\\w+:)?(THHDVu?|TenHang|TenSP|TenHHDV|TenDichVu|TenHangHoa|ItemName|ProductName|ProdName|TenDV|HangHoa|DichVu)(?:>| [^>]*>)([\\s\\S]*?)<\\/(?:\\w+:)?\\1>`;
+      const nameRegex = new RegExp(regexStr, 'gi');
+      
+      let match;
+      while ((match = nameRegex.exec(xmlString)) !== null) {
+        const nameText = match[2].trim();
+        
+        if (nameText && !nameText.includes('<')) { // Đảm bảo không chứa thẻ con
+          // Trích xuất toàn bộ text xung quanh nameText (trong khoảng 1000 ký tự) để mò các thẻ khác
+          const index = match.index;
+          const contextStart = Math.max(0, index - 500);
+          const contextEnd = Math.min(xmlString.length, index + 500);
+          const context = xmlString.substring(contextStart, contextEnd);
+          
+          const extractRegex = (tags: string[]) => {
+            for (const tag of tags) {
+              const r = new RegExp(`<(?:\\w+:)?${tag}(?:>| [^>]*>)([\\s\\S]*?)<\\/(?:\\w+:)?${tag}>`, 'i');
+              const m = context.match(r);
+              if (m && !m[1].includes('<')) return m[1].trim();
+            }
+            return '';
+          };
+
+          const quantityStr = extractRegex(['SLuong', 'SoLuong', 'Quantity', 'Qty']);
+          const priceStr = extractRegex(['DGia', 'DonGia', 'Price', 'UnitPrice']);
+          const taxRateStr = extractRegex(['TSuat', 'ThueSuat', 'VATRate', 'TaxRate']);
+          const amountStr = extractRegex(['ThTien', 'ThanhTien', 'TTien', 'Amount', 'TotalAmount']);
+          const codeStr = extractRegex(['MHHDVu', 'MHHDV', 'MaHang', 'MaSP', 'ItemCode', 'ProdCode']);
+          const unitStr = extractRegex(['DVTinh', 'DonViTinh', 'DVT', 'DonVi', 'UnitName', 'Unit']);
+
+          const isDuplicate = products.some(p => p.name === nameText && p.amount === parseFloat(amountStr.replace(',', '.') || '0'));
+          
+          if (!isDuplicate && (quantityStr || priceStr || amountStr)) {
+            products.push({
+              code: codeStr,
+              name: nameText,
+              unit: unitStr,
+              quantity: parseFloat(quantityStr.replace(',', '.') || '1'),
+              unitPrice: parseFloat(priceStr.replace(',', '.') || '0'),
+              taxRate: parseFloat(taxRateStr.replace('%', '') || '0'),
+              amount: parseFloat(amountStr.replace(',', '.') || '0'),
+              stock: 0,
+            });
+          }
+        }
+      }
+    }
 
     const invoiceInfo = {
       docNumber: (ttChung['KHHDon'] ? ttChung['KHHDon'] + '-' : '') + (ttChung['SHDon'] || ''),
