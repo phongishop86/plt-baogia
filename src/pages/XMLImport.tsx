@@ -64,18 +64,25 @@ export default function XMLImport() {
         for (const prod of products) {
           if (!prod.code && !prod.name) continue;
           
-          const existing = await db.products.where('code').equals(prod.code || '').first();
+          let existing = null;
+          if (prod.code && prod.code.trim() !== '') {
+            existing = await db.products.where('code').equals(prod.code).first();
+          }
+          if (!existing && prod.name) {
+            existing = await db.products.where('name').equals(prod.name).first();
+          }
+          
           let newStock = 0;
           const qty = prod.quantity || 1;
           
           if (!existing) {
             newStock = invoiceType === 'INPUT' ? qty : -qty;
             await db.products.add({
-              code: prod.code,
-              name: prod.name,
-              unit: prod.unit,
-              unitPrice: prod.unitPrice,
-              taxRate: prod.taxRate,
+              code: prod.code || '',
+              name: prod.name || '',
+              unit: prod.unit || '',
+              unitPrice: prod.unitPrice || 0,
+              taxRate: prod.taxRate || 0,
               stock: newStock
             });
           } else {
