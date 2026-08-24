@@ -10,18 +10,26 @@ export default function Dashboard() {
     
     let revenue = 0;
     let cost = 0;
+    let receivables = 0; // Phải thu (Khách hàng nợ mình)
+    let payables = 0; // Phải trả (Mình nợ NCC)
     
     documents.forEach(doc => {
       if (doc.type === 'OUTPUT_INVOICE') {
-        revenue += doc.subTotal; // Lấy doanh thu chưa thuế
+        revenue += doc.subTotal;
+        if (!doc.paymentDate) {
+          receivables += doc.total; // Công nợ tính trên tổng tiền đã có thuế
+        }
       } else if (doc.type === 'INPUT_INVOICE') {
-        cost += doc.subTotal; // Lấy chi phí chưa thuế
+        cost += doc.subTotal;
+        if (!doc.paymentDate) {
+          payables += doc.total; // Công nợ tính trên tổng tiền đã có thuế
+        }
       }
     });
 
     const profit = revenue - cost;
 
-    return { customers, products, documents: documents.length, revenue, cost, profit };
+    return { customers, products, documents: documents.length, revenue, cost, profit, receivables, payables };
   });
 
   const handleResetData = async () => {
@@ -74,6 +82,22 @@ export default function Dashboard() {
           value={formatCurrency(stats.profit)} 
           icon={<DollarSign size={24} className={stats.profit >= 0 ? "text-blue-600" : "text-red-600"} />} 
           bgColor={stats.profit >= 0 ? "bg-blue-50" : "bg-red-50"}
+        />
+      </div>
+
+      <h3 className="text-lg font-semibold text-gray-800 mt-8 mb-4 border-b pb-2">Công nợ (Dựa trên hóa đơn)</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <StatCard 
+          title="Phải thu của khách (Nợ đọng)" 
+          value={formatCurrency(stats.receivables)} 
+          icon={<Users size={24} className="text-amber-600" />} 
+          bgColor="bg-amber-50"
+        />
+        <StatCard 
+          title="Phải trả nhà cung cấp" 
+          value={formatCurrency(stats.payables)} 
+          icon={<Box size={24} className="text-orange-600" />} 
+          bgColor="bg-orange-50"
         />
       </div>
     </div>

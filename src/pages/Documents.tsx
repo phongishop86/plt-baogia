@@ -46,6 +46,16 @@ export default function Documents() {
     await db.documents.delete(doc.id);
   }
 
+  const handleUpdatePaymentStatus = async (id: number, date: Date | null) => {
+    await db.documents.update(id, { paymentDate: date || undefined });
+    // Update preview doc state to reflect changes immediately
+    const updatedDoc = await db.documents.get(id);
+    if (updatedDoc) {
+      const customer = await db.customers.get(updatedDoc.customerId);
+      setPreviewDoc({ ...updatedDoc, customer });
+    }
+  }
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden relative">
       <table className="min-w-full divide-y divide-gray-200">
@@ -170,6 +180,53 @@ export default function Documents() {
                   <p className="flex justify-between text-lg font-bold text-blue-800 mt-2 border-t pt-2"><span>Tổng cộng:</span> <span>{formatNumber(previewDoc.total)}</span></p>
                 </div>
               </div>
+              
+              {/* PHẦN THANH TOÁN (CÔNG NỢ) */}
+              {(previewDoc.type === 'INPUT_INVOICE' || previewDoc.type === 'OUTPUT_INVOICE') && (
+                <div className="mt-8 border-t pt-6">
+                  <h3 className="text-lg font-bold text-gray-800 mb-4">Tình trạng thanh toán (Công nợ)</h3>
+                  {previewDoc.paymentDate ? (
+                    <div className="bg-green-50 border border-green-200 text-green-800 p-4 rounded-lg flex justify-between items-center">
+                      <div>
+                        <p className="font-semibold text-green-900">Đã thanh toán</p>
+                        <p className="text-sm">Ngày thanh toán: {new Date(previewDoc.paymentDate).toLocaleDateString('vi-VN')}</p>
+                      </div>
+                      <button 
+                        onClick={() => handleUpdatePaymentStatus(previewDoc.id, null)}
+                        className="bg-white text-gray-600 px-3 py-1.5 border rounded hover:bg-gray-50 text-sm font-medium"
+                      >
+                        Hủy thanh toán
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-lg flex justify-between items-center">
+                      <div>
+                        <p className="font-semibold text-amber-900">
+                          {previewDoc.type === 'INPUT_INVOICE' ? 'Chưa thanh toán (Phải trả)' : 'Chưa thanh toán (Phải thu)'}
+                        </p>
+                        <p className="text-sm">Vui lòng cập nhật khi có giao dịch.</p>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <input 
+                          type="date" 
+                          id="payment-date-input"
+                          defaultValue={new Date().toISOString().split('T')[0]} 
+                          className="border border-gray-300 rounded px-2 py-1.5 text-sm"
+                        />
+                        <button 
+                          onClick={() => {
+                            const dateVal = (document.getElementById('payment-date-input') as HTMLInputElement).value;
+                            handleUpdatePaymentStatus(previewDoc.id, new Date(dateVal));
+                          }}
+                          className="bg-green-600 text-white px-3 py-1.5 rounded hover:bg-green-700 text-sm font-medium"
+                        >
+                          Xác nhận Đã TT
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
             </div>
           </div>

@@ -35,6 +35,7 @@ export interface Document {
   taxAmount: number;
   total: number;
   notes?: string;
+  paymentDate?: Date; // Ngày thanh toán (nếu có)
   createdAt?: Date;
 }
 
