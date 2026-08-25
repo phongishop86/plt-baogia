@@ -24,6 +24,27 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
   const [docNumber, setDocNumber] = useState(`BG-${Date.now().toString().slice(-6)}`);
   const [searchQuery, setSearchQuery] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [createdDocId, setCreatedDocId] = useState<number | null>(null);
+
+  // Modal tạo khách hàng mới
+  const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
+  const [newCustomer, setNewCustomer] = useState({ name: '', taxCode: '', address: '', phone: '', email: '' });
+
+  const handleCreateCustomer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCustomer.name || !newCustomer.taxCode) {
+      alert('Vui lòng nhập Tên và Mã số thuế!');
+      return;
+    }
+    try {
+      const id = await db.customers.add({ ...newCustomer, createdAt: new Date(), isSupplier: false });
+      setSelectedCustomerId(id as number);
+      setIsCustomerModalOpen(false);
+      setNewCustomer({ name: '', taxCode: '', address: '', phone: '', email: '' });
+    } catch (err: any) {
+      alert('Lỗi khi lưu khách hàng: ' + err.message);
+    }
+  };
 
   // Tự động nạp sản phẩm được tick chọn từ trang Tồn Kho
   useEffect(() => {
@@ -40,8 +61,6 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
       if (clearPrefilled) clearPrefilled();
     }
   }, [prefilledProducts, products, editingQuotationId]);
-
-  const [createdDocId, setCreatedDocId] = useState<number | null>(null);
 
   // Load báo giá đang sửa (nếu có)
   useEffect(() => {
@@ -281,7 +300,15 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Khách hàng</label>
+          <div className="flex justify-between items-center mb-2">
+            <label className="block text-sm font-medium text-gray-700">Khách hàng</label>
+            <button 
+              onClick={() => setIsCustomerModalOpen(true)}
+              className="text-xs text-blue-600 hover:text-blue-800 font-medium bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded"
+            >
+              + Tạo khách hàng mới
+            </button>
+          </div>
           <select 
             value={selectedCustomerId}
             onChange={(e) => setSelectedCustomerId(Number(e.target.value))}
@@ -505,6 +532,7 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
               setDocNumber(`BG-${Date.now().toString().slice(-6)}`);
               setSelectedCustomerId('');
               setSelectedItems([]);
+              setCreatedDocId(null);
             }}
             className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-2 rounded-md font-medium transition-colors"
           >
@@ -528,15 +556,55 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
           onClick={() => handleSaveQuotation('DRAFT')}
           className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-2 rounded-md font-medium transition-colors"
         >
-          {editingQuotationId ? 'Cập nhật Nháp' : 'Lưu Nháp (Draft)'}
+          {(editingQuotationId || createdDocId) ? 'Cập nhật Nháp' : 'Lưu Nháp (Draft)'}
         </button>
         <button 
           onClick={() => handleSaveQuotation('PENDING')}
           className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md font-medium transition-colors"
         >
-          {editingQuotationId ? 'Cập nhật & Chốt' : 'Lưu & Chờ gửi'}
+          {(editingQuotationId || createdDocId) ? 'Cập nhật & Chốt' : 'Lưu & Chờ gửi'}
         </button>
       </div>
+
+      {/* Modal Tạo khách hàng nhanh */}
+      {isCustomerModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 print:hidden">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+            <div className="p-4 border-b bg-gray-50 flex justify-between items-center">
+              <h2 className="text-lg font-bold text-gray-800">Thêm Khách hàng mới</h2>
+              <button onClick={() => setIsCustomerModalOpen(false)} className="text-gray-500 hover:text-gray-800">✕</button>
+            </div>
+            <form onSubmit={handleCreateCustomer} className="p-4 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Tên khách hàng / Đơn vị *</label>
+                <input required type="text" value={newCustomer.name} onChange={e => setNewCustomer({...newCustomer, name: e.target.value})} className="w-full border rounded p-2" placeholder="Ví dụ: Công ty TNHH ABC" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Mã số thuế *</label>
+                <input required type="text" value={newCustomer.taxCode} onChange={e => setNewCustomer({...newCustomer, taxCode: e.target.value})} className="w-full border rounded p-2" placeholder="Ví dụ: 0312345678" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Địa chỉ</label>
+                <input type="text" value={newCustomer.address} onChange={e => setNewCustomer({...newCustomer, address: e.target.value})} className="w-full border rounded p-2" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Số điện thoại</label>
+                  <input type="text" value={newCustomer.phone} onChange={e => setNewCustomer({...newCustomer, phone: e.target.value})} className="w-full border rounded p-2" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <input type="email" value={newCustomer.email} onChange={e => setNewCustomer({...newCustomer, email: e.target.value})} className="w-full border rounded p-2" />
+                </div>
+              </div>
+              <div className="pt-4 flex justify-end space-x-3">
+                <button type="button" onClick={() => setIsCustomerModalOpen(false)} className="px-4 py-2 border rounded text-gray-600 hover:bg-gray-50">Hủy</button>
+                <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium">Lưu & Chọn</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
