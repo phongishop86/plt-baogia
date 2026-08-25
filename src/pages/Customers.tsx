@@ -6,6 +6,7 @@ import { Plus, X, Pencil, Trash2 } from 'lucide-react';
 export default function Customers() {
   const customers = useLiveQuery(() => db.customers.toArray());
   const [showModal, setShowModal] = useState(false);
+  const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>(null);
   
   // Form state
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -62,6 +63,29 @@ export default function Customers() {
     }
   };
 
+  const handleSort = (key: string) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  let sortedCustomers = [...(customers || [])];
+  if (sortConfig) {
+    sortedCustomers.sort((a: any, b: any) => {
+      let valA = a[sortConfig.key] || '';
+      let valB = b[sortConfig.key] || '';
+      
+      if (typeof valA === 'string') valA = valA.toLowerCase();
+      if (typeof valB === 'string') valB = valB.toLowerCase();
+
+      if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
+      if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-200">
@@ -80,15 +104,23 @@ export default function Customers() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tên Đơn Vị</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã Số Thuế</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Địa chỉ</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Điện thoại</th>
+                <th onClick={() => handleSort('name')} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors">
+                  <div className="flex items-center space-x-1"><span>Tên Đơn Vị</span> <span className="text-gray-400">{sortConfig?.key === 'name' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : '↕'}</span></div>
+                </th>
+                <th onClick={() => handleSort('taxCode')} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors">
+                  <div className="flex items-center space-x-1"><span>Mã Số Thuế</span> <span className="text-gray-400">{sortConfig?.key === 'taxCode' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : '↕'}</span></div>
+                </th>
+                <th onClick={() => handleSort('address')} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors">
+                  <div className="flex items-center space-x-1"><span>Địa chỉ</span> <span className="text-gray-400">{sortConfig?.key === 'address' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : '↕'}</span></div>
+                </th>
+                <th onClick={() => handleSort('phone')} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors">
+                  <div className="flex items-center space-x-1"><span>Điện thoại</span> <span className="text-gray-400">{sortConfig?.key === 'phone' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : '↕'}</span></div>
+                </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Hành động</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {customers?.map((customer) => (
+              {sortedCustomers.map((customer) => (
                 <tr key={customer.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 text-sm font-medium text-gray-900 max-w-xs truncate" title={customer.name}>
                     {customer.name}
