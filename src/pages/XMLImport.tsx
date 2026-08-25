@@ -48,22 +48,7 @@ export default function XMLImport() {
           .first();
           
         if (existingDoc) {
-          // Xóa hóa đơn cũ đi để ghi đè lại (rất hữu ích khi người dùng import lại để cập nhật)
-          await db.documents.delete(existingDoc.id!);
-          
-          // Phục hồi lại tồn kho của các mặt hàng trong hóa đơn cũ trước khi xóa
-          if (existingDoc.items && existingDoc.items.length > 0) {
-            for (const item of existingDoc.items) {
-              const prod = await db.products.where('name').equals(item.productName).first();
-              if (prod) {
-                const qty = item.quantity || 0;
-                const isService = prod.type === 'SERVICE';
-                // Reverse the operation
-                const newStock = isService ? (prod.stock || 0) : (existingDoc.type === 'INPUT_INVOICE' ? (prod.stock || 0) - qty : (prod.stock || 0) + qty);
-                await db.products.update(prod.id!, { stock: newStock });
-              }
-            }
-          }
+          throw new Error("Hóa đơn này đã được import từ trước (Trùng số hóa đơn).");
         }
         
         // INPUT invoice (Mua vào): the counterpart is the Seller (Nhà cung cấp)

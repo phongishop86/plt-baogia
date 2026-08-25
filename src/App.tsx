@@ -13,6 +13,7 @@ function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [prefilledProducts, setPrefilledProducts] = useState<number[]>([]);
+  const [editingQuotationId, setEditingQuotationId] = useState<number | null>(null);
 
   // Đóng menu khi màn hình lớn hơn lg
   useEffect(() => {
@@ -127,7 +128,7 @@ function App() {
           </button>
           <h2 className="text-lg md:text-xl font-semibold capitalize text-gray-800 truncate">{
             activeTab === 'xml' ? 'Nhập Hóa Đơn Điện Tử (XML)' : 
-            activeTab === 'create-quote' ? 'Tạo Báo Giá Mới' :
+            activeTab === 'create-quote' ? (editingQuotationId ? 'Sửa Báo Giá' : 'Tạo Báo Giá Mới') :
             activeTab === 'customers' ? 'Quản lý Khách Hàng / Đối tác' :
             activeTab === 'products' ? 'Quản lý Sản Phẩm / Tồn kho' :
             activeTab === 'documents' ? 'Quản lý Hồ sơ Chứng từ' :
@@ -145,13 +146,23 @@ function App() {
               setPrefilledProducts={setPrefilledProducts} 
             />
           )}
-          {activeTab === 'documents' && <Documents />}
+          {activeTab === 'documents' && (
+            <Documents 
+              onNavigate={(tab) => handleTabClick(tab)}
+              setEditingQuotationId={(id: number) => {
+                setEditingQuotationId(id);
+                handleTabClick('create-quote');
+              }}
+            />
+          )}
           {activeTab === 'fund' && <Fund />}
           {activeTab === 'xml' && <XMLImport />}
           {activeTab === 'create-quote' && (
             <CreateQuotation 
               prefilledProducts={prefilledProducts} 
               clearPrefilled={() => setPrefilledProducts([])} 
+              editingQuotationId={editingQuotationId}
+              clearEditingQuotation={() => setEditingQuotationId(null)}
             />
           )}
           {activeTab === 'settings' && <Settings />}

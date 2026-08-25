@@ -3,7 +3,12 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
 import { Filter, Search, TrendingUp, TrendingDown } from 'lucide-react';
 
-export default function Documents() {
+interface DocumentsProps {
+  onNavigate?: (tab: string) => void;
+  setEditingQuotationId?: (id: number) => void;
+}
+
+export default function Documents({ onNavigate, setEditingQuotationId }: DocumentsProps) {
   const [previewDoc, setPreviewDoc] = useState<any>(null);
   
   // Filters
@@ -40,7 +45,7 @@ export default function Documents() {
         let newStock = product.stock || 0;
         if (doc.type === 'INPUT_INVOICE') {
           newStock -= item.quantity;
-        } else if (doc.type === 'OUTPUT_INVOICE' || doc.type === 'QUOTATION') {
+        } else if (doc.type === 'OUTPUT_INVOICE') {
           newStock += item.quantity;
         }
         await db.products.update(product.id, { stock: newStock });
@@ -211,6 +216,14 @@ export default function Documents() {
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-right space-x-3">
+                    {doc.type === 'QUOTATION' && setEditingQuotationId && (
+                      <button 
+                        className="text-amber-600 hover:text-amber-900 font-medium"
+                        onClick={() => setEditingQuotationId(doc.id!)}
+                      >
+                        Sửa
+                      </button>
+                    )}
                     <button 
                       className="text-indigo-600 hover:text-indigo-900 font-medium"
                       onClick={() => setPreviewDoc(doc)}

@@ -11,9 +11,11 @@ interface SelectedProduct extends Partial<Product> {
 interface CreateQuotationProps {
   prefilledProducts?: number[];
   clearPrefilled?: () => void;
+  editingQuotationId?: number | null;
+  clearEditingQuotation?: () => void;
 }
 
-export default function CreateQuotation({ prefilledProducts = [], clearPrefilled }: CreateQuotationProps) {
+export default function CreateQuotation({ prefilledProducts = [], clearPrefilled, editingQuotationId, clearEditingQuotation }: CreateQuotationProps) {
   const customers = useLiveQuery(() => db.customers.toArray());
   const products = useLiveQuery(() => db.products.toArray());
 
@@ -25,7 +27,7 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
 
   // Tự động nạp sản phẩm được tick chọn từ trang Tồn Kho
   useEffect(() => {
-    if (prefilledProducts.length > 0 && products && selectedItems.length === 0) {
+    if (prefilledProducts.length > 0 && products && selectedItems.length === 0 && !editingQuotationId) {
       const itemsToAdd = products
         .filter(p => prefilledProducts.includes(p.id!))
         .map(product => ({
@@ -37,7 +39,47 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
       setSelectedItems(itemsToAdd);
       if (clearPrefilled) clearPrefilled();
     }
-  }, [prefilledProducts, products]);
+  }, [prefilledProducts, products, editingQuotationId]);
+
+  const [createdDocId, setCreatedDocId] = useState<number | null>(null);
+
+  // Load báo giá đang sửa (nếu có)
+  useEffect(() => {
+    async function loadEditingQuotation() {
+      if (editingQuotationId && products) {
+        const doc = await db.documents.get(editingQuotationId);
+        if (doc && doc.type === 'QUOTATION') {
+          setDocNumber(doc.docNumber);
+          setSelectedCustomerId(doc.customerId);
+          
+          // Phục hồi items
+          const itemsToLoad: SelectedProduct[] = doc.items.map((item: any) => {
+            const originalProduct = products.find(p => p.id === item.productId);
+            return {
+              id: item.productId,
+              tempId: Date.now().toString() + Math.random().toString(),
+              name: item.productName,
+              unit: item.unit,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              taxRate: item.taxRate,
+              stock: originalProduct ? originalProduct.stock : 0
+            };
+          });
+          
+          setSelectedItems(itemsToLoad);
+          setCreatedDocId(editingQuotationId); // Đánh dấu ID đang edit
+        }
+      } else if (!editingQuotationId && selectedItems.length > 0 && !prefilledProducts.length && !createdDocId) {
+         // Clear when opening new (chỉ clear khi chuyển tab tạo mới, không clear nếu đang làm việc)
+         setDocNumber(`BG-${Date.now().toString().slice(-6)}`);
+         setSelectedCustomerId('');
+         setSelectedItems([]);
+         setCreatedDocId(null);
+      }
+    }
+    loadEditingQuotation();
+  }, [editingQuotationId, products]);
 
   const handleAddItemFromDB = (productId: number) => {
     const product = products?.find(p => p.id === productId);
@@ -93,8 +135,8 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
     const taxAmount = calculateTax();
     const total = subTotal + taxAmount;
 
-    await db.documents.add({
-      type: 'QUOTATION',
+    const docData = {
+      type: 'QUOTATION' as const,
       docNumber,
       customerId: selectedCustomerId as number,
       date: new Date(),
@@ -110,11 +152,32 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
         unitPrice: p.unitPrice || 0,
         taxRate: p.taxRate || 0,
         amount: p.quantity * (p.unitPrice || 0)
-      })),
-      createdAt: new Date()
-    });
+      }))
+    };
 
-    alert(status === 'DRAFT' ? 'Đã lưu nháp báo giá!' : 'Đã lưu báo giá chờ phát hành!');
+    const activeDocId = editingQuotationId || createdDocId;
+
+    if (activeDocId) {
+      await db.documents.update(activeDocId, docData);
+      alert(status === 'DRAFT' ? 'Đã cập nhật nháp báo giá!' : 'Đã cập nhật báo giá chờ phát hành!');
+    } else {
+      const newId = await db.documents.add({
+        ...docData,
+        createdAt: new Date()
+      });
+      setCreatedDocId(newId as number);
+      alert(status === 'DRAFT' ? 'Đã lưu nháp báo giá!' : 'Đã lưu báo giá chờ phát hành!');
+    }
+  };
+
+  const handleClearForm = () => {
+    if (confirm('Bạn muốn xóa trắng biểu mẫu để tạo báo giá mới?')) {
+      if (clearEditingQuotation) clearEditingQuotation();
+      setDocNumber(`BG-${Date.now().toString().slice(-6)}`);
+      setSelectedCustomerId('');
+      setSelectedItems([]);
+      setCreatedDocId(null);
+    }
   };
 
   const handlePrint = () => {
@@ -138,6 +201,29 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
   });
 
   const selectedCustomer = customers?.find(c => c.id === selectedCustomerId);
+
+  const handleSendEmail = () => {
+    if (!selectedCustomerId) {
+      alert('Vui lòng chọn khách hàng!');
+      return;
+    }
+    const customer = customers?.find(c => c.id === selectedCustomerId);
+    const customerEmail = customer?.email || '';
+    
+    const subject = encodeURIComponent(`Báo giá ${docNumber} - Công ty TNHH Phát Lộc Tech`);
+    const body = encodeURIComponent(
+      `Kính gửi ${customer?.name || 'Quý khách hàng'},\n\n` +
+      `Công ty TNHH Phát Lộc Tech xin trân trọng gửi đến Quý đơn vị bảng báo giá ${docNumber} mới nhất.\n` +
+      `Tổng giá trị báo giá: ${formatCurrency(calculateSubTotal() + calculateTax())}.\n\n` +
+      `Vui lòng xem file PDF Báo giá đính kèm ở email này để biết chi tiết các hạng mục.\n\n` +
+      `Nếu Quý khách có bất kỳ thắc mắc nào, xin vui lòng phản hồi lại email này hoặc liên hệ hotline: 0932685794.\n\n` +
+      `Trân trọng cảm ơn,\nPhát Lộc Tech`
+    );
+
+    window.location.href = `mailto:${customerEmail}?subject=${subject}&body=${body}`;
+    
+    alert('Đã mở ứng dụng gửi Mail.\n\nLƯU Ý: Bạn nhớ ĐÍNH KÈM FILE PDF BÁO GIÁ vào email trước khi bấm Gửi nhé!');
+  };
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-6 print:shadow-none print:border-none print:p-0">
@@ -172,6 +258,16 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
         <p className="mt-4 text-justify">
           Lời đầu tiên chúng tôi xin trân trọng gửi lời cảm ơn chân thành đến quý khách hàng đã quan tâm đến sản phẩm/dịch vụ của công ty chúng tôi. Công ty Phát Lộc Tech xin trân trọng báo giá đến quý đơn vị như sau:
         </p>
+      </div>
+
+      <div className="flex justify-between items-center print:hidden mb-4">
+        <h3 className="text-lg font-semibold text-gray-800">Thông tin chung</h3>
+        <button 
+          onClick={handleClearForm}
+          className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-md border font-medium transition-colors"
+        >
+          🔄 Tạo mới từ đầu (Xóa trắng)
+        </button>
       </div>
 
       <div className="grid grid-cols-2 gap-6 print:hidden">
@@ -402,6 +498,25 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
       </div>
 
       <div className="pt-6 flex justify-end space-x-4 print:hidden border-t">
+        {editingQuotationId && (
+          <button 
+            onClick={() => {
+              if (clearEditingQuotation) clearEditingQuotation();
+              setDocNumber(`BG-${Date.now().toString().slice(-6)}`);
+              setSelectedCustomerId('');
+              setSelectedItems([]);
+            }}
+            className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-2 rounded-md font-medium transition-colors"
+          >
+            Hủy Sửa
+          </button>
+        )}
+        <button 
+          onClick={handleSendEmail}
+          className="flex items-center space-x-2 bg-blue-50 hover:bg-blue-100 text-blue-700 px-6 py-2 rounded-md font-medium transition-colors border border-blue-200"
+        >
+          <span>📧 Gửi Email</span>
+        </button>
         <button 
           onClick={handlePrint}
           className="flex items-center space-x-2 bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-md font-medium transition-colors"
@@ -413,13 +528,13 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
           onClick={() => handleSaveQuotation('DRAFT')}
           className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-2 rounded-md font-medium transition-colors"
         >
-          Lưu Nháp (Draft)
+          {editingQuotationId ? 'Cập nhật Nháp' : 'Lưu Nháp (Draft)'}
         </button>
         <button 
           onClick={() => handleSaveQuotation('PENDING')}
           className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md font-medium transition-colors"
         >
-          Lưu & Chờ gửi
+          {editingQuotationId ? 'Cập nhật & Chốt' : 'Lưu & Chờ gửi'}
         </button>
       </div>
     </div>
