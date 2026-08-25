@@ -14,12 +14,13 @@ export default function Products({ onNavigate, setPrefilledProducts }: ProductsP
   
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<'PRODUCT' | 'SOLD_OUT' | 'SERVICE'>('PRODUCT'); // Tab phân chia
+  const [activeTab, setActiveTab] = useState<'PRODUCT' | 'SOLD_OUT' | 'SERVICE'>('PRODUCT');
   
   // Trạng thái đang chỉnh sửa
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editName, setEditName] = useState('');
   const [editType, setEditType] = useState<'PRODUCT' | 'SERVICE'>('PRODUCT');
+  const [editCategory, setEditCategory] = useState('');
 
   // Tính toán Tổng Mua Vào và Tổng Bán Ra cho từng sản phẩm
   const productStats = useMemo(() => {
@@ -52,15 +53,14 @@ export default function Products({ onNavigate, setPrefilledProducts }: ProductsP
 
     return products.map(p => ({
       ...p,
-      type: p.type || 'PRODUCT', // Mặc định là PRODUCT nếu chưa phân loại
+      type: p.type || 'PRODUCT',
+      category: p.category || '',
       totalIn: statsMap[p.id!].totalIn,
       totalOut: statsMap[p.id!].totalOut
     })).filter(p => {
-      // Lọc theo Search Query
       const matchSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           (p.code && p.code.toLowerCase().includes(searchQuery.toLowerCase()));
       
-      // Lọc theo Tab đang chọn
       let matchType = false;
       if (activeTab === 'PRODUCT') {
         matchType = p.type === 'PRODUCT' && (p.stock || 0) > 0;
@@ -93,15 +93,17 @@ export default function Products({ onNavigate, setPrefilledProducts }: ProductsP
     setEditingId(product.id!);
     setEditName(product.name);
     setEditType(product.type);
+    setEditCategory(product.category || '');
   };
 
   const saveEdit = async (productId: number, oldName: string) => {
     try {
-      // 1. Cập nhật trong bảng Product
-      await db.products.update(productId, { name: editName, type: editType });
+      await db.products.update(productId, { 
+        name: editName, 
+        type: editType, 
+        category: editCategory 
+      });
       
-      // 2. Nếu tên thay đổi, TỰ ĐỘNG CẬP NHẬT (Cascade) sang toàn bộ Hóa đơn/Báo giá cũ
-      // Để đảm bảo lịch sử thống kê (MUA VÀO/BÁN RA) không bị mất khi sửa tên
       if (oldName.trim().toLowerCase() !== editName.trim().toLowerCase()) {
         const allDocs = await db.documents.toArray();
         for (const doc of allDocs) {
@@ -273,18 +275,34 @@ export default function Products({ onNavigate, setPrefilledProducts }: ProductsP
                   
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
                     {isEditing ? (
-                      <select 
-                        value={editType} 
-                        onChange={e => setEditType(e.target.value as any)}
-                        className="border border-blue-400 rounded-md p-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm w-28"
-                      >
-                        <option value="PRODUCT">Hàng hóa</option>
-                        <option value="SERVICE">Chi phí / Dịch vụ</option>
-                      </select>
+                      <div className="flex flex-col space-y-2">
+                        <select 
+                          value={editType} 
+                          onChange={e => setEditType(e.target.value as any)}
+                          className="border border-blue-400 rounded-md p-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm w-full"
+                        >
+                          <option value="PRODUCT">Hàng hóa</option>
+                          <option value="SERVICE">Chi phí / Dịch vụ</option>
+                        </select>
+                        <input 
+                          type="text" 
+                          placeholder="Nhập Nhóm hàng (vd: Phụ tùng)..."
+                          value={editCategory}
+                          onChange={(e) => setEditCategory(e.target.value)}
+                          className="border border-blue-400 rounded-md p-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm w-full"
+                        />
+                      </div>
                     ) : (
-                      <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${product.type === 'SERVICE' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'}`}>
-                        {product.type === 'SERVICE' ? 'Dịch vụ nội bộ' : 'Hàng hóa'}
-                      </span>
+                      <div className="flex flex-col items-center space-y-1">
+                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${product.type === 'SERVICE' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'}`}>
+                          {product.type === 'SERVICE' ? 'Dịch vụ nội bộ' : 'Hàng hóa'}
+                        </span>
+                        {product.category && (
+                          <span className="text-xs font-medium text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100">
+                            {product.category}
+                          </span>
+                        )}
+                      </div>
                     )}
                   </td>
                   
