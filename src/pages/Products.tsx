@@ -1,14 +1,15 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../db/db';
+import { db, type User } from '../db/db';
 import { useMemo, useState } from 'react';
 import { CheckSquare, FileText, Search, Edit2, Save, X } from 'lucide-react';
 
 interface ProductsProps {
   onNavigate?: (tab: string) => void;
   setPrefilledProducts?: (ids: number[]) => void;
+  currentUser?: User | null;
 }
 
-export default function Products({ onNavigate, setPrefilledProducts }: ProductsProps) {
+export default function Products({ onNavigate, setPrefilledProducts, currentUser }: ProductsProps) {
   const products = useLiveQuery(() => db.products.toArray());
   const documents = useLiveQuery(() => db.documents.toArray());
   
@@ -333,9 +334,11 @@ export default function Products({ onNavigate, setPrefilledProducts }: ProductsP
                         </button>
                       </div>
                     ) : (
-                      <button onClick={() => startEdit(product)} className="text-gray-400 hover:text-blue-600 transition-colors" title="Chỉnh sửa tên / loại">
-                        <Edit2 className="h-4 w-4" />
-                      </button>
+                      currentUser?.role !== 'VIEWER' && (
+                        <button onClick={() => startEdit(product)} className="text-gray-400 hover:text-blue-600 transition-colors" title="Chỉnh sửa tên / loại">
+                          <Edit2 className="h-4 w-4" />
+                        </button>
+                      )
                     )}
                   </td>
                 </tr>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FileText, Users, Box, LayoutDashboard, Upload, FilePlus, Settings as SettingsIcon, Wallet, Menu, X } from 'lucide-react';
+import { FileText, Users, Box, LayoutDashboard, Upload, FilePlus, Settings as SettingsIcon, Wallet, Menu, X, LogOut, UserCircle } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import Customers from './pages/Customers';
 import Products from './pages/Products';
@@ -8,14 +8,36 @@ import XMLImport from './pages/XMLImport';
 import CreateQuotation from './pages/CreateQuotation';
 import Fund from './pages/Fund';
 import Settings from './pages/Settings';
+import Login from './pages/Login';
+import UsersManagement from './pages/UsersManagement';
+import { type User } from './db/db';
 
 function App() {
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  
+  // Try to load user from localStorage on boot
+  useEffect(() => {
+    const savedUser = localStorage.getItem('plt_current_user');
+    if (savedUser) {
+      setCurrentUser(JSON.parse(savedUser));
+    }
+  }, []);
+
+  const handleLogin = (user: User) => {
+    setCurrentUser(user);
+    localStorage.setItem('plt_current_user', JSON.stringify(user));
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    localStorage.removeItem('plt_current_user');
+  };
+
+  const [activeTab, setActiveTab] = useState('products'); // Mặc định mở tab Sản phẩm (an toàn nhất cho VIEWER)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [prefilledProducts, setPrefilledProducts] = useState<number[]>([]);
   const [editingQuotationId, setEditingQuotationId] = useState<number | null>(null);
 
-  // Đóng menu khi màn hình lớn hơn lg
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 768) {
@@ -26,15 +48,33 @@ function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Update default tab based on role when user logs in
+  useEffect(() => {
+    if (currentUser) {
+      if (currentUser.role === 'ADMIN' || currentUser.role === 'KETOAN') {
+        setActiveTab('dashboard');
+      } else {
+        setActiveTab('products');
+      }
+    }
+  }, [currentUser]);
+
   const handleTabClick = (tab: string) => {
     setActiveTab(tab);
-    setIsMobileMenuOpen(false); // Tự động đóng menu trên mobile khi chọn tab
+    setIsMobileMenuOpen(false);
   };
+
+  if (!currentUser) {
+    return <Login onLogin={handleLogin} />;
+  }
+
+  const role = currentUser.role;
+  const isAdmin = role === 'ADMIN';
+  const isKetoan = role === 'KETOAN' || isAdmin;
 
   return (
     <div className="flex h-screen bg-gray-50 text-gray-900 font-sans print:bg-white overflow-hidden">
       
-      {/* Lớp phủ màn hình mờ khi mở menu trên mobile */}
       {isMobileMenuOpen && (
         <div 
           className="fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity" 
@@ -53,7 +93,6 @@ function App() {
             <img src="/PLT-Logo-web.png" alt="PLT Logo" className="w-9 h-9 object-contain bg-white rounded" />
             <h1 className="font-bold text-lg text-gray-800 tracking-wide">PLT ERP</h1>
           </div>
-          {/* Nút đóng menu trên mobile */}
           <button 
             className="md:hidden text-gray-500 hover:text-gray-700" 
             onClick={() => setIsMobileMenuOpen(false)}
@@ -63,42 +102,52 @@ function App() {
         </div>
         
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-          <NavItem 
-            icon={<LayoutDashboard size={20} />} 
-            label="Tổng quan" 
-            active={activeTab === 'dashboard'} 
-            onClick={() => handleTabClick('dashboard')} 
-          />
-          <NavItem 
-            icon={<Users size={20} />} 
-            label="Khách hàng / Đối tác" 
-            active={activeTab === 'customers'} 
-            onClick={() => handleTabClick('customers')} 
-          />
+          {isKetoan && (
+            <NavItem 
+              icon={<LayoutDashboard size={20} />} 
+              label="Tổng quan" 
+              active={activeTab === 'dashboard'} 
+              onClick={() => handleTabClick('dashboard')} 
+            />
+          )}
+          {isKetoan && (
+            <NavItem 
+              icon={<Users size={20} />} 
+              label="Khách hàng / Đối tác" 
+              active={activeTab === 'customers'} 
+              onClick={() => handleTabClick('customers')} 
+            />
+          )}
           <NavItem 
             icon={<Box size={20} />} 
             label="Sản phẩm / Tồn kho" 
             active={activeTab === 'products'} 
             onClick={() => handleTabClick('products')} 
           />
-          <NavItem 
-            icon={<FileText size={20} />} 
-            label="Hồ sơ Chứng từ" 
-            active={activeTab === 'documents'} 
-            onClick={() => handleTabClick('documents')} 
-          />
-          <NavItem 
-            icon={<Wallet size={20} />} 
-            label="Quỹ & Tạm ứng" 
-            active={activeTab === 'fund'} 
-            onClick={() => handleTabClick('fund')} 
-          />
-          <NavItem 
-            icon={<Upload size={20} />} 
-            label="Import Hóa Đơn (XML)" 
-            active={activeTab === 'xml'} 
-            onClick={() => handleTabClick('xml')} 
-          />
+          {isKetoan && (
+            <NavItem 
+              icon={<FileText size={20} />} 
+              label="Hồ sơ Chứng từ" 
+              active={activeTab === 'documents'} 
+              onClick={() => handleTabClick('documents')} 
+            />
+          )}
+          {isKetoan && (
+            <NavItem 
+              icon={<Wallet size={20} />} 
+              label="Quỹ & Tạm ứng" 
+              active={activeTab === 'fund'} 
+              onClick={() => handleTabClick('fund')} 
+            />
+          )}
+          {isAdmin && (
+            <NavItem 
+              icon={<Upload size={20} />} 
+              label="Import Hóa Đơn (XML)" 
+              active={activeTab === 'xml'} 
+              onClick={() => handleTabClick('xml')} 
+            />
+          )}
           <NavItem 
             icon={<FilePlus size={20} className="text-blue-500" />} 
             label="Tạo Báo Giá" 
@@ -106,15 +155,37 @@ function App() {
             onClick={() => handleTabClick('create-quote')} 
           />
           
-          <div className="my-4 border-t border-gray-200 mx-2"></div>
+          {isAdmin && <div className="my-4 border-t border-gray-200 mx-2"></div>}
           
-          <NavItem 
-            icon={<SettingsIcon size={20} className="text-gray-500" />} 
-            label="Cài đặt (Admin)" 
-            active={activeTab === 'settings'} 
-            onClick={() => handleTabClick('settings')} 
-          />
+          {isAdmin && (
+            <NavItem 
+              icon={<SettingsIcon size={20} className="text-gray-500" />} 
+              label="Cài đặt (Đồng bộ)" 
+              active={activeTab === 'settings'} 
+              onClick={() => handleTabClick('settings')} 
+            />
+          )}
+          {isAdmin && (
+            <NavItem 
+              icon={<UserCircle size={20} className="text-gray-500" />} 
+              label="Quản lý Tài khoản" 
+              active={activeTab === 'users'} 
+              onClick={() => handleTabClick('users')} 
+            />
+          )}
         </nav>
+
+        <div className="p-4 border-t border-gray-200 bg-gray-50">
+          <div className="flex items-center justify-between">
+            <div className="flex flex-col">
+              <span className="text-sm font-semibold text-gray-800">{currentUser.username}</span>
+              <span className="text-xs text-gray-500">{role}</span>
+            </div>
+            <button onClick={handleLogout} className="p-2 text-gray-500 hover:text-red-600 transition-colors" title="Đăng xuất">
+              <LogOut size={20} />
+            </button>
+          </div>
+        </div>
       </aside>
 
       {/* Main Content */}
@@ -134,29 +205,32 @@ function App() {
             activeTab === 'documents' ? 'Quản lý Hồ sơ Chứng từ' :
             activeTab === 'fund' ? 'Quản lý Quỹ & Tạm ứng' :
             activeTab === 'settings' ? 'Cài đặt Hệ thống' :
+            activeTab === 'users' ? 'Quản lý Tài khoản (Users)' :
             'Tổng quan (Dashboard)'
           }</h2>
         </header>
         <div className="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-6 print:p-0">
-          {activeTab === 'dashboard' && <Dashboard />}
-          {activeTab === 'customers' && <Customers />}
+          {activeTab === 'dashboard' && isKetoan && <Dashboard />}
+          {activeTab === 'customers' && isKetoan && <Customers />}
           {activeTab === 'products' && (
             <Products 
               onNavigate={(tab) => handleTabClick(tab)} 
               setPrefilledProducts={setPrefilledProducts} 
+              currentUser={currentUser}
             />
           )}
-          {activeTab === 'documents' && (
+          {activeTab === 'documents' && isKetoan && (
             <Documents 
               onNavigate={(tab) => handleTabClick(tab)}
               setEditingQuotationId={(id: number) => {
                 setEditingQuotationId(id);
                 handleTabClick('create-quote');
               }}
+              currentUser={currentUser}
             />
           )}
-          {activeTab === 'fund' && <Fund />}
-          {activeTab === 'xml' && <XMLImport />}
+          {activeTab === 'fund' && isKetoan && <Fund />}
+          {activeTab === 'xml' && isAdmin && <XMLImport />}
           {activeTab === 'create-quote' && (
             <CreateQuotation 
               prefilledProducts={prefilledProducts} 
@@ -165,7 +239,8 @@ function App() {
               clearEditingQuotation={() => setEditingQuotationId(null)}
             />
           )}
-          {activeTab === 'settings' && <Settings />}
+          {activeTab === 'settings' && isAdmin && <Settings />}
+          {activeTab === 'users' && isAdmin && <UsersManagement />}
         </div>
       </main>
     </div>

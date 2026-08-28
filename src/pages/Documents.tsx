@@ -1,14 +1,15 @@
 import { useState, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../db/db';
-import { Filter, Search, TrendingUp, TrendingDown } from 'lucide-react';
+import { db, type User } from '../db/db';
+import { Filter, Search, TrendingUp, TrendingDown, FileText, ArrowRight, Trash2, Edit } from 'lucide-react';
 
 interface DocumentsProps {
   onNavigate?: (tab: string) => void;
   setEditingQuotationId?: (id: number) => void;
+  currentUser?: User | null;
 }
 
-export default function Documents({ onNavigate, setEditingQuotationId }: DocumentsProps) {
+export default function Documents({ onNavigate, setEditingQuotationId, currentUser }: DocumentsProps) {
   const [previewDoc, setPreviewDoc] = useState<any>(null);
   
   // Filters
@@ -230,12 +231,14 @@ export default function Documents({ onNavigate, setEditingQuotationId }: Documen
                     >
                       Chi tiết
                     </button>
-                    <button 
-                      className="text-red-500 hover:text-red-700 font-medium"
-                      onClick={() => handleDelete(doc)}
-                    >
-                      Xóa
-                    </button>
+                    {currentUser?.role === 'ADMIN' && (
+                      <button 
+                        className="text-red-500 hover:text-red-700 font-medium"
+                        onClick={() => handleDelete(doc)}
+                      >
+                        Xóa
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}

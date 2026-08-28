@@ -61,11 +61,20 @@ export interface Transaction {
   createdAt?: Date;
 }
 
+export interface User {
+  id?: number;
+  username: string;
+  password?: string; // Trong thực tế nên hash, nhưng vì chạy offline-first client-side nên lưu tạm plain text hoặc hash nhẹ
+  role: 'ADMIN' | 'KETOAN' | 'VIEWER';
+  createdAt?: Date;
+}
+
 export class PLTDatabase extends Dexie {
   customers!: Table<Customer, number>;
   products!: Table<Product, number>;
   documents!: Table<Document, number>;
   transactions!: Table<Transaction, number>;
+  users!: Table<User, number>;
 
   constructor() {
     super('PLTERPDatabase');
@@ -79,6 +88,13 @@ export class PLTDatabase extends Dexie {
       products: '++id, code, name',
       documents: '++id, type, docNumber, customerId, date',
       transactions: '++id, date, type'
+    });
+    this.version(3).stores({
+      customers: '++id, taxCode, name',
+      products: '++id, code, name',
+      documents: '++id, type, docNumber, customerId, date',
+      transactions: '++id, date, type',
+      users: '++id, username, role'
     });
   }
 }

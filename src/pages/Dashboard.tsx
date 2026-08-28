@@ -128,8 +128,8 @@ export default function Dashboard() {
               <h4 className="text-center font-medium text-gray-600 mb-2">Phân bổ Nhóm đối tác</h4>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={pieData} cx="50%" cy="50%" labelLine={false} label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`} outerRadius={80} fill="#8884d8" dataKey="value">
-                    {pieData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
+                  <Pie data={pieData} cx="50%" cy="50%" labelLine={false} label={({ name, percent }) => percent && percent > 0.05 ? `${name} (${(percent * 100).toFixed(0)}%)` : ''} outerRadius={80} fill="#8884d8" dataKey="value">
+                    {pieData.map((_entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
                   </Pie>
                   <Tooltip />
                 </PieChart>
@@ -142,7 +142,7 @@ export default function Dashboard() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis type="number" tickFormatter={(val) => `${val/1000000}tr`} />
                   <YAxis dataKey="name" type="category" width={100} tick={{fontSize: 10}} />
-                  <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                  <Tooltip formatter={(value: any) => formatCurrency(Number(value))} />
                   <Bar dataKey="totalTransaction" name="Tổng giao dịch" fill="#3b82f6" />
                 </BarChart>
               </ResponsiveContainer>
@@ -186,14 +186,14 @@ export default function Dashboard() {
                   <Pie 
                     data={categoryPieData} 
                     cx="50%" cy="50%" 
-                    label={({ name, percent }) => percent > 0.05 ? `${name} (${(percent * 100).toFixed(0)}%)` : ''} 
+                    label={({ name, percent }) => percent && percent > 0.05 ? `${name} (${(percent * 100).toFixed(0)}%)` : ''} 
                     outerRadius={90} 
                     fill="#8884d8" 
                     dataKey="totalValue"
                   >
-                    {categoryPieData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
+                    {categoryPieData.map((_entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
                   </Pie>
-                  <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                  <Tooltip formatter={(value: any) => formatCurrency(Number(value))} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -204,7 +204,7 @@ export default function Dashboard() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis type="number" tickFormatter={(val) => `${val/1000000}tr`} />
                   <YAxis dataKey="name" type="category" width={100} tick={{fontSize: 10}} />
-                  <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                  <Tooltip formatter={(value: any) => formatCurrency(Number(value))} />
                   <Bar dataKey="totalValue" name="Giá trị" fill="#82ca9d" />
                 </BarChart>
               </ResponsiveContainer>
@@ -238,7 +238,7 @@ export default function Dashboard() {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" angle={-45} textAnchor="end" height={70} tick={{fontSize: 11}} />
                 <YAxis tickFormatter={(val) => `${val/1000000}tr`} />
-                <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                <Tooltip formatter={(value: any) => formatCurrency(Number(value))} />
                 <Bar dataKey="debt" name="Số tiền nợ" fill="#ef4444" />
               </BarChart>
             </ResponsiveContainer>
@@ -264,7 +264,7 @@ export default function Dashboard() {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
                 <YAxis tickFormatter={(val) => `${val/1000000}tr`} />
-                <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                <Tooltip formatter={(value: any) => formatCurrency(Number(value))} />
                 <Legend />
                 <Bar dataKey="revenue" name="Doanh thu" fill="#3b82f6" opacity={0.8} />
                 <Bar dataKey="cost" name="Chi phí" fill="#ef4444" opacity={0.8} />
@@ -303,7 +303,7 @@ export default function Dashboard() {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
                 <YAxis tickFormatter={(val) => `${val/1000000}tr`} />
-                <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                <Tooltip formatter={(value: any) => formatCurrency(Number(value))} />
                 <Legend />
                 <Bar dataKey="revenue" name="Doanh thu" fill="#10b981" />
               </BarChart>
@@ -330,7 +330,7 @@ export default function Dashboard() {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
                 <YAxis tickFormatter={(val) => `${val/1000000}tr`} />
-                <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                <Tooltip formatter={(value: any) => formatCurrency(Number(value))} />
                 <Legend />
                 <Bar dataKey="cost" name="Chi phí" fill="#ef4444" />
               </BarChart>
