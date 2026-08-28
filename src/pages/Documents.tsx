@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, type User } from '../db/db';
-import { Filter, Search, TrendingUp, TrendingDown } from 'lucide-react';
+import { Filter, Search, TrendingUp, TrendingDown, ChevronUp, ChevronDown } from 'lucide-react';
 
 interface DocumentsProps {
   setEditingQuotationId?: (id: number) => void;
@@ -64,10 +64,20 @@ export default function Documents({ setEditingQuotationId, currentUser }: Docume
     }
   }
 
+  const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>(null);
+
+  const handleSort = (key: string) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
   // Lọc dữ liệu
   const filteredDocs = useMemo(() => {
     if (!documents) return [];
-    return documents.filter(doc => {
+    const result = documents.filter(doc => {
       // 1. Search term (by customer name or docNumber)
       const matchesSearch = searchTerm === '' || 
         doc.docNumber?.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -83,7 +93,31 @@ export default function Documents({ setEditingQuotationId, currentUser }: Docume
 
       return matchesSearch && matchesType && matchesPayment;
     });
-  }, [documents, searchTerm, filterType, filterPayment]);
+
+    if (sortConfig !== null) {
+      result.sort((a: any, b: any) => {
+        let aVal = a[sortConfig.key];
+        let bVal = b[sortConfig.key];
+        
+        if (sortConfig.key === 'customer') {
+           aVal = a.customer?.name || '';
+           bVal = b.customer?.name || '';
+        } else if (sortConfig.key === 'status') {
+           aVal = a.paymentDate ? 'PAID' : (a.status || '');
+           bVal = b.paymentDate ? 'PAID' : (b.status || '');
+        } else if (sortConfig.key === 'date') {
+           aVal = new Date(a.date).getTime();
+           bVal = new Date(b.date).getTime();
+        }
+
+        if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+    
+    return result;
+  }, [documents, searchTerm, filterType, filterPayment, sortConfig]);
 
   // Tính tổng
   const totals = useMemo(() => {
@@ -163,12 +197,42 @@ export default function Documents({ setEditingQuotationId, currentUser }: Docume
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Số HĐ/CT</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Loại</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Đối tác</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Tổng tiền</th>
-                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" onClick={() => handleSort('docNumber')}>
+                  <div className="flex items-center space-x-1">
+                    <span>Số HĐ/CT</span>
+                    {sortConfig?.key === 'docNumber' ? (sortConfig.direction === 'asc' ? <ChevronUp size={14}/> : <ChevronDown size={14}/>) : null}
+                  </div>
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" onClick={() => handleSort('type')}>
+                  <div className="flex items-center space-x-1">
+                    <span>Loại</span>
+                    {sortConfig?.key === 'type' ? (sortConfig.direction === 'asc' ? <ChevronUp size={14}/> : <ChevronDown size={14}/>) : null}
+                  </div>
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" onClick={() => handleSort('date')}>
+                  <div className="flex items-center space-x-1">
+                    <span>Ngày</span>
+                    {sortConfig?.key === 'date' ? (sortConfig.direction === 'asc' ? <ChevronUp size={14}/> : <ChevronDown size={14}/>) : null}
+                  </div>
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" onClick={() => handleSort('customer')}>
+                  <div className="flex items-center space-x-1">
+                    <span>Đối tác</span>
+                    {sortConfig?.key === 'customer' ? (sortConfig.direction === 'asc' ? <ChevronUp size={14}/> : <ChevronDown size={14}/>) : null}
+                  </div>
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" onClick={() => handleSort('total')}>
+                  <div className="flex items-center justify-end space-x-1">
+                    <span>Tổng tiền</span>
+                    {sortConfig?.key === 'total' ? (sortConfig.direction === 'asc' ? <ChevronUp size={14}/> : <ChevronDown size={14}/>) : null}
+                  </div>
+                </th>
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" onClick={() => handleSort('status')}>
+                  <div className="flex items-center justify-center space-x-1">
+                    <span>Trạng thái</span>
+                    {sortConfig?.key === 'status' ? (sortConfig.direction === 'asc' ? <ChevronUp size={14}/> : <ChevronDown size={14}/>) : null}
+                  </div>
+                </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Hành động</th>
               </tr>
             </thead>
