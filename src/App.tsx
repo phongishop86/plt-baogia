@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
-import { FileText, Users, Box, LayoutDashboard, Upload, FilePlus, Settings as SettingsIcon, Wallet, Menu, X, LogOut, UserCircle } from 'lucide-react';
+import { FileText, Users, Box, LayoutDashboard, Upload, FilePlus, Settings as SettingsIcon, Wallet, Menu, X, LogOut, UserCircle, CloudUpload, AlertCircle } from 'lucide-react';
+import { useGoogleLogin } from '@react-oauth/google';
+import { findBackupFile, uploadBackup, DRIVE_SCOPE } from './utils/googleDrive';
+import { db } from './db/db';
 import Dashboard from './pages/Dashboard';
 import Customers from './pages/Customers';
 import Products from './pages/Products';
@@ -28,10 +31,56 @@ function App() {
     localStorage.setItem('plt_current_user', JSON.stringify(user));
   };
 
-  const handleLogout = () => {
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [isSyncingOut, setIsSyncingOut] = useState(false);
+  const [syncOutStatus, setSyncOutStatus] = useState('');
+
+  const executeLogout = () => {
     setCurrentUser(null);
     localStorage.removeItem('plt_current_user');
+    setShowLogoutModal(false);
   };
+
+  const handleLogoutClick = () => {
+    setShowLogoutModal(true);
+  };
+
+  const syncAndLogout = useGoogleLogin({
+    scope: DRIVE_SCOPE,
+    onSuccess: async (tokenResponse) => {
+      setIsSyncingOut(true);
+      setSyncOutStatus('Đang đẩy dữ liệu lên Google Drive...');
+      try {
+        const token = tokenResponse.access_token;
+        const fileId = await findBackupFile(token);
+
+        const customers = await db.customers.toArray();
+        const products = await db.products.toArray();
+        const documents = await db.documents.toArray();
+        const transactions = await db.transactions.toArray();
+        const users = await db.users.toArray();
+        
+        const backupData = {
+          version: 3,
+          date: new Date().toISOString(),
+          data: { customers, products, documents, transactions, users }
+        };
+
+        await uploadBackup(token, fileId || null, backupData);
+        setSyncOutStatus('Đồng bộ thành công! Đang thoát...');
+        setTimeout(() => executeLogout(), 1000);
+      } catch (err) {
+        console.error(err);
+        setSyncOutStatus('Lỗi đồng bộ!');
+        alert('Có lỗi xảy ra khi đẩy dữ liệu lên Drive. Vui lòng thử lại.');
+        setIsSyncingOut(false);
+      }
+    },
+    onError: () => {
+      alert('Đăng nhập Google thất bại!');
+      setIsSyncingOut(false);
+    }
+  });
 
   const [activeTab, setActiveTab] = useState('products'); // Mặc định mở tab Sản phẩm (an toàn nhất cho VIEWER)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -186,7 +235,7 @@ function App() {
             </div>
           </div>
           <button 
-            onClick={handleLogout} 
+            onClick={handleLogoutClick} 
             className="w-full flex items-center justify-center space-x-2 p-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-md transition-colors font-medium text-sm" 
             title="Đăng xuất khỏi hệ thống"
           >
@@ -222,7 +271,7 @@ function App() {
           <div className="flex items-center space-x-3 md:hidden">
             <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-full">{currentUser.username}</span>
             <button 
-              onClick={handleLogout} 
+              onClick={handleLogoutClick} 
               className="text-red-500 hover:text-red-700 bg-red-50 p-1.5 rounded-md"
               title="Đăng xuất"
             >
@@ -242,7 +291,6 @@ function App() {
           )}
           {activeTab === 'documents' && isKetoan && (
             <Documents 
-              onNavigate={(tab) => handleTabClick(tab)}
               setEditingQuotationId={(id: number) => {
                 setEditingQuotationId(id);
                 handleTabClick('create-quote');
@@ -264,6 +312,59 @@ function App() {
           {activeTab === 'users' && isAdmin && <UsersManagement />}
         </div>
       </main>
+
+      {/* Logout Modal */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+            <div className="p-6">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-600">
+                  <AlertCircle size={24} />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900">Đăng xuất khỏi hệ thống?</h3>
+              </div>
+              <p className="text-gray-600 mb-6 text-sm">
+                Nếu bạn vừa tạo hoặc sửa dữ liệu (báo giá, khách hàng...), bạn nên <b>Đồng bộ lên Cloud</b> trước khi thoát để người khác (hoặc sếp) có thể thấy được dữ liệu mới nhất.
+              </p>
+
+              {isSyncingOut && (
+                <div className="mb-4 p-3 bg-blue-50 text-blue-700 text-sm rounded-lg flex items-center justify-center font-medium">
+                  <span className="animate-pulse">{syncOutStatus}</span>
+                </div>
+              )}
+
+              <div className="flex flex-col space-y-3">
+                <button
+                  onClick={() => syncAndLogout()}
+                  disabled={isSyncingOut}
+                  className="w-full flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-medium transition-colors disabled:opacity-50"
+                >
+                  <CloudUpload size={20} />
+                  <span>Đồng bộ lên Cloud & Đăng xuất</span>
+                </button>
+                
+                <button
+                  onClick={executeLogout}
+                  disabled={isSyncingOut}
+                  className="w-full flex items-center justify-center space-x-2 bg-gray-100 hover:bg-red-50 text-gray-700 hover:text-red-600 py-2.5 rounded-lg font-medium transition-colors disabled:opacity-50"
+                >
+                  <LogOut size={20} />
+                  <span>Không, chỉ Đăng xuất</span>
+                </button>
+
+                <button
+                  onClick={() => setShowLogoutModal(false)}
+                  disabled={isSyncingOut}
+                  className="w-full py-2 text-gray-500 hover:text-gray-700 font-medium text-sm disabled:opacity-50 mt-2"
+                >
+                  Hủy bỏ
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

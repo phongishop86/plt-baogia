@@ -1,15 +1,14 @@
 import { useState, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, type User } from '../db/db';
-import { Filter, Search, TrendingUp, TrendingDown, FileText, ArrowRight, Trash2, Edit } from 'lucide-react';
+import { Filter, Search, TrendingUp, TrendingDown } from 'lucide-react';
 
 interface DocumentsProps {
-  onNavigate?: (tab: string) => void;
   setEditingQuotationId?: (id: number) => void;
   currentUser?: User | null;
 }
 
-export default function Documents({ onNavigate, setEditingQuotationId, currentUser }: DocumentsProps) {
+export default function Documents({ setEditingQuotationId, currentUser }: DocumentsProps) {
   const [previewDoc, setPreviewDoc] = useState<any>(null);
   
   // Filters

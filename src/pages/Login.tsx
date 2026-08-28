@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import { db, type User } from '../db/db';
+import { useGoogleLogin } from '@react-oauth/google';
+import { findBackupFile, downloadBackup, DRIVE_SCOPE } from '../utils/googleDrive';
+import { CloudDownload } from 'lucide-react';
 
 interface LoginProps {
   onLogin: (user: User) => void;
@@ -9,12 +12,56 @@ export default function Login({ onLogin }: LoginProps) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const loginWithGoogle = useGoogleLogin({
+    scope: DRIVE_SCOPE,
+    onSuccess: async (tokenResponse) => {
+      setIsSyncing(true);
+      setError('Đang tải dữ liệu từ Google Drive...');
+      try {
+        const token = tokenResponse.access_token;
+        const fileId = await findBackupFile(token);
+
+        if (fileId) {
+          const backupData = await downloadBackup(token, fileId);
+          if (backupData && backupData.data) {
+            await db.transaction('rw', db.customers, db.products, db.documents, db.transactions, db.users, async () => {
+                await db.customers.clear();
+                await db.products.clear();
+                await db.documents.clear();
+                await db.transactions.clear();
+                await db.users.clear(); // Xóa bảng user cũ để nạp bảng user mới từ cloud
+
+                if (backupData.data.customers?.length) await db.customers.bulkAdd(backupData.data.customers);
+                if (backupData.data.products?.length) await db.products.bulkAdd(backupData.data.products);
+                if (backupData.data.documents?.length) await db.documents.bulkAdd(backupData.data.documents);
+                if (backupData.data.transactions?.length) await db.transactions.bulkAdd(backupData.data.transactions);
+                if (backupData.data.users?.length) await db.users.bulkAdd(backupData.data.users);
+            });
+            setError('');
+            alert('Tải dữ liệu từ Drive thành công! Bạn có thể đăng nhập ngay bây giờ.');
+          }
+        } else {
+          setError('Không tìm thấy bản sao lưu nào trên Google Drive.');
+        }
+      } catch (err) {
+        console.error(err);
+        setError('Có lỗi khi tải dữ liệu từ Google Drive.');
+      } finally {
+        setIsSyncing(false);
+      }
+    },
+    onError: () => {
+      setError('Lỗi kết nối Google Drive!');
+      setIsSyncing(false);
+    }
+  });
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    // Kiểm tra xem db.users có trống không, nếu trống thì tạo tài khoản Admin mặc định
     const count = await db.users.count();
     if (count === 0) {
       await db.users.add({
@@ -27,7 +74,7 @@ export default function Login({ onLogin }: LoginProps) {
 
     const user = await db.users.where('username').equals(username.trim()).first();
     if (!user) {
-      setError('Tài khoản không tồn tại. Nếu đây là lần đầu chạy, hãy dùng admin / 1');
+      setError('Tài khoản không tồn tại. Nếu bạn có tài khoản trên Cloud, vui lòng bấm Tải dữ liệu từ Cloud trước.');
       return;
     }
 
@@ -48,7 +95,7 @@ export default function Login({ onLogin }: LoginProps) {
         <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">Đăng nhập Hệ thống ERP</h2>
         
         {error && (
-          <div className="bg-red-50 text-red-600 p-3 rounded mb-4 text-sm text-center">
+          <div className={`p-3 rounded mb-4 text-sm text-center ${isSyncing ? 'bg-blue-50 text-blue-600' : 'bg-red-50 text-red-600'}`}>
             {error}
           </div>
         )}
@@ -78,14 +125,27 @@ export default function Login({ onLogin }: LoginProps) {
           </div>
           <button
             type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-lg transition-colors"
+            disabled={isSyncing}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-lg transition-colors disabled:bg-blue-300"
           >
             Đăng nhập
           </button>
         </form>
-        <p className="text-center text-gray-500 text-xs mt-6">
-          Hệ thống chạy hoàn toàn trên máy khách (Offline-first). <br/> Lần đầu khởi động, tài khoản mặc định là <b>admin</b> / mật khẩu: <b>1</b>
-        </p>
+
+        <div className="mt-6 border-t pt-4">
+          <button
+            type="button"
+            onClick={() => loginWithGoogle()}
+            disabled={isSyncing}
+            className="w-full flex items-center justify-center space-x-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors"
+          >
+            <CloudDownload size={20} className="text-blue-600" />
+            <span>Tải dữ liệu từ Cloud (Google Drive)</span>
+          </button>
+          <p className="text-center text-gray-500 text-xs mt-3">
+            * Bấm nút này nếu tài khoản của bạn được cấp mới từ Admin nhưng chưa có trên máy này.
+          </p>
+        </div>
       </div>
     </div>
   );
