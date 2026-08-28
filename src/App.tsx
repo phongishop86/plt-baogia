@@ -175,39 +175,60 @@ function App() {
           )}
         </nav>
 
-        <div className="p-4 border-t border-gray-200 bg-gray-50">
-          <div className="flex items-center justify-between">
-            <div className="flex flex-col">
-              <span className="text-sm font-semibold text-gray-800">{currentUser.username}</span>
-              <span className="text-xs text-gray-500">{role}</span>
+        <div className="p-4 border-t border-gray-200 bg-gray-50 mt-auto">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center space-x-2">
+              <UserCircle size={24} className="text-gray-400" />
+              <div className="flex flex-col">
+                <span className="text-sm font-bold text-gray-800">{currentUser.username}</span>
+                <span className="text-xs text-gray-500">{role}</span>
+              </div>
             </div>
-            <button onClick={handleLogout} className="p-2 text-gray-500 hover:text-red-600 transition-colors" title="Đăng xuất">
-              <LogOut size={20} />
-            </button>
           </div>
+          <button 
+            onClick={handleLogout} 
+            className="w-full flex items-center justify-center space-x-2 p-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-md transition-colors font-medium text-sm" 
+            title="Đăng xuất khỏi hệ thống"
+          >
+            <LogOut size={16} />
+            <span>Đăng xuất</span>
+          </button>
         </div>
       </aside>
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <header className="h-14 bg-white border-b border-gray-200 flex items-center px-4 md:px-6 print:hidden shrink-0">
-          <button 
-            className="mr-3 md:hidden text-gray-600 hover:text-gray-900 focus:outline-none" 
-            onClick={() => setIsMobileMenuOpen(true)}
-          >
-            <Menu size={24} />
-          </button>
-          <h2 className="text-lg md:text-xl font-semibold capitalize text-gray-800 truncate">{
-            activeTab === 'xml' ? 'Nhập Hóa Đơn Điện Tử (XML)' : 
-            activeTab === 'create-quote' ? (editingQuotationId ? 'Sửa Báo Giá' : 'Tạo Báo Giá Mới') :
-            activeTab === 'customers' ? 'Quản lý Khách Hàng / Đối tác' :
-            activeTab === 'products' ? 'Quản lý Sản Phẩm / Tồn kho' :
-            activeTab === 'documents' ? 'Quản lý Hồ sơ Chứng từ' :
-            activeTab === 'fund' ? 'Quản lý Quỹ & Tạm ứng' :
-            activeTab === 'settings' ? 'Cài đặt Hệ thống' :
-            activeTab === 'users' ? 'Quản lý Tài khoản (Users)' :
-            'Tổng quan (Dashboard)'
-          }</h2>
+        <header className="h-14 bg-white border-b border-gray-200 flex items-center justify-between px-4 md:px-6 print:hidden shrink-0">
+          <div className="flex items-center">
+            <button 
+              className="mr-3 md:hidden text-gray-600 hover:text-gray-900 focus:outline-none" 
+              onClick={() => setIsMobileMenuOpen(true)}
+            >
+              <Menu size={24} />
+            </button>
+            <h2 className="text-lg md:text-xl font-semibold capitalize text-gray-800 truncate">{
+              activeTab === 'xml' ? 'Nhập Hóa Đơn Điện Tử (XML)' : 
+              activeTab === 'create-quote' ? (editingQuotationId ? 'Sửa Báo Giá' : 'Tạo Báo Giá Mới') :
+              activeTab === 'customers' ? 'Quản lý Khách Hàng / Đối tác' :
+              activeTab === 'products' ? 'Quản lý Sản Phẩm / Tồn kho' :
+              activeTab === 'documents' ? 'Quản lý Hồ sơ Chứng từ' :
+              activeTab === 'fund' ? 'Quản lý Quỹ & Tạm ứng' :
+              activeTab === 'settings' ? 'Cài đặt Hệ thống' :
+              activeTab === 'users' ? 'Quản lý Tài khoản (Users)' :
+              'Tổng quan (Dashboard)'
+            }</h2>
+          </div>
+          
+          <div className="flex items-center space-x-3 md:hidden">
+            <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-full">{currentUser.username}</span>
+            <button 
+              onClick={handleLogout} 
+              className="text-red-500 hover:text-red-700 bg-red-50 p-1.5 rounded-md"
+              title="Đăng xuất"
+            >
+              <LogOut size={18} />
+            </button>
+          </div>
         </header>
         <div className="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-6 print:p-0">
           {activeTab === 'dashboard' && isKetoan && <Dashboard />}
