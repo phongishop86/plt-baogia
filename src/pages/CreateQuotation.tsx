@@ -150,6 +150,12 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
       return;
     }
 
+    const hasEmptyName = selectedItems.some(p => !p.name || p.name.trim() === '');
+    if (hasEmptyName) {
+      const confirmSave = confirm('Có một hoặc nhiều dòng chưa có Tên hàng hóa!\nBạn có chắc chắn muốn Lưu báo giá này không?');
+      if (!confirmSave) return;
+    }
+
     const subTotal = calculateSubTotal();
     const taxAmount = calculateTax();
     const total = subTotal + taxAmount;
@@ -178,14 +184,14 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
 
     if (activeDocId) {
       await db.documents.update(activeDocId, docData);
-      alert(status === 'DRAFT' ? 'Đã cập nhật nháp báo giá!' : 'Đã cập nhật báo giá chờ phát hành!');
+      alert('Đã cập nhật Báo giá thành công!');
     } else {
       const newId = await db.documents.add({
         ...docData,
         createdAt: new Date()
       });
       setCreatedDocId(newId as number);
-      alert(status === 'DRAFT' ? 'Đã lưu nháp báo giá!' : 'Đã lưu báo giá chờ phát hành!');
+      alert('Đã lưu Báo giá thành công!');
     }
   };
 
@@ -553,16 +559,10 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
           <span>In Báo Giá</span>
         </button>
         <button 
-          onClick={() => handleSaveQuotation('DRAFT')}
-          className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-2 rounded-md font-medium transition-colors"
-        >
-          {(editingQuotationId || createdDocId) ? 'Cập nhật Nháp' : 'Lưu Nháp (Draft)'}
-        </button>
-        <button 
           onClick={() => handleSaveQuotation('PENDING')}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md font-medium transition-colors"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-md font-bold shadow-md transition-colors"
         >
-          {(editingQuotationId || createdDocId) ? 'Cập nhật & Chốt' : 'Lưu & Chờ gửi'}
+          Lưu Báo Giá
         </button>
       </div>
 
