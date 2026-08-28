@@ -35,11 +35,12 @@ export default function Settings() {
       const products = await db.products.toArray();
       const documents = await db.documents.toArray();
       const transactions = await db.transactions.toArray();
+      const users = await db.users.toArray();
       
       const backupData = {
-        version: 2,
+        version: 3,
         date: new Date().toISOString(),
-        data: { customers, products, documents, transactions }
+        data: { customers, products, documents, transactions, users }
       };
       
       const blob = new Blob([JSON.stringify(backupData)], { type: 'application/json' });
@@ -66,16 +67,18 @@ export default function Settings() {
             if (!backupData.data) throw new Error('File không hợp lệ');
             
             if (confirm('CẢNH BÁO: Phục hồi dữ liệu sẽ GHI ĐÈ và XÓA TOÀN BỘ dữ liệu hiện tại trên máy này. \n\nBạn có chắc chắn muốn tải dữ liệu từ file này lên?')) {
-                await db.transaction('rw', db.customers, db.products, db.documents, db.transactions, async () => {
+                await db.transaction('rw', db.customers, db.products, db.documents, db.transactions, db.users, async () => {
                     await db.customers.clear();
                     await db.products.clear();
                     await db.documents.clear();
                     await db.transactions.clear();
+                    await db.users.clear();
                     
                     if (backupData.data.customers?.length) await db.customers.bulkAdd(backupData.data.customers);
                     if (backupData.data.products?.length) await db.products.bulkAdd(backupData.data.products);
                     if (backupData.data.documents?.length) await db.documents.bulkAdd(backupData.data.documents);
                     if (backupData.data.transactions?.length) await db.transactions.bulkAdd(backupData.data.transactions);
+                    if (backupData.data.users?.length) await db.users.bulkAdd(backupData.data.users);
                 });
                 alert('Phục hồi dữ liệu thành công!');
                 window.location.reload();
@@ -110,11 +113,12 @@ export default function Settings() {
           const products = await db.products.toArray();
           const documents = await db.documents.toArray();
           const transactions = await db.transactions.toArray();
+          const users = await db.users.toArray();
           
           const backupData = {
-            version: 2,
+            version: 3,
             date: new Date().toISOString(),
-            data: { customers, products, documents, transactions }
+            data: { customers, products, documents, transactions, users }
           };
 
           await uploadBackup(token, null, backupData);
@@ -128,15 +132,17 @@ export default function Settings() {
             setSyncStatus('Đang tải dữ liệu từ Drive về máy...');
             const backupData = await downloadBackup(token, fileId);
             if (backupData && backupData.data) {
-              await db.transaction('rw', db.customers, db.products, db.documents, db.transactions, async () => {
+              await db.transaction('rw', db.customers, db.products, db.documents, db.transactions, db.users, async () => {
                   await db.customers.clear();
                   await db.products.clear();
                   await db.documents.clear();
                   await db.transactions.clear();
+                  await db.users.clear();
                   if (backupData.data.customers?.length) await db.customers.bulkAdd(backupData.data.customers);
                   if (backupData.data.products?.length) await db.products.bulkAdd(backupData.data.products);
                   if (backupData.data.documents?.length) await db.documents.bulkAdd(backupData.data.documents);
                   if (backupData.data.transactions?.length) await db.transactions.bulkAdd(backupData.data.transactions);
+                  if (backupData.data.users?.length) await db.users.bulkAdd(backupData.data.users);
               });
               setSyncStatus('Phục hồi dữ liệu từ Drive thành công!');
               alert('Đã phục hồi dữ liệu từ Google Drive thành công!');
@@ -149,11 +155,12 @@ export default function Settings() {
             const products = await db.products.toArray();
             const documents = await db.documents.toArray();
             const transactions = await db.transactions.toArray();
+            const users = await db.users.toArray();
             
             const backupData = {
-              version: 2,
+              version: 3,
               date: new Date().toISOString(),
-              data: { customers, products, documents, transactions }
+              data: { customers, products, documents, transactions, users }
             };
   
             await uploadBackup(token, fileId, backupData);
