@@ -169,15 +169,17 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
       taxAmount,
       total,
       status, // 'DRAFT' hoặc 'PENDING'
-      items: selectedItems.map(p => ({
-        productId: p.id,
-        productName: p.name || 'Hàng hóa chưa tên',
-        unit: p.unit || '',
-        quantity: p.quantity,
-        unitPrice: p.unitPrice || 0,
-        taxRate: p.taxRate || 0,
-        amount: p.quantity * (p.unitPrice || 0)
-      }))
+      items: selectedItems
+        .map(p => ({
+          productId: p.id,
+          productName: p.name || 'Hàng hóa chưa tên',
+          unit: p.unit || '',
+          quantity: p.quantity,
+          unitPrice: p.unitPrice || 0,
+          taxRate: p.taxRate || 0,
+          amount: p.quantity * (p.unitPrice || 0)
+        }))
+        .sort((a, b) => a.productName.localeCompare(b.productName, 'vi-VN'))
     };
 
     const activeDocId = editingQuotationId || createdDocId;
@@ -193,6 +195,9 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
       setCreatedDocId(newId as number);
       alert('Đã lưu Báo giá thành công!');
     }
+
+    // Sắp xếp lại danh sách trên màn hình nhập liệu để đồng bộ với Database
+    setSelectedItems(prev => [...prev].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'vi-VN')));
   };
 
   const handleClearForm = () => {
