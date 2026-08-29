@@ -294,7 +294,7 @@ export default function Documents({ setEditingQuotationId, currentUser }: Docume
                     >
                       Chi tiết
                     </button>
-                    {currentUser?.role === 'ADMIN' && (
+                    {(currentUser?.role === 'ADMIN' || (currentUser?.role === 'KETOAN' && doc.type === 'QUOTATION')) && (
                       <button 
                         className="text-red-500 hover:text-red-700 font-medium"
                         onClick={() => handleDelete(doc)}

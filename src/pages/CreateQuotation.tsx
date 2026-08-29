@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, type Product } from '../db/db';
-import { Printer } from 'lucide-react';
+import { Trash2, Printer } from 'lucide-react';
 
 interface SelectedProduct extends Partial<Product> {
   tempId: string; // Cho các dòng nhập thủ công
@@ -380,7 +380,7 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
       </div>
 
       {selectedItems.length > 0 && (
-        <div className="mt-4 border rounded-md overflow-hidden print:border-none print:mt-2">
+        <div className="mt-4 border rounded-md overflow-x-auto print:overflow-visible print:border-none print:mt-2">
           <table className="min-w-full divide-y divide-gray-200 print:border-collapse print:border-2 print:border-black font-[Times_New_Roman]">
             <thead className="bg-gray-50 print:bg-gray-200">
               <tr>
@@ -402,7 +402,7 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
                   </td>
                   <td className="px-2 py-2 text-sm text-gray-900 print:border print:border-black align-top">
                     {/* UI Nhập liệu trên Web: Tự động dãn dòng theo nội dung */}
-                    <div className="relative print:hidden">
+                    <div className="relative print:hidden min-w-[200px]">
                       <div className="invisible whitespace-pre-wrap break-words min-h-[1.5rem] w-full pb-1">
                         {item.name + ' '}
                       </div>
@@ -423,7 +423,7 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
                       type="text" 
                       value={item.unit} 
                       onChange={e => updateItem(item.tempId, 'unit', e.target.value)}
-                      className="w-full border-none bg-transparent focus:ring-0 p-0 text-center"
+                      className="w-full border-none bg-transparent focus:ring-0 p-0 text-center min-w-[60px]"
                     />
                   </td>
                   <td className="px-2 py-2 text-sm text-gray-500 text-center print:border print:border-black print:text-black align-top">
@@ -438,7 +438,7 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
                         className="w-16 text-center border rounded p-1 print:border-none print:p-0"
                       />
                       {item.id && (
-                        <span className={`text-[10px] print:hidden ${item.quantity > (item.stock || 0) ? 'text-red-500' : 'text-gray-400'}`}>
+                        <span className={`text-[10px] print:hidden whitespace-nowrap ${item.quantity > (item.stock || 0) ? 'text-red-500' : 'text-gray-400'}`}>
                           Tồn: {item.stock ? new Intl.NumberFormat('vi-VN').format(item.stock) : 0}
                         </span>
                       )}
@@ -452,7 +452,7 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
                         const val = e.target.value.replace(/\D/g, '');
                         updateItem(item.tempId, 'unitPrice', Number(val));
                       }}
-                      className="w-full border rounded p-1 print:border-none print:p-0 text-right"
+                      className="w-full min-w-[100px] border rounded p-1 print:border-none print:p-0 text-right"
                     />
                   </td>
                   <td className="px-2 py-2 text-sm text-gray-500 print:border print:border-black print:hidden align-top">
@@ -466,11 +466,17 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
                       <option value="10">10%</option>
                     </select>
                   </td>
-                  <td className="px-4 py-2 text-sm text-gray-900 font-medium text-right print:border print:border-black align-top pt-3">
+                  <td className="px-4 py-2 text-sm text-gray-900 font-medium text-right print:border print:border-black align-top pt-3 whitespace-nowrap">
                     {formatCurrency(item.quantity * (item.unitPrice || 0))}
                   </td>
                   <td className="px-4 py-2 text-sm text-right print:hidden align-top pt-3">
-                    <button onClick={() => handleRemoveItem(item.tempId)} className="text-red-500 hover:text-red-700">Xóa</button>
+                    <button 
+                      onClick={() => handleRemoveItem(item.tempId)} 
+                      className="text-red-500 hover:text-red-700 bg-red-50 p-1.5 rounded-md transition-colors"
+                      title="Xóa dòng này"
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   </td>
                 </tr>
               ))}
