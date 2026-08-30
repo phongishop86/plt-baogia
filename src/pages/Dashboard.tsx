@@ -4,7 +4,7 @@ import { db } from '../db/db';
 import { Users, FileText, Box, TrendingUp, TrendingDown, DollarSign, ArrowLeft } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, ComposedChart, Line } from 'recharts';
 
-type DetailView = 'CUSTOMERS' | 'PRODUCTS' | 'DOCUMENTS' | 'REVENUE' | 'COST' | 'RECEIVABLES' | 'PAYABLES' | 'PROFIT' | null;
+type DetailView = 'CUSTOMERS' | 'PRODUCTS' | 'DOCUMENTS' | 'REVENUE' | 'COST' | 'OP_COST' | 'RECEIVABLES' | 'PAYABLES' | 'PROFIT' | null;
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658'];
 
@@ -16,6 +16,7 @@ export default function Dashboard() {
     const customers = await db.customers.toArray();
     const products = await db.products.toArray();
     const documents = await db.documents.toArray();
+    const transactions = await db.transactions.toArray();
     
     // Đính kèm thông tin khách hàng vào document để hiển thị chi tiết
     for (const doc of documents) {
@@ -25,14 +26,22 @@ export default function Dashboard() {
     
     let revenue = 0;
     let cost = 0;
+    let operatingCost = 0;
     let receivables = 0; 
     let payables = 0; 
 
-    const monthlyStats: Record<string, { month: string, revenue: number, cost: number }> = {};
+    // Tính chi phí hoạt động từ Quỹ (OTHER_OUT)
+    transactions.forEach(tx => {
+      if (tx.type === 'OTHER_OUT') {
+        operatingCost += tx.amount;
+      }
+    });
+
+    const monthlyStats: Record<string, { month: string, revenue: number, cost: number, opCost: number }> = {};
     
     documents.forEach(doc => {
       const m = new Date(doc.date).toISOString().slice(0, 7);
-      if (!monthlyStats[m]) monthlyStats[m] = { month: m, revenue: 0, cost: 0 };
+      if (!monthlyStats[m]) monthlyStats[m] = { month: m, revenue: 0, cost: 0, opCost: 0 };
 
       if (doc.type === 'OUTPUT_INVOICE') {
         revenue += doc.subTotal;
@@ -49,18 +58,29 @@ export default function Dashboard() {
       }
     });
 
+    // Cộng thêm chi phí hoạt động vào từng tháng
+    transactions.forEach(tx => {
+      if (tx.type === 'OTHER_OUT') {
+        const m = new Date(tx.date).toISOString().slice(0, 7);
+        if (!monthlyStats[m]) monthlyStats[m] = { month: m, revenue: 0, cost: 0, opCost: 0 };
+        monthlyStats[m].opCost += tx.amount;
+      }
+    });
+
     const profitChartData = Object.values(monthlyStats)
-      .map(m => ({ ...m, profit: m.revenue - m.cost }))
+      .map(m => ({ ...m, profit: m.revenue - m.cost - m.opCost }))
       .sort((a,b) => a.month.localeCompare(b.month));
 
-    const profit = revenue - cost;
+    const profit = revenue - cost - operatingCost;
 
     return { 
       customers, 
       products, 
       documents, 
+      transactions,
       revenue, 
       cost, 
+      operatingCost,
       profit, 
       receivables, 
       payables,
@@ -128,10 +148,11 @@ export default function Dashboard() {
               <h4 className="text-center font-medium text-gray-600 mb-2">Phân bổ Nhóm đối tác</h4>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={pieData} cx="50%" cy="50%" labelLine={false} label={({ name, percent }) => percent && percent > 0.05 ? `${name} (${(percent * 100).toFixed(0)}%)` : ''} outerRadius={80} fill="#8884d8" dataKey="value">
+                  <Pie data={pieData} cx="50%" cy="50%" outerRadius={80} fill="#8884d8" dataKey="value">
                     {pieData.map((_entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
                   </Pie>
                   <Tooltip />
+                  <Legend layout="horizontal" verticalAlign="bottom" align="center" />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -186,14 +207,14 @@ export default function Dashboard() {
                   <Pie 
                     data={categoryPieData} 
                     cx="50%" cy="50%" 
-                    label={({ name, percent }) => percent && percent > 0.05 ? `${name} (${(percent * 100).toFixed(0)}%)` : ''} 
-                    outerRadius={90} 
+                    outerRadius={80} 
                     fill="#8884d8" 
                     dataKey="totalValue"
                   >
                     {categoryPieData.map((_entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
                   </Pie>
                   <Tooltip formatter={(value: any) => formatCurrency(Number(value))} />
+                  <Legend layout="horizontal" verticalAlign="bottom" align="center" />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -345,6 +366,33 @@ export default function Dashboard() {
           { header: 'Tiền hàng', render: (i) => formatCurrency(i.subTotal), sortValue: (i) => i.subTotal },
         ];
         break;
+      case 'OP_COST':
+        title = 'Chi tiết Chi phí Vận hành (Quỹ)';
+        data = stats.transactions.filter(t => t.type === 'OTHER_OUT');
+        
+        chartElement = (
+          <div className="h-72 mb-8">
+            <h4 className="text-center font-medium text-red-600 mb-2">Biểu đồ Chi phí vận hành theo tháng</h4>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={stats.profitChartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis tickFormatter={(val) => `${val/1000000}tr`} />
+                <Tooltip formatter={(value: any) => formatCurrency(Number(value))} />
+                <Legend />
+                <Bar dataKey="opCost" name="Chi phí vận hành" fill="#f59e0b" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        );
+
+        columns = [
+          { header: 'Ngày', render: (i) => new Date(i.date).toLocaleDateString('vi-VN'), sortValue: (i) => new Date(i.date).getTime() },
+          { header: 'Loại chi', render: () => 'Chi phí khác', sortValue: () => 1 },
+          { header: 'Nội dung', render: (i) => i.description, sortValue: (i) => i.description },
+          { header: 'Số tiền', render: (i) => <span className="font-medium text-red-600">{formatCurrency(i.amount)}</span>, sortValue: (i) => i.amount },
+        ];
+        break;
       case 'PAYABLES':
         title = 'Chi tiết Phải trả (Nợ NCC)';
         data = stats.unpaidInputs;
@@ -455,7 +503,7 @@ export default function Dashboard() {
       </div>
       
       <h3 className="text-lg font-semibold text-gray-800 mt-8 mb-4 border-b pb-2">Tài chính (Tạm tính)</h3>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <StatCard 
           onClick={() => setDetailView('REVENUE')}
           title="Tổng Doanh thu (Bán ra)" 
@@ -465,8 +513,15 @@ export default function Dashboard() {
         />
         <StatCard 
           onClick={() => setDetailView('COST')}
-          title="Tổng Chi phí (Mua vào)" 
+          title="Tiền nhập hàng hóa" 
           value={formatCurrency(stats.cost)} 
+          icon={<Box size={24} className="text-orange-500" />} 
+          bgColor="bg-orange-50"
+        />
+        <StatCard 
+          onClick={() => setDetailView('OP_COST')}
+          title="Chi phí Vận hành (Quỹ)" 
+          value={formatCurrency(stats.operatingCost)} 
           icon={<TrendingDown size={24} className="text-red-500" />} 
           bgColor="bg-red-50"
         />
