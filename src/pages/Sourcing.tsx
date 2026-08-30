@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, ExternalLink, ShoppingCart, Globe, Server, Box } from 'lucide-react';
+import { Search, ExternalLink, ShoppingCart, Globe, Server, Box, Monitor, Cpu, Camera } from 'lucide-react';
 
 export default function Sourcing() {
   const [keyword, setKeyword] = useState('');
@@ -24,19 +24,37 @@ export default function Sourcing() {
       desc: 'Nguồn hàng đa dạng, nhiều nhà phân phối B2B.'
     },
     {
-      name: 'Tiki',
-      url: (kw: string) => `https://tiki.vn/search?q=${encodeURIComponent(kw)}`,
-      icon: <ShoppingCart className="text-blue-600" size={24} />,
-      desc: 'Sản phẩm chính hãng, xuất hóa đơn VAT dễ dàng.'
+      name: 'Tin Học Ngôi Sao',
+      url: (kw: string) => `https://tinhocngoisao.com/search?q=${encodeURIComponent(kw)}`,
+      icon: <Cpu className="text-red-600" size={24} />,
+      desc: 'Chuyên linh kiện máy tính, PC, giá sỉ IT.'
     },
     {
-      name: 'Chợ Tốt',
-      url: (kw: string) => `https://www.chotot.com/tags/toan-quoc/${encodeURIComponent(kw)}`,
-      icon: <ShoppingCart className="text-yellow-500" size={24} />,
-      desc: 'Tìm nguồn thanh lý, xưởng gia công nhỏ lẻ.'
+      name: 'Phát Đạt Vĩnh Viễn',
+      url: (kw: string) => `https://www.google.com/search?q=${encodeURIComponent('site:phatdatvinhvien.com ' + kw)}`,
+      icon: <Monitor className="text-teal-600" size={24} />,
+      desc: 'Kho sỉ linh kiện, phụ kiện máy tính, cáp chuyển.'
     },
     {
-      name: 'Google (Nhà cung cấp/Sỉ)',
+      name: 'Phát Đạt Computer',
+      url: (kw: string) => `https://www.google.com/search?q=${encodeURIComponent('site:phatdatcomputer.vn ' + kw)}`,
+      icon: <Monitor className="text-blue-700" size={24} />,
+      desc: 'Báo giá linh kiện máy tính, sỉ lẻ toàn quốc.'
+    },
+    {
+      name: 'Vi Tính Lê Huy',
+      url: (kw: string) => `https://www.google.com/search?q=${encodeURIComponent('site:vitinhlehuy.com ' + kw)}`,
+      icon: <Monitor className="text-cyan-600" size={24} />,
+      desc: 'PC, linh kiện, phụ kiện giá thợ.'
+    },
+    {
+      name: 'Vuhoang Telecom',
+      url: (kw: string) => `https://vuhoangtelecom.vn/?s=${encodeURIComponent(kw)}`,
+      icon: <Camera className="text-red-500" size={24} />,
+      desc: 'Tổng kho Camera, báo động, viễn thông.'
+    },
+    {
+      name: 'Google (Nhà cung cấp)',
       url: (kw: string) => `https://www.google.com/search?q=${encodeURIComponent(kw + ' "giá sỉ" OR "phân phối" OR "nhà máy"')}`,
       icon: <Server className="text-green-600" size={24} />,
       desc: 'Tra cứu trực tiếp các nhà sản xuất, xưởng sỉ.'
