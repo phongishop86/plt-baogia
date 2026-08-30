@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FileText, Users, Box, LayoutDashboard, Upload, FilePlus, Settings as SettingsIcon, Wallet, Menu, X, LogOut, UserCircle, CloudUpload, AlertCircle } from 'lucide-react';
+import { FileText, Users, Box, LayoutDashboard, Upload, FilePlus, Settings as SettingsIcon, Wallet, Menu, X, LogOut, UserCircle, CloudUpload, AlertCircle, Search } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { findBackupFile, uploadBackup, DRIVE_SCOPE } from './utils/googleDrive';
 import { db } from './db/db';
@@ -13,6 +13,7 @@ import Fund from './pages/Fund';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
 import UsersManagement from './pages/UsersManagement';
+import Sourcing from './pages/Sourcing';
 import { type User } from './db/db';
 
 function App() {
@@ -203,6 +204,12 @@ function App() {
             active={activeTab === 'create-quote'} 
             onClick={() => handleTabClick('create-quote')} 
           />
+          <NavItem 
+            icon={<Search size={20} className="text-orange-500" />} 
+            label="Tìm Nguồn Hàng" 
+            active={activeTab === 'sourcing'} 
+            onClick={() => handleTabClick('sourcing')} 
+          />
           
           {isAdmin && <div className="my-4 border-t border-gray-200 mx-2"></div>}
           
@@ -308,6 +315,7 @@ function App() {
               clearEditingQuotation={() => setEditingQuotationId(null)}
             />
           )}
+          {activeTab === 'sourcing' && <Sourcing />}
           {activeTab === 'settings' && isAdmin && <Settings />}
           {activeTab === 'users' && isAdmin && <UsersManagement />}
         </div>
