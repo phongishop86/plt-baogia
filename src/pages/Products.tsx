@@ -99,24 +99,29 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
     setEditCategory(product.category || '');
   };
 
+  const [dateModal, setDateModal] = useState<{
+    isOpen: boolean;
+    type: 'BULK' | 'INLINE';
+    bulkIds?: number[];
+    inlineId?: number;
+    inlineOldName?: string;
+  } | null>(null);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+
   const saveEdit = async (productId: number, oldName: string) => {
+    const prod = products?.find(p => p.id === productId);
+    if (editType === 'EXPENSE' && prod && prod.type !== 'EXPENSE') {
+      setDateModal({ isOpen: true, type: 'INLINE', inlineId: productId, inlineOldName: oldName });
+      return;
+    }
+    await executeInlineSave(productId, oldName, undefined);
+  };
+
+  const executeInlineSave = async (productId: number, oldName: string, expDate?: Date) => {
     try {
       let extraUpdate: any = {};
-      const prod = products?.find(p => p.id === productId);
-      if (editType === 'EXPENSE' && prod && prod.type !== 'EXPENSE') {
-        const todayStr = new Date().toISOString().split('T')[0];
-        const dateInput = prompt(`Vui lòng nhập NGÀY GHI NHẬN CHI PHÍ (Định dạng: YYYY-MM-DD):`, todayStr);
-        if (dateInput) {
-          const d = new Date(dateInput);
-          if (!isNaN(d.getTime())) {
-            extraUpdate.expenseDate = d;
-          } else {
-            alert("Ngày nhập không hợp lệ! Dùng ngày hiện tại.");
-            extraUpdate.expenseDate = new Date();
-          }
-        } else {
-          extraUpdate.expenseDate = new Date();
-        }
+      if (expDate) {
+        extraUpdate.expenseDate = expDate;
       }
 
       await db.products.update(productId, { 
@@ -148,6 +153,26 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
       console.error("Lỗi khi cập nhật sản phẩm:", err);
       alert("Có lỗi xảy ra khi lưu thay đổi.");
     }
+  };
+
+  const handleConfirmDateModal = async () => {
+    if (!dateModal) return;
+    const d = new Date(selectedDate);
+    if (isNaN(d.getTime())) {
+      alert("Ngày chọn không hợp lệ!");
+      return;
+    }
+
+    if (dateModal.type === 'BULK' && dateModal.bulkIds) {
+      for (const id of dateModal.bulkIds) {
+        await db.products.update(id, { type: 'EXPENSE', expenseDate: d });
+      }
+      setSelectedIds([]);
+    } else if (dateModal.type === 'INLINE' && dateModal.inlineId) {
+      await executeInlineSave(dateModal.inlineId, dateModal.inlineOldName || '', d);
+    }
+    
+    setDateModal(null);
   };
 
 
@@ -252,19 +277,7 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
                   const typeName = newType === 'PRODUCT' ? 'Hàng hóa' : newType === 'SERVICE' ? 'Dịch vụ' : 'Chi phí hoạt động';
                   
                   if (newType === 'EXPENSE') {
-                    const todayStr = new Date().toISOString().split('T')[0];
-                    const dateInput = prompt(`Chuyển ${selectedIds.length} mặt hàng sang nhóm ${typeName}.\nVui lòng nhập NGÀY GHI NHẬN CHI PHÍ (Định dạng: YYYY-MM-DD):`, todayStr);
-                    if (dateInput) {
-                      const d = new Date(dateInput);
-                      if (isNaN(d.getTime())) {
-                        alert("Ngày nhập không hợp lệ! Vui lòng nhập đúng định dạng YYYY-MM-DD.");
-                      } else {
-                        for (const id of selectedIds) {
-                          await db.products.update(id, { type: newType as any, expenseDate: d });
-                        }
-                        setSelectedIds([]);
-                      }
-                    }
+                    setDateModal({ isOpen: true, type: 'BULK', bulkIds: selectedIds });
                   } else {
                     if (confirm(`Chuyển ${selectedIds.length} mặt hàng đã chọn sang nhóm ${typeName}?`)) {
                       for (const id of selectedIds) {
@@ -427,6 +440,38 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
           </tbody>
         </table>
       </div>
+
+      {/* Modal chọn ngày ghi nhận chi phí */}
+      {dateModal?.isOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white p-6 rounded-xl shadow-xl w-full max-w-sm">
+            <h3 className="text-lg font-bold text-gray-800 mb-2">Ngày ghi nhận chi phí</h3>
+            <p className="text-sm text-gray-600 mb-5">
+              Vui lòng chọn ngày để phân bổ chi phí này vào tháng tương ứng trên báo cáo Tài chính.
+            </p>
+            <input 
+              type="date" 
+              className="w-full border border-gray-300 rounded-md p-2.5 mb-6 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              value={selectedDate}
+              onChange={e => setSelectedDate(e.target.value)}
+            />
+            <div className="flex justify-end gap-3">
+              <button 
+                onClick={() => setDateModal(null)}
+                className="px-4 py-2 border border-gray-200 rounded-md text-gray-600 hover:bg-gray-50 font-medium transition-colors"
+              >
+                Hủy bỏ
+              </button>
+              <button 
+                onClick={handleConfirmDateModal}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium transition-colors"
+              >
+                Xác nhận
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
