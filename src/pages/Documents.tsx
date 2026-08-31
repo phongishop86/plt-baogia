@@ -204,57 +204,69 @@ export default function Documents({ setEditingQuotationId, currentUser }: Docume
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" onClick={() => handleSort('docNumber')}>
-                  <div className="flex items-center space-x-1">
-                    <span>Số HĐ/CT</span>
-                    {sortConfig?.key === 'docNumber' ? (sortConfig.direction === 'asc' ? <ChevronUp size={14}/> : <ChevronDown size={14}/>) : null}
+                <th className="p-0 border-r border-gray-200">
+                  <div className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 overflow-hidden min-w-[120px]" style={{ resize: 'horizontal' }} onClick={() => handleSort('docNumber')}>
+                    <div className="flex items-center space-x-1">
+                      <span>Số HĐ/CT</span>
+                      {sortConfig?.key === 'docNumber' ? (sortConfig.direction === 'asc' ? <ChevronUp size={14}/> : <ChevronDown size={14}/>) : null}
+                    </div>
                   </div>
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" onClick={() => handleSort('type')}>
-                  <div className="flex items-center space-x-1">
-                    <span>Loại</span>
-                    {sortConfig?.key === 'type' ? (sortConfig.direction === 'asc' ? <ChevronUp size={14}/> : <ChevronDown size={14}/>) : null}
+                <th className="p-0 border-r border-gray-200">
+                  <div className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 overflow-hidden min-w-[120px]" style={{ resize: 'horizontal' }} onClick={() => handleSort('type')}>
+                    <div className="flex items-center space-x-1">
+                      <span>Loại</span>
+                      {sortConfig?.key === 'type' ? (sortConfig.direction === 'asc' ? <ChevronUp size={14}/> : <ChevronDown size={14}/>) : null}
+                    </div>
                   </div>
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" onClick={() => handleSort('date')}>
-                  <div className="flex items-center space-x-1">
-                    <span>Ngày</span>
-                    {sortConfig?.key === 'date' ? (sortConfig.direction === 'asc' ? <ChevronUp size={14}/> : <ChevronDown size={14}/>) : null}
+                <th className="p-0 border-r border-gray-200">
+                  <div className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 overflow-hidden min-w-[120px]" style={{ resize: 'horizontal' }} onClick={() => handleSort('date')}>
+                    <div className="flex items-center space-x-1">
+                      <span>Ngày</span>
+                      {sortConfig?.key === 'date' ? (sortConfig.direction === 'asc' ? <ChevronUp size={14}/> : <ChevronDown size={14}/>) : null}
+                    </div>
                   </div>
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" onClick={() => handleSort('customer')}>
-                  <div className="flex items-center space-x-1">
-                    <span>Đối tác</span>
-                    {sortConfig?.key === 'customer' ? (sortConfig.direction === 'asc' ? <ChevronUp size={14}/> : <ChevronDown size={14}/>) : null}
+                <th className="p-0 border-r border-gray-200">
+                  <div className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 overflow-hidden min-w-[200px]" style={{ resize: 'horizontal' }} onClick={() => handleSort('customer')}>
+                    <div className="flex items-center space-x-1">
+                      <span>Đối tác</span>
+                      {sortConfig?.key === 'customer' ? (sortConfig.direction === 'asc' ? <ChevronUp size={14}/> : <ChevronDown size={14}/>) : null}
+                    </div>
                   </div>
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" onClick={() => handleSort('total')}>
-                  <div className="flex items-center justify-end space-x-1">
-                    <span>Tổng tiền</span>
-                    {sortConfig?.key === 'total' ? (sortConfig.direction === 'asc' ? <ChevronUp size={14}/> : <ChevronDown size={14}/>) : null}
+                <th className="p-0 border-r border-gray-200">
+                  <div className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 overflow-hidden min-w-[140px]" style={{ resize: 'horizontal' }} onClick={() => handleSort('total')}>
+                    <div className="flex items-center justify-end space-x-1">
+                      <span>Tổng tiền</span>
+                      {sortConfig?.key === 'total' ? (sortConfig.direction === 'asc' ? <ChevronUp size={14}/> : <ChevronDown size={14}/>) : null}
+                    </div>
                   </div>
                 </th>
-                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" onClick={() => handleSort('status')}>
-                  <div className="flex items-center justify-center space-x-1">
-                    <span>Trạng thái</span>
-                    {sortConfig?.key === 'status' ? (sortConfig.direction === 'asc' ? <ChevronUp size={14}/> : <ChevronDown size={14}/>) : null}
+                <th className="p-0 border-r border-gray-200">
+                  <div className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 overflow-hidden min-w-[140px]" style={{ resize: 'horizontal' }} onClick={() => handleSort('status')}>
+                    <div className="flex items-center justify-center space-x-1">
+                      <span>Trạng thái</span>
+                      {sortConfig?.key === 'status' ? (sortConfig.direction === 'asc' ? <ChevronUp size={14}/> : <ChevronDown size={14}/>) : null}
+                    </div>
                   </div>
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Hành động</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[120px]">Hành động</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredDocs.map((doc) => (
                 <tr key={doc.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">{doc.docNumber}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 border-r border-gray-100">{doc.docNumber}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-100">
                     <span className={`px-2 py-1 text-xs rounded-full ${doc.type === 'INPUT_INVOICE' ? 'bg-blue-100 text-blue-800' : doc.type === 'OUTPUT_INVOICE' ? 'bg-green-100 text-green-800' : 'bg-purple-100 text-purple-800'}`}>
                       {doc.type === 'INPUT_INVOICE' ? 'Mua vào' : doc.type === 'OUTPUT_INVOICE' ? 'Bán ra' : 'Báo giá'}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(doc.date).toLocaleDateString('vi-VN')}</td>
-                  <td className="px-6 py-4 text-sm text-gray-900 truncate max-w-[200px]" title={doc.customer?.name}>{doc.customer?.name}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">{formatNumber(doc.total)}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-100">{new Date(doc.date).toLocaleDateString('vi-VN')}</td>
+                  <td className="px-6 py-4 text-sm text-gray-900 whitespace-normal break-words border-r border-gray-100">{doc.customer?.name}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right border-r border-gray-100">{formatNumber(doc.total)}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-center">
                     {doc.type === 'QUOTATION' ? (
                       <select 
