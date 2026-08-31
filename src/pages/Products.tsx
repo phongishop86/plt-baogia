@@ -569,7 +569,7 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
                             {h.type === 'QUOTATION' ? 'Báo giá' : h.type === 'INPUT_INVOICE' ? 'Mua vào' : 'Bán ra'}
                           </span>
                         </td>
-                        <td className="px-6 py-3 text-sm text-gray-700 max-w-[200px] truncate" title={h.customerName}>{h.customerName}</td>
+                        <td className="px-6 py-3 text-sm text-gray-700 whitespace-normal break-words">{h.customerName}</td>
                         <td className="px-6 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">{h.quantity}</td>
                         <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-900 text-right">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(h.unitPrice)}</td>
                       </tr>
