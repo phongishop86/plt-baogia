@@ -20,7 +20,14 @@ export default function Documents({ setEditingQuotationId, currentUser }: Docume
     const docs = await db.documents.toArray();
     docs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     return Promise.all(docs.map(async (doc) => {
-      const customer = await db.customers.get(doc.customerId);
+      let customer = null;
+      if (doc.customerId) {
+        try {
+          customer = await db.customers.get(doc.customerId);
+        } catch (err) {
+          console.warn("Lỗi khi tải thông tin khách hàng:", err);
+        }
+      }
       return { ...doc, customer };
     }));
   });
