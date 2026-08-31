@@ -6,15 +6,18 @@ import { Filter, Search, TrendingUp, TrendingDown, ChevronUp, ChevronDown } from
 interface DocumentsProps {
   setEditingQuotationId?: (id: number) => void;
   currentUser?: User | null;
+  mode?: 'DOCUMENTS' | 'QUOTATIONS';
+  onNavigate?: (tab: string) => void;
 }
 
-export default function Documents({ setEditingQuotationId, currentUser }: DocumentsProps) {
+export default function Documents({ setEditingQuotationId, currentUser, mode = 'DOCUMENTS', onNavigate }: DocumentsProps) {
   const [previewDoc, setPreviewDoc] = useState<any>(null);
   
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterType, setFilterType] = useState('ALL');
+  const [filterType, setFilterType] = useState(mode === 'QUOTATIONS' ? 'QUOTATION' : 'ALL');
   const [filterPayment, setFilterPayment] = useState('ALL');
+  const [filterStatus, setFilterStatus] = useState('ALL');
 
   const documents = useLiveQuery(async () => {
     const docs = await db.documents.toArray();
@@ -90,15 +93,27 @@ export default function Documents({ setEditingQuotationId, currentUser }: Docume
         doc.docNumber?.toLowerCase().includes(searchTerm.toLowerCase()) || 
         doc.customer?.name?.toLowerCase().includes(searchTerm.toLowerCase());
         
-      // 2. Filter Type
-      const matchesType = filterType === 'ALL' || doc.type === filterType;
+      // 2. Filter Type & Mode
+      let matchesType = true;
+      if (mode === 'QUOTATIONS') {
+        matchesType = doc.type === 'QUOTATION';
+      } else {
+        // mode === DOCUMENTS
+        matchesType = doc.type !== 'QUOTATION' && (filterType === 'ALL' || doc.type === filterType);
+      }
       
-      // 3. Filter Payment
+      // 3. Filter Payment / Status
       let matchesPayment = true;
-      if (filterPayment === 'PAID') matchesPayment = !!doc.paymentDate;
-      if (filterPayment === 'UNPAID') matchesPayment = !doc.paymentDate;
+      let matchesStatus = true;
+      
+      if (mode === 'DOCUMENTS') {
+        if (filterPayment === 'PAID') matchesPayment = !!doc.paymentDate;
+        if (filterPayment === 'UNPAID') matchesPayment = !doc.paymentDate;
+      } else {
+        if (filterStatus !== 'ALL') matchesStatus = doc.status === filterStatus;
+      }
 
-      return matchesSearch && matchesType && matchesPayment;
+      return matchesSearch && matchesType && matchesPayment && matchesStatus;
     });
 
     if (sortConfig !== null) {
@@ -157,46 +172,77 @@ export default function Documents({ setEditingQuotationId, currentUser }: Docume
             />
           </div>
           <div className="flex items-center space-x-3">
-            <Filter size={18} className="text-gray-500" />
-            <select 
-              value={filterType} 
-              onChange={(e) => setFilterType(e.target.value)}
-              className="text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-blue-500"
-            >
-              <option value="ALL">Tất cả loại Hóa đơn</option>
-              <option value="INPUT_INVOICE">Mua vào (Chi phí)</option>
-              <option value="OUTPUT_INVOICE">Bán ra (Doanh thu)</option>
-              <option value="QUOTATION">Báo giá</option>
-            </select>
-            <select 
-              value={filterPayment} 
-              onChange={(e) => setFilterPayment(e.target.value)}
-              className="text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-blue-500"
-            >
-              <option value="ALL">Tất cả trạng thái</option>
-              <option value="PAID">Đã thanh toán</option>
-              <option value="UNPAID">Chưa thanh toán (Công nợ)</option>
-            </select>
+            {mode === 'DOCUMENTS' ? (
+              <>
+                <Filter size={18} className="text-gray-500" />
+                <select 
+                  value={filterType} 
+                  onChange={(e) => setFilterType(e.target.value)}
+                  className="text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value="ALL">Tất cả Hóa đơn</option>
+                  <option value="INPUT_INVOICE">Mua vào (Chi phí)</option>
+                  <option value="OUTPUT_INVOICE">Bán ra (Doanh thu)</option>
+                </select>
+                <select 
+                  value={filterPayment} 
+                  onChange={(e) => setFilterPayment(e.target.value)}
+                  className="text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value="ALL">Tất cả trạng thái</option>
+                  <option value="PAID">Đã thanh toán</option>
+                  <option value="UNPAID">Chưa thanh toán (Công nợ)</option>
+                </select>
+              </>
+            ) : (
+              <>
+                <Filter size={18} className="text-gray-500" />
+                <select 
+                  value={filterStatus} 
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  className="text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value="ALL">Tất cả Trạng thái</option>
+                  <option value="DRAFT">Nháp (Tạo mới)</option>
+                  <option value="PENDING">Lưu chờ gửi</option>
+                  <option value="SENT">Đã gửi khách</option>
+                  <option value="COMPLETED">Đã chốt (Thành công)</option>
+                  <option value="CANCELLED">Đã hủy</option>
+                </select>
+                <button
+                  onClick={() => {
+                    // Truyền -1 để App.tsx biết là cần clear editing ID
+                    if (setEditingQuotationId) setEditingQuotationId(-1);
+                    if (onNavigate) onNavigate('create-quote');
+                  }}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 whitespace-nowrap"
+                >
+                  + Tạo mới
+                </button>
+              </>
+            )}
           </div>
         </div>
 
         {/* Tổng hợp công nợ hiện tại theo bộ lọc */}
-        <div className="grid grid-cols-2 gap-4 border-t pt-4">
-          <div className="bg-amber-50 rounded-lg p-3 flex items-center space-x-3 border border-amber-100">
-            <div className="bg-amber-200 p-2 rounded-full"><TrendingUp size={20} className="text-amber-700"/></div>
-            <div>
-              <p className="text-xs text-amber-800 font-medium uppercase tracking-wide">Tổng Phải Thu (Chưa thanh toán)</p>
-              <p className="text-lg font-bold text-amber-900">{formatNumber(totals.receivables)}</p>
+        {mode === 'DOCUMENTS' && (
+          <div className="grid grid-cols-2 gap-4 border-t pt-4">
+            <div className="bg-amber-50 rounded-lg p-3 flex items-center space-x-3 border border-amber-100">
+              <div className="bg-amber-200 p-2 rounded-full"><TrendingUp size={20} className="text-amber-700"/></div>
+              <div>
+                <p className="text-xs text-amber-800 font-medium uppercase tracking-wide">Tổng Phải Thu (Chưa thanh toán)</p>
+                <p className="text-lg font-bold text-amber-900">{formatNumber(totals.receivables)}</p>
+              </div>
+            </div>
+            <div className="bg-orange-50 rounded-lg p-3 flex items-center space-x-3 border border-orange-100">
+              <div className="bg-orange-200 p-2 rounded-full"><TrendingDown size={20} className="text-orange-700"/></div>
+              <div>
+                <p className="text-xs text-orange-800 font-medium uppercase tracking-wide">Tổng Phải Trả (Chưa thanh toán)</p>
+                <p className="text-lg font-bold text-orange-900">{formatNumber(totals.payables)}</p>
+              </div>
             </div>
           </div>
-          <div className="bg-orange-50 rounded-lg p-3 flex items-center space-x-3 border border-orange-100">
-            <div className="bg-orange-200 p-2 rounded-full"><TrendingDown size={20} className="text-orange-700"/></div>
-            <div>
-              <p className="text-xs text-orange-800 font-medium uppercase tracking-wide">Tổng Phải Trả (Chưa thanh toán)</p>
-              <p className="text-lg font-bold text-orange-900">{formatNumber(totals.payables)}</p>
-            </div>
-          </div>
-        </div>
+        )}
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden relative">

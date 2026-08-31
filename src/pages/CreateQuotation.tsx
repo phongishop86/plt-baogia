@@ -190,7 +190,7 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
       alert('Đã cập nhật Báo giá thành công!');
       if (clearEditingQuotation) clearEditingQuotation();
       if (clearPrefilled) clearPrefilled();
-      if (onNavigate) onNavigate('documents');
+      if (onNavigate) onNavigate('quotations');
     } else {
       const newId = await db.documents.add({
         ...docData,
@@ -200,7 +200,7 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
       alert('Đã lưu Báo giá thành công!');
       if (clearEditingQuotation) clearEditingQuotation();
       if (clearPrefilled) clearPrefilled();
-      if (onNavigate) onNavigate('documents');
+      if (onNavigate) onNavigate('quotations');
     }
 
     // Sắp xếp lại danh sách trên màn hình nhập liệu để đồng bộ với Database

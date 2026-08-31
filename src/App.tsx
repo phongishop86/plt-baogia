@@ -200,9 +200,9 @@ function App() {
           )}
           <NavItem 
             icon={<FilePlus size={20} className="text-blue-500" />} 
-            label="Tạo Báo Giá" 
-            active={activeTab === 'create-quote'} 
-            onClick={() => handleTabClick('create-quote')} 
+            label="Quản lý Báo giá" 
+            active={activeTab === 'quotations'} 
+            onClick={() => handleTabClick('quotations')} 
           />
           <NavItem 
             icon={<Search size={20} className="text-orange-500" />} 
@@ -265,6 +265,7 @@ function App() {
             <h2 className="text-lg md:text-xl font-semibold capitalize text-gray-800 truncate">{
               activeTab === 'xml' ? 'Nhập Hóa Đơn Điện Tử (XML)' : 
               activeTab === 'create-quote' ? (editingQuotationId ? 'Sửa Báo Giá' : 'Tạo Báo Giá Mới') :
+              activeTab === 'quotations' ? 'Quản lý Báo giá' :
               activeTab === 'customers' ? 'Quản lý Khách Hàng / Đối tác' :
               activeTab === 'products' ? 'Quản lý Sản Phẩm / Tồn kho' :
               activeTab === 'documents' ? 'Quản lý Hồ sơ Chứng từ' :
@@ -298,10 +299,22 @@ function App() {
           )}
           {activeTab === 'documents' && isKetoan && (
             <Documents 
+              mode="DOCUMENTS"
               setEditingQuotationId={(id: number) => {
-                setEditingQuotationId(id);
+                setEditingQuotationId(id === -1 ? null : id);
                 handleTabClick('create-quote');
               }}
+              currentUser={currentUser}
+            />
+          )}
+          {activeTab === 'quotations' && (
+            <Documents 
+              mode="QUOTATIONS"
+              setEditingQuotationId={(id: number) => {
+                setEditingQuotationId(id === -1 ? null : id);
+                handleTabClick('create-quote');
+              }}
+              onNavigate={(tab) => handleTabClick(tab)}
               currentUser={currentUser}
             />
           )}
