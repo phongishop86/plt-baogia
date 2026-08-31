@@ -38,7 +38,7 @@
 @media print {
   @page {
     size: auto;
-    margin: 10mm; /* Đặt lề nhỏ để trình duyệt không chèn Date/URL vào Header/Footer */
+    margin: 0; /* Margin = 0 sẽ buộc trình duyệt không chèn Watermark (URL, Ngày giờ, Tiêu đề) vào Header/Footer */
   }
   
   /* Đảm bảo nền trắng khi in */
@@ -46,5 +46,6 @@
     background-color: white !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+    padding: 15mm !important; /* Tạo lề nhân tạo cho trang giấy thay cho @page margin để text không sát mép */
   }
 }
