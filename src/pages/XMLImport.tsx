@@ -80,11 +80,16 @@ export default function XMLImport() {
           const qty = prod.quantity || 1;
           
           if (!existing) {
-            // Tự động suy luận Hàng hóa hay Dịch vụ dựa vào Tên và ĐVT
-            const isService = prod.name?.toLowerCase().includes('dịch vụ') || 
+            // Tự động suy luận Hàng hóa hay Dịch vụ/Chi phí dựa vào Tên và ĐVT
+            const isServiceOrExpense = prod.name?.toLowerCase().includes('dịch vụ') || prod.name?.toLowerCase().includes('chi phí') || prod.name?.toLowerCase().includes('cước') || 
                               ['gói', 'tháng', 'năm', 'lần', 'chuyến'].includes(prod.unit?.toLowerCase() || '');
             
-            newStock = (invoiceType === 'INPUT' && !isService) ? qty : (!isService ? -qty : 0);
+            // Nếu là HĐ Mua vào (INPUT) và không lưu kho => Chi phí hoạt động (EXPENSE)
+            // Nếu là HĐ Bán ra (OUTPUT) và không lưu kho => Dịch vụ bán (SERVICE)
+            const resolvedType = (invoiceType === 'INPUT' && isServiceOrExpense) ? 'EXPENSE' : (isServiceOrExpense ? 'SERVICE' : 'PRODUCT');
+            
+            // Các loại phi hàng hoá sẽ không cộng dồn/trừ tồn kho
+            newStock = (invoiceType === 'INPUT' && resolvedType === 'PRODUCT') ? qty : (resolvedType === 'PRODUCT' ? -qty : 0);
             
             await db.products.add({
               code: prod.code || '',
@@ -93,13 +98,15 @@ export default function XMLImport() {
               unitPrice: prod.unitPrice || 0,
               taxRate: prod.taxRate || 0,
               stock: newStock,
-              type: isService ? 'SERVICE' : 'PRODUCT'
+              type: resolvedType
             });
           } else {
             const currentStock = existing.stock || 0;
-            const isService = existing.type === 'SERVICE';
-            newStock = isService ? currentStock : (invoiceType === 'INPUT' ? currentStock + qty : currentStock - qty);
-            await db.products.update(existing.id!, { stock: newStock, unitPrice: prod.unitPrice }); // Update price as well
+            const isNonProduct = existing.type === 'SERVICE' || existing.type === 'EXPENSE';
+            newStock = (invoiceType === 'INPUT' && !isNonProduct) ? currentStock + qty : (!isNonProduct ? currentStock - qty : currentStock);
+            
+            await db.products.update(existing.id!, { 
+              stock: newStock, unitPrice: prod.unitPrice }); // Update price as well
           }
         }
         

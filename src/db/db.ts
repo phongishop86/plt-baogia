@@ -20,7 +20,7 @@ export interface Product {
   unitPrice: number;
   taxRate: number; // e.g. 8 or 10
   stock: number; // Tồn kho
-  type?: 'PRODUCT' | 'SERVICE'; // Phân loại: Hàng hóa (Tồn kho) hay Dịch vụ (Không tồn kho)
+  type?: 'PRODUCT' | 'SERVICE' | 'EXPENSE'; // Phân loại: Hàng hóa (Tồn kho), Dịch vụ (Không tồn kho), Chi phí (Hoạt động)
   category?: string; // Nhóm mặt hàng / Danh mục
   createdAt?: Date;
   updatedAt?: Date;

@@ -12,9 +12,9 @@ const normalizeStr = (str: string) => str.normalize('NFD').replace(/[\u0300-\u03
 
 const isOperatingCostProduct = (product?: { type?: string, category?: string }) => {
   if (!product) return false;
-  if (product.type === 'SERVICE') return true;
+  if (product.type === 'EXPENSE') return true;
   const cat = normalizeStr(product.category || '');
-  return cat.includes('chi phi') || cat.includes('dich vu') || cat.includes('van phong pham') || cat.includes('cong cu') || cat.includes('tieu hao');
+  return cat.includes('chi phi') || cat.includes('van phong pham') || cat.includes('cong cu') || cat.includes('tieu hao');
 };
 
 export default function Dashboard() {
@@ -275,7 +275,8 @@ export default function Dashboard() {
         // Nhóm theo Danh mục (category)
         const categoryMap: Record<string, { name: string, totalValue: number, count: number }> = {};
         data.forEach(p => {
-          const cat = p.category || (p.type === 'SERVICE' ? 'Dịch vụ' : 'Chưa phân loại');
+          const typeName = p.type === 'SERVICE' ? 'Dịch vụ' : p.type === 'EXPENSE' ? 'Chi phí' : 'Chưa phân loại';
+          const cat = p.category || typeName;
           if (!categoryMap[cat]) categoryMap[cat] = { name: cat, totalValue: 0, count: 0 };
           categoryMap[cat].totalValue += (p.stock || 0) * p.unitPrice;
           categoryMap[cat].count += 1;
@@ -325,7 +326,7 @@ export default function Dashboard() {
 
         columns = [
           { header: 'Tên Sản phẩm', render: (i) => i.name, sortValue: (i) => i.name },
-          { header: 'Nhóm hàng', render: (i) => <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded-md text-xs">{i.category || (i.type === 'SERVICE' ? 'Dịch vụ' : 'Chưa phân loại')}</span>, sortValue: (i) => i.category || '' },
+          { header: 'Nhóm hàng', render: (i) => <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded-md text-xs">{i.category || (i.type === 'SERVICE' ? 'Dịch vụ' : i.type === 'EXPENSE' ? 'Chi phí' : 'Chưa phân loại')}</span>, sortValue: (i) => i.category || '' },
           { header: 'Tồn kho', render: (i) => i.stock, sortValue: (i) => i.stock || 0 },
           { header: 'Giá bán', render: (i) => formatCurrency(i.unitPrice), sortValue: (i) => i.unitPrice },
           { header: 'Giá trị ước tính', render: (i) => formatCurrency((i.stock||0) * i.unitPrice), sortValue: (i) => (i.stock||0) * i.unitPrice },

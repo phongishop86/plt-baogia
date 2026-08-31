@@ -15,12 +15,12 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
   
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<'PRODUCT' | 'SOLD_OUT' | 'SERVICE'>('PRODUCT');
+  const [activeTab, setActiveTab] = useState<'PRODUCT' | 'SOLD_OUT' | 'SERVICE' | 'EXPENSE'>('PRODUCT');
   
   // Trạng thái đang chỉnh sửa
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editName, setEditName] = useState('');
-  const [editType, setEditType] = useState<'PRODUCT' | 'SERVICE'>('PRODUCT');
+  const [editType, setEditType] = useState<'PRODUCT' | 'SERVICE' | 'EXPENSE'>('PRODUCT');
   const [editCategory, setEditCategory] = useState('');
 
   // Tính toán Tổng Mua Vào và Tổng Bán Ra cho từng sản phẩm
@@ -69,6 +69,8 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
         matchType = p.type === 'PRODUCT' && (p.stock || 0) <= 0;
       } else if (activeTab === 'SERVICE') {
         matchType = p.type === 'SERVICE';
+      } else if (activeTab === 'EXPENSE') {
+        matchType = p.type === 'EXPENSE';
       }
       
       return matchSearch && matchType;
@@ -129,19 +131,7 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
     }
   };
 
-  const handleBulkChangeType = async () => {
-    const newType = activeTab !== 'SERVICE' ? 'SERVICE' : 'PRODUCT';
-    const message = activeTab !== 'SERVICE' 
-      ? `Chuyển ${selectedIds.length} mặt hàng đã chọn sang nhóm Chi phí/Dịch vụ?\n(Sẽ không hiển thị trong tồn kho và không xuất báo giá được)`
-      : `Chuyển ${selectedIds.length} mặt hàng đã chọn sang nhóm Hàng hóa?\n(Sẽ ghi nhận tồn kho và có thể xuất báo giá)`;
-      
-    if (confirm(message)) {
-      for (const id of selectedIds) {
-        await db.products.update(id, { type: newType });
-      }
-      setSelectedIds([]);
-    }
-  };
+
 
   const handleMarkAsSold = async () => {
     if (confirm(`Chuyển ${selectedIds.length} mặt hàng đã chọn sang nhóm Đã Bán?\n(Thao tác này sẽ thiết lập Tồn kho = 0 để làm sạch danh sách)`)) {
@@ -189,26 +179,34 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
               📦 Hàng hóa
             </button>
             <button
-              onClick={() => { setActiveTab('SOLD_OUT'); setSelectedIds([]); }}
-              className={`flex-1 sm:flex-none px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                activeTab === 'SOLD_OUT' ? 'bg-white text-amber-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              🏷️ Đã bán (Hết kho)
-            </button>
-            <button
               onClick={() => { setActiveTab('SERVICE'); setSelectedIds([]); }}
               className={`flex-1 sm:flex-none px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
                 activeTab === 'SERVICE' ? 'bg-white text-purple-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'
               }`}
             >
-              ⚙️ Dịch vụ / Chi phí
+              ⚙️ Dịch vụ
+            </button>
+            <button
+              onClick={() => { setActiveTab('SOLD_OUT'); setSelectedIds([]); }}
+              className={`flex-1 sm:flex-none px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                activeTab === 'SOLD_OUT' ? 'bg-white text-amber-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              🏷️ Đã bán
+            </button>
+            <button
+              onClick={() => { setActiveTab('EXPENSE'); setSelectedIds([]); }}
+              className={`flex-1 sm:flex-none px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                activeTab === 'EXPENSE' ? 'bg-white text-red-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              💸 Chi phí HĐ
             </button>
           </div>
 
           {/* Nút Báo giá & Chuyển đổi */}
           {selectedIds.length > 0 && (
-            <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+            <div className="flex flex-wrap gap-2 w-full sm:w-auto items-center">
               {activeTab === 'PRODUCT' && (
                 <>
                   <button 
@@ -226,14 +224,27 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
                   </button>
                 </>
               )}
-              <button 
-                onClick={handleBulkChangeType}
-                className={`flex-1 sm:flex-none items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors shadow-sm whitespace-nowrap justify-center flex ${
-                  activeTab !== 'SERVICE' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'bg-gray-600 hover:bg-gray-700 text-white'
-                }`}
+              <select
+                className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors shadow-sm cursor-pointer outline-none"
+                onChange={async (e) => {
+                  const newType = e.target.value;
+                  if (!newType) return;
+                  
+                  const typeName = newType === 'PRODUCT' ? 'Hàng hóa' : newType === 'SERVICE' ? 'Dịch vụ' : 'Chi phí hoạt động';
+                  if (confirm(`Chuyển ${selectedIds.length} mặt hàng đã chọn sang nhóm ${typeName}?`)) {
+                    for (const id of selectedIds) {
+                      await db.products.update(id, { type: newType as any });
+                    }
+                    setSelectedIds([]);
+                  }
+                  e.target.value = ''; // Reset select
+                }}
               >
-                {activeTab !== 'SERVICE' ? 'Chuyển thành Dịch Vụ' : 'Chuyển thành Hàng Hóa'}
-              </button>
+                <option value="">-- Chuyển nhóm thành --</option>
+                <option value="PRODUCT">Hàng hóa</option>
+                <option value="SERVICE">Dịch vụ</option>
+                <option value="EXPENSE">Chi phí hoạt động</option>
+              </select>
             </div>
           )}
         </div>
@@ -250,8 +261,8 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
               <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">ĐVT</th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Đơn giá</th>
               <th className="px-6 py-3 text-center text-xs font-medium text-blue-600 uppercase tracking-wider">Tổng Mua</th>
-              {activeTab !== 'SERVICE' && <th className="px-6 py-3 text-center text-xs font-medium text-green-600 uppercase tracking-wider">Tổng Bán</th>}
-              {activeTab !== 'SERVICE' && <th className="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">Tồn kho</th>}
+              {activeTab !== 'EXPENSE' && <th className="px-6 py-3 text-center text-xs font-medium text-green-600 uppercase tracking-wider">Tổng Bán</th>}
+              {activeTab !== 'SERVICE' && <th className="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">Tồn kho / SL</th>}
               <th className="px-4 py-3 text-center w-16"></th>
             </tr>
           </thead>
@@ -300,7 +311,8 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
                           className="border border-blue-400 rounded-md p-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm w-full"
                         >
                           <option value="PRODUCT">Hàng hóa</option>
-                          <option value="SERVICE">Chi phí / Dịch vụ</option>
+                          <option value="SERVICE">Dịch vụ</option>
+                          <option value="EXPENSE">Chi phí HĐ</option>
                         </select>
                         <input 
                           type="text" 
@@ -312,8 +324,12 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
                       </div>
                     ) : (
                       <div className="flex flex-col items-center space-y-1">
-                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${product.type === 'SERVICE' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'}`}>
-                          {product.type === 'SERVICE' ? 'Dịch vụ nội bộ' : 'Hàng hóa'}
+                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          product.type === 'SERVICE' ? 'bg-purple-100 text-purple-800' : 
+                          product.type === 'EXPENSE' ? 'bg-red-100 text-red-800' : 
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {product.type === 'SERVICE' ? 'Dịch vụ' : product.type === 'EXPENSE' ? 'Chi phí HĐ' : 'Hàng hóa'}
                         </span>
                         {product.category && (
                           <span className="text-xs font-medium text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100">
@@ -328,7 +344,7 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">{formatNumber(product.unitPrice)}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-center font-medium text-blue-600">{product.totalIn}</td>
                   
-                  {activeTab !== 'SERVICE' && (
+                  {activeTab !== 'EXPENSE' && (
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-center font-medium text-green-600">{product.totalOut}</td>
                   )}
                   
