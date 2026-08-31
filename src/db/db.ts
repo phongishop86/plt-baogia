@@ -22,6 +22,7 @@ export interface Product {
   stock: number; // Tồn kho
   type?: 'PRODUCT' | 'SERVICE' | 'EXPENSE'; // Phân loại: Hàng hóa (Tồn kho), Dịch vụ (Không tồn kho), Chi phí (Hoạt động)
   category?: string; // Nhóm mặt hàng / Danh mục
+  expenseDate?: Date; // Ngày ghi nhận chi phí (chỉ dùng cho EXPENSE)
   createdAt?: Date;
   updatedAt?: Date;
 }

@@ -101,10 +101,29 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
 
   const saveEdit = async (productId: number, oldName: string) => {
     try {
+      let extraUpdate: any = {};
+      const prod = products?.find(p => p.id === productId);
+      if (editType === 'EXPENSE' && prod && prod.type !== 'EXPENSE') {
+        const todayStr = new Date().toISOString().split('T')[0];
+        const dateInput = prompt(`Vui lòng nhập NGÀY GHI NHẬN CHI PHÍ (Định dạng: YYYY-MM-DD):`, todayStr);
+        if (dateInput) {
+          const d = new Date(dateInput);
+          if (!isNaN(d.getTime())) {
+            extraUpdate.expenseDate = d;
+          } else {
+            alert("Ngày nhập không hợp lệ! Dùng ngày hiện tại.");
+            extraUpdate.expenseDate = new Date();
+          }
+        } else {
+          extraUpdate.expenseDate = new Date();
+        }
+      }
+
       await db.products.update(productId, { 
         name: editName, 
         type: editType, 
-        category: editCategory 
+        category: editCategory,
+        ...extraUpdate
       });
       
       if (oldName.trim().toLowerCase() !== editName.trim().toLowerCase()) {
@@ -231,11 +250,28 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
                   if (!newType) return;
                   
                   const typeName = newType === 'PRODUCT' ? 'Hàng hóa' : newType === 'SERVICE' ? 'Dịch vụ' : 'Chi phí hoạt động';
-                  if (confirm(`Chuyển ${selectedIds.length} mặt hàng đã chọn sang nhóm ${typeName}?`)) {
-                    for (const id of selectedIds) {
-                      await db.products.update(id, { type: newType as any });
+                  
+                  if (newType === 'EXPENSE') {
+                    const todayStr = new Date().toISOString().split('T')[0];
+                    const dateInput = prompt(`Chuyển ${selectedIds.length} mặt hàng sang nhóm ${typeName}.\nVui lòng nhập NGÀY GHI NHẬN CHI PHÍ (Định dạng: YYYY-MM-DD):`, todayStr);
+                    if (dateInput) {
+                      const d = new Date(dateInput);
+                      if (isNaN(d.getTime())) {
+                        alert("Ngày nhập không hợp lệ! Vui lòng nhập đúng định dạng YYYY-MM-DD.");
+                      } else {
+                        for (const id of selectedIds) {
+                          await db.products.update(id, { type: newType as any, expenseDate: d });
+                        }
+                        setSelectedIds([]);
+                      }
                     }
-                    setSelectedIds([]);
+                  } else {
+                    if (confirm(`Chuyển ${selectedIds.length} mặt hàng đã chọn sang nhóm ${typeName}?`)) {
+                      for (const id of selectedIds) {
+                        await db.products.update(id, { type: newType as any });
+                      }
+                      setSelectedIds([]);
+                    }
                   }
                   e.target.value = ''; // Reset select
                 }}

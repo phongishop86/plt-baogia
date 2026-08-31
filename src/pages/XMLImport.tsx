@@ -98,7 +98,8 @@ export default function XMLImport() {
               unitPrice: prod.unitPrice || 0,
               taxRate: prod.taxRate || 0,
               stock: newStock,
-              type: resolvedType
+              type: resolvedType,
+              expenseDate: resolvedType === 'EXPENSE' ? invoiceInfo.date : undefined
             });
           } else {
             const currentStock = existing.stock || 0;

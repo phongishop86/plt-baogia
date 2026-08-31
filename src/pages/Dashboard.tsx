@@ -140,13 +140,14 @@ export default function Dashboard() {
         const val = (p.stock || 0) * (p.unitPrice || 0);
         if (val > 0) {
           operatingCost += val;
-          // Vì khai báo trực tiếp trong danh mục không có ngày tháng, tạm lấy ngày tạo hoặc ngày hiện tại
-          const m = new Date().toISOString().slice(0, 7);
+          // Lấy ngày nhập chi phí, nếu không có lấy ngày tạo/cập nhật hoặc hiện tại
+          const expDate = p.expenseDate ? new Date(p.expenseDate) : (p.createdAt ? new Date(p.createdAt) : new Date());
+          const m = expDate.toISOString().slice(0, 7);
           if (!monthlyStats[m]) monthlyStats[m] = { month: m, revenue: 0, cost: 0, opCost: 0 };
           monthlyStats[m].opCost += val;
 
           opCostDetails.push({
-            date: new Date(),
+            date: expDate,
             type: 'Khai báo Danh mục (Tồn kho)',
             description: p.name,
             amount: val
