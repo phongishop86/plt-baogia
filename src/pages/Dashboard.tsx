@@ -8,6 +8,15 @@ type DetailView = 'CUSTOMERS' | 'PRODUCTS' | 'DOCUMENTS' | 'REVENUE' | 'COST' | 
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658'];
 
+const normalizeStr = (str: string) => str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
+const isOperatingCostProduct = (product?: { type?: string, category?: string }) => {
+  if (!product) return false;
+  if (product.type === 'SERVICE') return true;
+  const cat = normalizeStr(product.category || '');
+  return cat.includes('chi phi') || cat.includes('dich vu') || cat.includes('van phong pham') || cat.includes('cong cu') || cat.includes('tieu hao');
+};
+
 export default function Dashboard() {
   const [detailView, setDetailView] = useState<DetailView>(null);
   const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>(null);
@@ -18,6 +27,13 @@ export default function Dashboard() {
     const documents = await db.documents.toArray();
     const transactions = await db.transactions.toArray();
     
+    let inventoryValue = 0;
+    products.forEach(p => {
+      if (!isOperatingCostProduct(p)) {
+        inventoryValue += (p.stock || 0) * (p.unitPrice || 0);
+      }
+    });
+
     // Đính kèm thông tin khách hàng vào document để hiển thị chi tiết
     for (const doc of documents) {
       const customer = customers.find(c => c.id === doc.customerId);
@@ -55,18 +71,7 @@ export default function Dashboard() {
 
         doc.items.forEach(item => {
           const product = products.find(p => p.id === item.productId);
-          const cat = product?.category?.toLowerCase() || '';
-          
-          const isOpCost = product && (
-            product.type === 'SERVICE' || 
-            cat.includes('chi phí') ||
-            cat.includes('dịch vụ') ||
-            cat.includes('văn phòng phẩm') ||
-            cat.includes('công cụ') ||
-            cat.includes('tiêu hao')
-          );
-
-          if (isOpCost) {
+          if (isOperatingCostProduct(product)) {
             opSubTotal += item.amount;
           } else {
             goodsSubTotal += item.amount;
@@ -121,17 +126,7 @@ export default function Dashboard() {
       if (doc.type === 'INPUT_INVOICE') {
         doc.items.forEach(item => {
           const product = products.find(p => p.id === item.productId);
-          const cat = product?.category?.toLowerCase() || '';
-          
-          const isOpCost = product && (
-            product.type === 'SERVICE' || 
-            cat.includes('chi phí') ||
-            cat.includes('dịch vụ') ||
-            cat.includes('văn phòng phẩm') ||
-            cat.includes('công cụ') ||
-            cat.includes('tiêu hao')
-          );
-          if (isOpCost) {
+          if (isOperatingCostProduct(product)) {
             opCostDetails.push({
               date: doc.date,
               type: 'Hóa đơn Mua vào (Chi phí nội bộ)',
@@ -146,6 +141,7 @@ export default function Dashboard() {
     return { 
       customers, 
       products, 
+      inventoryValue,
       documents, 
       transactions,
       revenue, 
@@ -250,8 +246,8 @@ export default function Dashboard() {
         ];
         break;
       case 'PRODUCTS':
-        title = 'Phân tích Tồn kho & Sản phẩm';
-        data = stats.products;
+        title = 'Phân tích Tồn kho (Loại trừ Chi phí/Dịch vụ)';
+        data = stats.products.filter(p => !isOperatingCostProduct(p));
         
         // Nhóm theo Danh mục (category)
         const categoryMap: Record<string, { name: string, totalValue: number, count: number }> = {};
@@ -567,9 +563,10 @@ export default function Dashboard() {
         <h2 className="text-2xl font-bold text-gray-800">Tổng quan hệ thống</h2>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <StatCard onClick={() => setDetailView('CUSTOMERS')} title="Khách hàng / Đối tác" value={stats.customers.length.toString()} icon={<Users size={24} className="text-blue-500" />} />
-        <StatCard onClick={() => setDetailView('PRODUCTS')} title="Sản phẩm" value={stats.products.length.toString()} icon={<Box size={24} className="text-purple-500" />} />
+        <StatCard onClick={() => setDetailView('PRODUCTS')} title="Mã hàng tồn kho" value={stats.products.filter(p => !isOperatingCostProduct(p)).length.toString()} icon={<Box size={24} className="text-purple-500" />} />
+        <StatCard onClick={() => setDetailView('PRODUCTS')} title="Giá trị Tồn kho" value={formatCurrency(stats.inventoryValue)} icon={<DollarSign size={24} className="text-indigo-500" />} bgColor="bg-indigo-50" />
         <StatCard onClick={() => setDetailView('DOCUMENTS')} title="Tổng số Chứng từ" value={stats.documents.length.toString()} icon={<FileText size={24} className="text-gray-500" />} />
       </div>
       
