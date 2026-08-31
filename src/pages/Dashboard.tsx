@@ -50,8 +50,39 @@ export default function Dashboard() {
           receivables += doc.total; 
         }
       } else if (doc.type === 'INPUT_INVOICE') {
-        cost += doc.subTotal;
-        monthlyStats[m].cost += doc.subTotal;
+        let goodsSubTotal = 0;
+        let opSubTotal = 0;
+
+        doc.items.forEach(item => {
+          const product = products.find(p => p.id === item.productId);
+          const cat = product?.category?.toLowerCase() || '';
+          
+          const isOpCost = product && (
+            product.type === 'SERVICE' || 
+            cat.includes('chi phí') ||
+            cat.includes('dịch vụ') ||
+            cat.includes('văn phòng phẩm') ||
+            cat.includes('công cụ') ||
+            cat.includes('tiêu hao')
+          );
+
+          if (isOpCost) {
+            opSubTotal += item.amount;
+          } else {
+            goodsSubTotal += item.amount;
+          }
+        });
+
+        // Đảm bảo tổng goods + op bằng với doc.subTotal trong trường hợp sai số làm tròn (nếu có)
+        const diff = doc.subTotal - (goodsSubTotal + opSubTotal);
+        if (diff !== 0) goodsSubTotal += diff; 
+
+        cost += goodsSubTotal;
+        operatingCost += opSubTotal;
+
+        monthlyStats[m].cost += goodsSubTotal;
+        monthlyStats[m].opCost += opSubTotal;
+
         if (!doc.paymentDate) {
           payables += doc.total; 
         }
@@ -73,6 +104,45 @@ export default function Dashboard() {
 
     const profit = revenue - cost - operatingCost;
 
+    // Xây dựng mảng chi tiết các khoản chi phí vận hành (từ Quỹ + Hóa đơn)
+    const opCostDetails: any[] = [];
+    transactions.forEach(tx => {
+      if (tx.type === 'OTHER_OUT') {
+        opCostDetails.push({
+          date: tx.date,
+          type: 'Phiếu Chi (Quỹ)',
+          description: tx.description,
+          amount: tx.amount
+        });
+      }
+    });
+
+    documents.forEach(doc => {
+      if (doc.type === 'INPUT_INVOICE') {
+        doc.items.forEach(item => {
+          const product = products.find(p => p.id === item.productId);
+          const cat = product?.category?.toLowerCase() || '';
+          
+          const isOpCost = product && (
+            product.type === 'SERVICE' || 
+            cat.includes('chi phí') ||
+            cat.includes('dịch vụ') ||
+            cat.includes('văn phòng phẩm') ||
+            cat.includes('công cụ') ||
+            cat.includes('tiêu hao')
+          );
+          if (isOpCost) {
+            opCostDetails.push({
+              date: doc.date,
+              type: 'Hóa đơn Mua vào (Chi phí nội bộ)',
+              description: `${item.productName} (HĐ: ${doc.docNumber})`,
+              amount: item.amount
+            });
+          }
+        });
+      }
+    });
+
     return { 
       customers, 
       products, 
@@ -88,7 +158,8 @@ export default function Dashboard() {
       unpaidInputs: documents.filter(d => d.type === 'INPUT_INVOICE' && !d.paymentDate),
       outputs: documents.filter(d => d.type === 'OUTPUT_INVOICE'),
       inputs: documents.filter(d => d.type === 'INPUT_INVOICE'),
-      profitChartData
+      profitChartData,
+      opCostDetails
     };
   });
 
@@ -367,8 +438,8 @@ export default function Dashboard() {
         ];
         break;
       case 'OP_COST':
-        title = 'Chi tiết Chi phí Vận hành (Quỹ)';
-        data = stats.transactions.filter(t => t.type === 'OTHER_OUT');
+        title = 'Chi tiết Chi phí Vận hành';
+        data = stats.opCostDetails;
         
         chartElement = (
           <div className="h-72 mb-8">
@@ -388,7 +459,7 @@ export default function Dashboard() {
 
         columns = [
           { header: 'Ngày', render: (i) => new Date(i.date).toLocaleDateString('vi-VN'), sortValue: (i) => new Date(i.date).getTime() },
-          { header: 'Loại chi', render: () => 'Chi phí khác', sortValue: () => 1 },
+          { header: 'Loại chi', render: (i) => i.type, sortValue: (i) => i.type },
           { header: 'Nội dung', render: (i) => i.description, sortValue: (i) => i.description },
           { header: 'Số tiền', render: (i) => <span className="font-medium text-red-600">{formatCurrency(i.amount)}</span>, sortValue: (i) => i.amount },
         ];
@@ -520,7 +591,7 @@ export default function Dashboard() {
         />
         <StatCard 
           onClick={() => setDetailView('OP_COST')}
-          title="Chi phí Vận hành (Quỹ)" 
+          title="Chi phí Vận hành" 
           value={formatCurrency(stats.operatingCost)} 
           icon={<TrendingDown size={24} className="text-red-500" />} 
           bgColor="bg-red-50"
