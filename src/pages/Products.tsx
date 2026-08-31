@@ -143,6 +143,15 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
     }
   };
 
+  const handleMarkAsSold = async () => {
+    if (confirm(`Chuyển ${selectedIds.length} mặt hàng đã chọn sang nhóm Đã Bán?\n(Thao tác này sẽ thiết lập Tồn kho = 0 để làm sạch danh sách)`)) {
+      for (const id of selectedIds) {
+        await db.products.update(id, { stock: 0 });
+      }
+      setSelectedIds([]);
+    }
+  };
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mt-6">
       <div className="p-4 border-b border-gray-200 bg-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -201,13 +210,21 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
           {selectedIds.length > 0 && (
             <div className="flex flex-wrap gap-2 w-full sm:w-auto">
               {activeTab === 'PRODUCT' && (
-                <button 
-                  onClick={handleCreateQuotation}
-                  className="flex-1 sm:flex-none items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors shadow-sm whitespace-nowrap justify-center flex"
-                >
-                  <FileText className="w-4 h-4" />
-                  Báo Giá ({selectedIds.length})
-                </button>
+                <>
+                  <button 
+                    onClick={handleCreateQuotation}
+                    className="flex-1 sm:flex-none items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors shadow-sm whitespace-nowrap justify-center flex"
+                  >
+                    <FileText className="w-4 h-4" />
+                    Báo Giá ({selectedIds.length})
+                  </button>
+                  <button 
+                    onClick={handleMarkAsSold}
+                    className="flex-1 sm:flex-none items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors shadow-sm whitespace-nowrap justify-center flex"
+                  >
+                    Chuyển sang Đã Bán
+                  </button>
+                </>
               )}
               <button 
                 onClick={handleBulkChangeType}
@@ -215,7 +232,7 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
                   activeTab !== 'SERVICE' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'bg-gray-600 hover:bg-gray-700 text-white'
                 }`}
               >
-                {activeTab !== 'SERVICE' ? 'Chuyển thành Chi Phí' : 'Chuyển thành Hàng Hóa'}
+                {activeTab !== 'SERVICE' ? 'Chuyển thành Dịch Vụ' : 'Chuyển thành Hàng Hóa'}
               </button>
             </div>
           )}
