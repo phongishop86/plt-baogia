@@ -23,6 +23,58 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
   const [editType, setEditType] = useState<'PRODUCT' | 'SERVICE' | 'EXPENSE'>('PRODUCT');
   const [editCategory, setEditCategory] = useState('');
 
+  const [historyModal, setHistoryModal] = useState<{
+    isOpen: boolean;
+    product: any;
+    history: any[];
+  }>({ isOpen: false, product: null, history: [] });
+
+  const openHistoryModal = async (product: any) => {
+    if (!documents) return;
+    const historyList = [];
+    
+    for (const doc of documents) {
+      if (!doc.items || !Array.isArray(doc.items)) continue;
+      
+      const normalize = (str?: string) => (str || '').toString().trim().toLowerCase();
+      const match = doc.items.find((item: any) => 
+        normalize(product.name) === normalize(item.productName) || 
+        (product.code && product.code === item.productId?.toString())
+      );
+      
+      if (match) {
+        let customerName = 'Không rõ đối tác';
+        if (doc.customerId) {
+          try {
+            const customer = await db.customers.get(doc.customerId);
+            if (customer) customerName = customer.name;
+          } catch (e) {}
+        }
+        
+        historyList.push({
+          docId: doc.id,
+          date: doc.date,
+          docNumber: doc.docNumber,
+          type: doc.type,
+          customerName,
+          quantity: match.quantity,
+          unitPrice: match.unitPrice,
+          taxRate: match.taxRate || 0,
+          amount: match.amount || (match.quantity * match.unitPrice)
+        });
+      }
+    }
+    
+    // Sắp xếp ngày mới nhất lên đầu
+    historyList.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    
+    setHistoryModal({
+      isOpen: true,
+      product,
+      history: historyList
+    });
+  };
+
   // Tính toán Tổng Mua Vào và Tổng Bán Ra cho từng sản phẩm
   const productStats = useMemo(() => {
     if (!products || !documents) return [];
@@ -320,7 +372,7 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
               const isEditing = editingId === product.id;
               
               return (
-                <tr key={product.id} className={`hover:bg-blue-50 transition-colors ${selectedIds.includes(product.id!) ? 'bg-blue-50' : ''}`}>
+                <tr key={product.id} className={`hover:bg-blue-50 transition-colors cursor-pointer ${selectedIds.includes(product.id!) ? 'bg-blue-50' : ''}`} onDoubleClick={() => openHistoryModal(product)}>
                   <td className="px-4 py-4 text-center">
                     <input 
                       type="checkbox" 
@@ -467,6 +519,72 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium transition-colors"
               >
                 Xác nhận
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Modal Lịch sử giao dịch Sản phẩm */}
+      {historyModal.isOpen && historyModal.product && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="flex justify-between items-center p-4 border-b bg-blue-50">
+              <h3 className="text-lg font-bold text-gray-900">
+                Lịch sử giao dịch: <span className="text-blue-700">{historyModal.product.name}</span>
+              </h3>
+              <button onClick={() => setHistoryModal({ ...historyModal, isOpen: false })} className="text-gray-500 hover:text-gray-700">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="p-0 overflow-y-auto bg-gray-50 flex-1">
+              {historyModal.history.length === 0 ? (
+                <div className="p-10 text-center text-gray-500 flex flex-col items-center">
+                  <FileText className="h-10 w-10 text-gray-300 mb-3" />
+                  <p>Mặt hàng này chưa có lịch sử mua bán nào.</p>
+                </div>
+              ) : (
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-white sticky top-0 shadow-sm">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Số HĐ</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Loại</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Đối tác</th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">SL</th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Đơn giá</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-100">
+                    {historyModal.history.map((h, idx) => (
+                      <tr key={idx} className="hover:bg-blue-50 transition-colors">
+                        <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-900">{new Date(h.date).toLocaleDateString('vi-VN')}</td>
+                        <td className="px-6 py-3 whitespace-nowrap text-sm font-bold text-gray-900">{h.docNumber}</td>
+                        <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-500">
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                            h.type === 'QUOTATION' ? 'bg-purple-100 text-purple-800' :
+                            h.type === 'INPUT_INVOICE' ? 'bg-blue-100 text-blue-800' :
+                            'bg-green-100 text-green-800'
+                          }`}>
+                            {h.type === 'QUOTATION' ? 'Báo giá' : h.type === 'INPUT_INVOICE' ? 'Mua vào' : 'Bán ra'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-3 text-sm text-gray-700 max-w-[200px] truncate" title={h.customerName}>{h.customerName}</td>
+                        <td className="px-6 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">{h.quantity}</td>
+                        <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-900 text-right">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(h.unitPrice)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+            
+            <div className="p-4 border-t bg-white flex justify-end">
+              <button 
+                onClick={() => setHistoryModal({ ...historyModal, isOpen: false })}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50"
+              >
+                Đóng
               </button>
             </div>
           </div>
