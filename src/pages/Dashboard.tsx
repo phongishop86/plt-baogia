@@ -103,11 +103,7 @@ export default function Dashboard() {
       }
     });
 
-    const profitChartData = Object.values(monthlyStats)
-      .map(m => ({ ...m, profit: m.revenue - m.cost - m.opCost }))
-      .sort((a,b) => a.month.localeCompare(b.month));
-
-    const profit = revenue - cost - operatingCost;
+    // Đã chuyển phần tính profit và profitChartData xuống cuối hàm
 
     // Xây dựng mảng chi tiết các khoản chi phí vận hành (từ Quỹ + Hóa đơn)
     const opCostDetails: any[] = [];
@@ -138,23 +134,32 @@ export default function Dashboard() {
       }
     });
 
-    // Xây dựng ma trận chi phí vận hành theo tháng
-    const uniqueMonths = Array.from(new Set(opCostDetails.map(d => new Date(d.date).toISOString().slice(0, 7)))).sort();
-    const opCostMap: Record<string, Record<string, number>> = {};
-    opCostDetails.forEach(d => {
-      // Nhóm theo tên hạng mục (bỏ chuỗi (HĐ: ...) ở đuôi đi để gom nhóm)
-      let baseName = d.description.replace(/\s*\(HĐ:.*?\)/g, '').trim();
-      if (!baseName) baseName = 'Khác';
-      
-      const m = new Date(d.date).toISOString().slice(0, 7);
-      if (!opCostMap[baseName]) opCostMap[baseName] = {};
-      opCostMap[baseName][m] = (opCostMap[baseName][m] || 0) + d.amount;
+    // Đưa dữ liệu các hàng hóa, dịch vụ thuộc Tab Chi phí (Khai báo trực tiếp) vào Tài chính
+    products.forEach(p => {
+      if (isOperatingCostProduct(p)) {
+        const val = (p.stock || 0) * (p.unitPrice || 0);
+        if (val > 0) {
+          operatingCost += val;
+          // Vì khai báo trực tiếp trong danh mục không có ngày tháng, tạm lấy ngày tạo hoặc ngày hiện tại
+          const m = new Date().toISOString().slice(0, 7);
+          if (!monthlyStats[m]) monthlyStats[m] = { month: m, revenue: 0, cost: 0, opCost: 0 };
+          monthlyStats[m].opCost += val;
+
+          opCostDetails.push({
+            date: new Date(),
+            type: 'Khai báo Danh mục (Tồn kho)',
+            description: p.name,
+            amount: val
+          });
+        }
+      }
     });
 
-    const opCostMatrix = Object.entries(opCostMap).map(([name, monthsData]) => ({
-      name,
-      ...monthsData
-    }));
+    const profitChartData = Object.values(monthlyStats)
+      .map(m => ({ ...m, profit: m.revenue - m.cost - m.opCost }))
+      .sort((a,b) => a.month.localeCompare(b.month));
+
+    const profit = revenue - cost - operatingCost;
 
     return { 
       customers, 
@@ -173,9 +178,7 @@ export default function Dashboard() {
       outputs: documents.filter(d => d.type === 'OUTPUT_INVOICE'),
       inputs: documents.filter(d => d.type === 'INPUT_INVOICE'),
       profitChartData,
-      opCostDetails,
-      uniqueMonths,
-      opCostMatrix
+      opCostDetails
     };
   });
 
@@ -640,46 +643,6 @@ export default function Dashboard() {
         />
       </div>
 
-      <h3 className="text-lg font-semibold text-gray-800 mt-8 mb-4 border-b pb-2">Bảng kê Chi phí Dịch vụ / Vận hành qua từng tháng</h3>
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-8">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Hạng mục Chi phí
-                </th>
-                {stats.uniqueMonths.map((m: string) => (
-                  <th key={m} className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {m}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 bg-white">
-              {stats.opCostMatrix.map((row: any, idx: number) => (
-                <tr key={idx} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {row.name}
-                  </td>
-                  {stats.uniqueMonths.map((m: string) => (
-                    <td key={m} className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 text-right">
-                      {row[m] ? formatCurrency(row[m]) : '-'}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-              {stats.opCostMatrix.length === 0 && (
-                <tr>
-                  <td colSpan={stats.uniqueMonths.length + 1} className="px-6 py-8 text-center text-gray-500 text-sm">
-                    Chưa có phát sinh chi phí vận hành nào
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
     </div>
   );
 }
