@@ -13,9 +13,10 @@ interface CreateQuotationProps {
   clearPrefilled?: () => void;
   editingQuotationId?: number | null;
   clearEditingQuotation?: () => void;
+  onNavigate?: (tab: string) => void;
 }
 
-export default function CreateQuotation({ prefilledProducts = [], clearPrefilled, editingQuotationId, clearEditingQuotation }: CreateQuotationProps) {
+export default function CreateQuotation({ prefilledProducts = [], clearPrefilled, editingQuotationId, clearEditingQuotation, onNavigate }: CreateQuotationProps) {
   const customers = useLiveQuery(() => db.customers.toArray());
   const products = useLiveQuery(() => db.products.toArray());
 
@@ -187,6 +188,9 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
     if (activeDocId) {
       await db.documents.update(activeDocId, docData);
       alert('Đã cập nhật Báo giá thành công!');
+      if (clearEditingQuotation) clearEditingQuotation();
+      if (clearPrefilled) clearPrefilled();
+      if (onNavigate) onNavigate('documents');
     } else {
       const newId = await db.documents.add({
         ...docData,
@@ -194,6 +198,9 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
       });
       setCreatedDocId(newId as number);
       alert('Đã lưu Báo giá thành công!');
+      if (clearEditingQuotation) clearEditingQuotation();
+      if (clearPrefilled) clearPrefilled();
+      if (onNavigate) onNavigate('documents');
     }
 
     // Sắp xếp lại danh sách trên màn hình nhập liệu để đồng bộ với Database

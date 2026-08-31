@@ -313,6 +313,7 @@ function App() {
               clearPrefilled={() => setPrefilledProducts([])} 
               editingQuotationId={editingQuotationId}
               clearEditingQuotation={() => setEditingQuotationId(null)}
+              onNavigate={(tab) => handleTabClick(tab)}
             />
           )}
           {activeTab === 'sourcing' && <Sourcing />}
