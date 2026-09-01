@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
 import { Users, FileText, Box, TrendingUp, TrendingDown, DollarSign, ArrowLeft } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, ComposedChart, Line } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, ComposedChart, Line, LabelList } from 'recharts';
 
 type DetailView = 'CUSTOMERS' | 'PRODUCTS' | 'DOCUMENTS' | 'REVENUE' | 'COST' | 'OP_COST' | 'RECEIVABLES' | 'PAYABLES' | 'PROFIT' | null;
 
@@ -20,6 +20,7 @@ const isOperatingCostProduct = (product?: { type?: string, category?: string }) 
 export default function Dashboard() {
   const [detailView, setDetailView] = useState<DetailView>(null);
   const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>(null);
+  const [invoiceModal, setInvoiceModal] = useState<any>(null);
 
   const stats = useLiveQuery(async () => {
     const customers = await db.customers.toArray();
@@ -184,6 +185,13 @@ export default function Dashboard() {
   });
 
   const formatCurrency = (val: number) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
+  const formatShortVal = (val: number) => {
+    if (!val) return '';
+    if (Math.abs(val) >= 1000000000) return (val / 1000000000).toFixed(1) + ' tỷ';
+    if (Math.abs(val) >= 1000000) return (val / 1000000).toFixed(1).replace('.0', '') + 'tr';
+    if (Math.abs(val) >= 1000) return (val / 1000).toFixed(0) + 'k';
+    return val.toString();
+  };
 
   if (!stats) return <div className="p-8 text-center text-gray-500">Đang tải dữ liệu...</div>;
 
@@ -418,7 +426,9 @@ export default function Dashboard() {
                 <YAxis tickFormatter={(val) => `${val/1000000}tr`} />
                 <Tooltip formatter={(value: any) => formatCurrency(Number(value))} />
                 <Legend />
-                <Bar dataKey="revenue" name="Doanh thu" fill="#10b981" />
+                <Bar dataKey="revenue" name="Doanh thu" fill="#10b981">
+                  <LabelList dataKey="revenue" position="top" formatter={(val: any) => Number(val) > 0 ? formatShortVal(Number(val)) : ''} style={{ fontSize: '11px', fill: '#10b981', fontWeight: 'bold' }} />
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -436,16 +446,18 @@ export default function Dashboard() {
         data = stats.inputs;
 
         chartElement = (
-          <div className="h-72 mb-8">
+          <div className="h-72 mb-8 mt-4">
             <h4 className="text-center font-medium text-red-600 mb-2">Biểu đồ Tổng chi phí Hóa đơn mua vào</h4>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={stats.profitChartData}>
+              <BarChart data={stats.profitChartData} margin={{ top: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
                 <YAxis tickFormatter={(val) => `${val/1000000}tr`} />
                 <Tooltip formatter={(value: any) => formatCurrency(Number(value))} />
                 <Legend />
-                <Bar dataKey="cost" name="Chi phí" fill="#ef4444" />
+                <Bar dataKey="cost" name="Chi phí" fill="#ef4444">
+                  <LabelList dataKey="cost" position="top" formatter={(val: any) => Number(val) > 0 ? formatShortVal(Number(val)) : ''} style={{ fontSize: '11px', fill: '#ef4444', fontWeight: 'bold' }} />
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -463,16 +475,18 @@ export default function Dashboard() {
         data = stats.opCostDetails;
         
         chartElement = (
-          <div className="h-72 mb-8">
+          <div className="h-72 mb-8 mt-4">
             <h4 className="text-center font-medium text-red-600 mb-2">Biểu đồ Chi phí vận hành theo tháng</h4>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={stats.profitChartData}>
+              <BarChart data={stats.profitChartData} margin={{ top: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
                 <YAxis tickFormatter={(val) => `${val/1000000}tr`} />
                 <Tooltip formatter={(value: any) => formatCurrency(Number(value))} />
                 <Legend />
-                <Bar dataKey="opCost" name="Chi phí vận hành" fill="#f59e0b" />
+                <Bar dataKey="opCost" name="Chi phí vận hành" fill="#f59e0b">
+                  <LabelList dataKey="opCost" position="top" formatter={(val: any) => Number(val) > 0 ? formatShortVal(Number(val)) : ''} style={{ fontSize: '11px', fill: '#f59e0b', fontWeight: 'bold' }} />
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -565,9 +579,18 @@ export default function Dashboard() {
             </thead>
             <tbody className="divide-y divide-gray-200">
               {sortedData.map((item, rowIdx) => (
-                <tr key={rowIdx} className="hover:bg-gray-50">
+                <tr 
+                  key={rowIdx} 
+                  className={`hover:bg-gray-50 ${item.items ? 'cursor-pointer hover:bg-blue-50 transition-colors' : ''}`}
+                  onDoubleClick={() => {
+                    if (item.items) {
+                      setInvoiceModal(item);
+                    }
+                  }}
+                  title={item.items ? "Nhấp đúp để xem chi tiết các mặt hàng" : ""}
+                >
                   {columns.map((col, colIdx) => (
-                    <td key={colIdx} className="px-6 py-4 whitespace-normal break-words text-sm text-gray-900">
+                    <td key={colIdx} className="px-6 py-4 whitespace-normal break-words text-sm text-gray-900 border-r border-gray-100 last:border-r-0">
                       {col.render(item)}
                     </td>
                   ))}
@@ -583,6 +606,50 @@ export default function Dashboard() {
             </tbody>
           </table>
         </div>
+
+        {invoiceModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
+            <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[90vh]">
+              <div className="flex justify-between items-center p-4 border-b bg-blue-50">
+                <h3 className="text-lg font-bold text-gray-900">
+                  Chi tiết chứng từ: <span className="text-blue-700">{invoiceModal.docNumber}</span>
+                </h3>
+                <button onClick={() => setInvoiceModal(null)} className="text-gray-500 hover:text-gray-700 font-bold text-xl">&times;</button>
+              </div>
+              <div className="p-4 flex-1 overflow-y-auto">
+                <div className="mb-4 text-sm text-gray-700 space-y-1">
+                  <p><strong>Loại chứng từ:</strong> {invoiceModal.type === 'OUTPUT_INVOICE' ? 'Bán ra' : invoiceModal.type === 'INPUT_INVOICE' ? 'Mua vào' : 'Báo giá'}</p>
+                  <p><strong>Khách hàng / Đối tác:</strong> {invoiceModal.customerName}</p>
+                  <p><strong>Ngày:</strong> {new Date(invoiceModal.date).toLocaleDateString('vi-VN')}</p>
+                </div>
+                <table className="min-w-full divide-y divide-gray-200 border border-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase border-r border-gray-200">Tên hàng hóa, dịch vụ</th>
+                      <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase w-24 border-r border-gray-200">SL</th>
+                      <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase w-32 border-r border-gray-200">Đơn Giá</th>
+                      <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase w-32 border-r border-gray-200">Thành tiền</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {invoiceModal.items.map((item: any, idx: number) => (
+                      <tr key={idx} className="hover:bg-gray-50">
+                        <td className="px-4 py-2 text-sm text-gray-900 whitespace-normal break-words border-r border-gray-100">{item.productName || item.name}</td>
+                        <td className="px-4 py-2 text-sm text-gray-900 text-right font-medium border-r border-gray-100">{item.quantity}</td>
+                        <td className="px-4 py-2 text-sm text-gray-900 text-right border-r border-gray-100">{formatCurrency(item.unitPrice)}</td>
+                        <td className="px-4 py-2 text-sm text-gray-900 text-right font-bold border-r border-gray-100">{formatCurrency(item.amount || (item.quantity * item.unitPrice))}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="p-4 border-t bg-gray-50 flex justify-between items-center">
+                <span className="font-bold text-gray-900">Tổng cộng:</span>
+                <span className="font-bold text-red-600 text-lg">{formatCurrency(invoiceModal.total)}</span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
