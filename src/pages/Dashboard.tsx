@@ -541,18 +541,23 @@ export default function Dashboard() {
                 {columns.map((col, idx) => (
                   <th 
                     key={idx} 
-                    className={`px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase ${col.sortValue ? 'cursor-pointer hover:bg-gray-200 transition-colors' : ''}`}
-                    onClick={() => col.sortValue && handleSort(col.header)}
+                    className="p-0 border-r border-gray-200 last:border-r-0"
                   >
-                    <div className="flex items-center space-x-1">
-                      <span>{col.header}</span>
-                      {col.sortValue && (
-                        <span className="text-gray-400">
-                          {sortConfig?.key === col.header 
-                            ? (sortConfig.direction === 'asc' ? '↑' : '↓') 
-                            : '↕'}
-                        </span>
-                      )}
+                    <div 
+                      className={`px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase overflow-hidden min-w-[120px] ${col.sortValue ? 'cursor-pointer hover:bg-gray-200 transition-colors' : ''}`}
+                      style={{ resize: 'horizontal' }}
+                      onClick={() => col.sortValue && handleSort(col.header)}
+                    >
+                      <div className="flex items-center space-x-1">
+                        <span>{col.header}</span>
+                        {col.sortValue && (
+                          <span className="text-gray-400">
+                            {sortConfig?.key === col.header 
+                              ? (sortConfig.direction === 'asc' ? '↑' : '↓') 
+                              : '↕'}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </th>
                 ))}
@@ -562,7 +567,7 @@ export default function Dashboard() {
               {sortedData.map((item, rowIdx) => (
                 <tr key={rowIdx} className="hover:bg-gray-50">
                   {columns.map((col, colIdx) => (
-                    <td key={colIdx} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td key={colIdx} className="px-6 py-4 whitespace-normal break-words text-sm text-gray-900">
                       {col.render(item)}
                     </td>
                   ))}
