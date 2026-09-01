@@ -27,6 +27,8 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
   const [soldModal, setSoldModal] = useState<{ isOpen: boolean; productIds: number[] } | null>(null);
   const [soldDate, setSoldDate] = useState(new Date().toISOString().split('T')[0]);
   const [soldCustomerId, setSoldCustomerId] = useState<string>('');
+  const [soldDocNumber, setSoldDocNumber] = useState('');
+  const [soldTotalAmount, setSoldTotalAmount] = useState<number | ''>('');
 
   const [historyModal, setHistoryModal] = useState<{
     isOpen: boolean;
@@ -234,8 +236,18 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
 
 
 
-  const handleMarkAsSold = () => {
+  const handleMarkAsSold = async () => {
     if (selectedIds.length === 0) return;
+    let totalValue = 0;
+    for (const id of selectedIds) {
+      const p = await db.products.get(id);
+      if (p) {
+        const qty = p.stock > 0 ? p.stock : 1;
+        totalValue += qty * p.unitPrice;
+      }
+    }
+    setSoldDocNumber(`PX-${Date.now().toString().slice(-6)}`);
+    setSoldTotalAmount(totalValue);
     setSoldModal({ isOpen: true, productIds: selectedIds });
   };
 
@@ -262,37 +274,51 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
     }
 
     const itemsToSell = [];
-    let total = 0;
+    let baseTotal = 0;
+    const prods = [];
 
     for (const id of soldModal.productIds) {
       const prod = await db.products.get(id);
       if (prod) {
+        prods.push(prod);
         const sellQty = prod.stock > 0 ? prod.stock : 1;
-        await db.products.update(id, { stock: 0 });
-        
-        itemsToSell.push({
-          productId: prod.id,
-          productName: prod.name,
-          unit: prod.unit,
-          quantity: sellQty,
-          unitPrice: prod.unitPrice,
-          taxRate: prod.taxRate || 0,
-          amount: sellQty * prod.unitPrice
-        });
-        total += sellQty * prod.unitPrice;
+        baseTotal += sellQty * prod.unitPrice;
       }
+    }
+
+    const finalTotal = soldTotalAmount !== '' ? Number(soldTotalAmount) : baseTotal;
+    const ratio = baseTotal > 0 ? (finalTotal / baseTotal) : 1;
+    let actualTotal = 0;
+
+    for (const prod of prods) {
+      const sellQty = prod.stock > 0 ? prod.stock : 1;
+      await db.products.update(prod.id!, { stock: 0 });
+      
+      const adjustedUnitPrice = baseTotal > 0 ? Math.round(prod.unitPrice * ratio) : (prods.length === 1 ? Math.round(finalTotal / sellQty) : 0);
+      const amount = sellQty * adjustedUnitPrice;
+      actualTotal += amount;
+      
+      itemsToSell.push({
+        productId: prod.id,
+        productName: prod.name,
+        unit: prod.unit,
+        quantity: sellQty,
+        unitPrice: adjustedUnitPrice,
+        taxRate: prod.taxRate || 0,
+        amount: amount
+      });
     }
 
     if (itemsToSell.length > 0) {
       await db.documents.add({
         type: 'OUTPUT_INVOICE',
-        docNumber: `PX-${Date.now().toString().slice(-6)}`,
+        docNumber: soldDocNumber.trim() || `PX-${Date.now().toString().slice(-6)}`,
         customerId: actualCustomerId,
         date: d,
         items: itemsToSell,
-        subTotal: total,
+        subTotal: actualTotal,
         taxAmount: 0,
-        total: total,
+        total: actualTotal,
         createdAt: new Date(),
         status: 'COMPLETED'
       });
@@ -637,14 +663,40 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Ngày bán</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Số Hóa đơn (Mã chứng từ)</label>
                 <input 
-                  type="date" 
+                  type="text" 
+                  placeholder="VD: PX-001234 (Để trống sẽ tạo tự động)"
                   className="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm"
-                  value={soldDate}
-                  onChange={e => setSoldDate(e.target.value)}
+                  value={soldDocNumber}
+                  onChange={e => setSoldDocNumber(e.target.value)}
                 />
               </div>
+
+              <div className="flex gap-4">
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Ngày bán</label>
+                  <input 
+                    type="date" 
+                    className="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm"
+                    value={soldDate}
+                    onChange={e => setSoldDate(e.target.value)}
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tổng tiền bán được (VNĐ)</label>
+                  <input 
+                    type="number" 
+                    placeholder="Nhập giá bán thực tế..."
+                    className="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm font-bold text-green-700"
+                    value={soldTotalAmount}
+                    onChange={e => setSoldTotalAmount(e.target.value ? Number(e.target.value) : '')}
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-gray-500 italic mt-1">
+                * Việc nhập tổng tiền bán được giúp hệ thống tự động chia tỉ lệ để hạch toán lời lỗ chính xác trên từng mặt hàng.
+              </p>
             </div>
 
             <div className="flex justify-end gap-3">
