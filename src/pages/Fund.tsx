@@ -112,12 +112,32 @@ export default function Fund() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Loại Giao Dịch</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Diễn giải</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Thu (Tăng Quỹ)</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Chi (Giảm Quỹ)</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Hành động</th>
+                <th className="p-0 border-r border-gray-200">
+                  <div className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase overflow-hidden min-w-[120px]" style={{ resize: 'horizontal' }}>
+                    Ngày
+                  </div>
+                </th>
+                <th className="p-0 border-r border-gray-200">
+                  <div className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase overflow-hidden min-w-[150px]" style={{ resize: 'horizontal' }}>
+                    Loại Giao Dịch
+                  </div>
+                </th>
+                <th className="p-0 border-r border-gray-200">
+                  <div className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase overflow-hidden min-w-[200px]" style={{ resize: 'horizontal' }}>
+                    Diễn giải
+                  </div>
+                </th>
+                <th className="p-0 border-r border-gray-200">
+                  <div className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase overflow-hidden min-w-[140px]" style={{ resize: 'horizontal' }}>
+                    Thu (Tăng Quỹ)
+                  </div>
+                </th>
+                <th className="p-0 border-r border-gray-200">
+                  <div className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase overflow-hidden min-w-[140px]" style={{ resize: 'horizontal' }}>
+                    Chi (Giảm Quỹ)
+                  </div>
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase min-w-[120px]">Hành động</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">

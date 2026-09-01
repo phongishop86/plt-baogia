@@ -421,16 +421,36 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-4 py-3 text-left w-10"></th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã SP</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tên sản phẩm / Dịch vụ</th>
-              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Phân loại</th>
-              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">ĐVT</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Đơn giá</th>
-              <th className="px-6 py-3 text-center text-xs font-medium text-blue-600 uppercase tracking-wider">Tổng Mua</th>
-              {activeTab !== 'EXPENSE' && <th className="px-6 py-3 text-center text-xs font-medium text-green-600 uppercase tracking-wider">Tổng Bán</th>}
-              {activeTab !== 'SERVICE' && <th className="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">Tồn kho / SL</th>}
-              <th className="px-4 py-3 text-center w-16"></th>
+              <th className="px-4 py-3 text-left w-10 border-r border-gray-200"></th>
+              <th className="p-0 border-r border-gray-200">
+                <div className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase overflow-hidden min-w-[100px]" style={{ resize: 'horizontal' }}>Mã SP</div>
+              </th>
+              <th className="p-0 border-r border-gray-200">
+                <div className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase overflow-hidden min-w-[200px]" style={{ resize: 'horizontal' }}>Tên sản phẩm / Dịch vụ</div>
+              </th>
+              <th className="p-0 border-r border-gray-200">
+                <div className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase overflow-hidden min-w-[120px]" style={{ resize: 'horizontal' }}>Phân loại</div>
+              </th>
+              <th className="p-0 border-r border-gray-200">
+                <div className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase overflow-hidden min-w-[80px]" style={{ resize: 'horizontal' }}>ĐVT</div>
+              </th>
+              <th className="p-0 border-r border-gray-200">
+                <div className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase overflow-hidden min-w-[120px]" style={{ resize: 'horizontal' }}>Đơn giá</div>
+              </th>
+              <th className="p-0 border-r border-gray-200">
+                <div className="px-6 py-3 text-center text-xs font-medium text-blue-600 uppercase overflow-hidden min-w-[100px]" style={{ resize: 'horizontal' }}>Tổng Mua</div>
+              </th>
+              {activeTab !== 'EXPENSE' && (
+                <th className="p-0 border-r border-gray-200">
+                  <div className="px-6 py-3 text-center text-xs font-medium text-green-600 uppercase overflow-hidden min-w-[100px]" style={{ resize: 'horizontal' }}>Tổng Bán</div>
+                </th>
+              )}
+              {activeTab !== 'SERVICE' && (
+                <th className="p-0 border-r border-gray-200">
+                  <div className="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase overflow-hidden min-w-[100px]" style={{ resize: 'horizontal' }}>Tồn kho / SL</div>
+                </th>
+              )}
+              <th className="px-4 py-3 text-center min-w-[80px]"></th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
@@ -439,7 +459,7 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
               
               return (
                 <tr key={product.id} className={`hover:bg-blue-50 transition-colors cursor-pointer ${selectedIds.includes(product.id!) ? 'bg-blue-50' : ''}`} onDoubleClick={() => openHistoryModal(product)}>
-                  <td className="px-4 py-4 text-center">
+                  <td className="px-4 py-4 text-center border-r border-gray-100">
                     <input 
                       type="checkbox" 
                       className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
@@ -449,9 +469,9 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
                       title="Chọn để thao tác"
                     />
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.code || '-'}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-100">{product.code || '-'}</td>
                   
-                  <td className="px-6 py-4 text-sm font-medium text-gray-900 max-w-md">
+                  <td className="px-6 py-4 text-sm font-medium text-gray-900 border-r border-gray-100 max-w-md">
                     {isEditing ? (
                       <textarea
                         value={editName}
@@ -469,7 +489,7 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
                     )}
                   </td>
                   
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
+                  <td className="px-6 py-4 text-sm text-center border-r border-gray-100">
                     {isEditing ? (
                       <div className="flex flex-col space-y-2">
                         <select 
@@ -491,7 +511,7 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
                       </div>
                     ) : (
                       <div className="flex flex-col items-center space-y-1">
-                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full whitespace-nowrap ${
                           product.type === 'SERVICE' ? 'bg-purple-100 text-purple-800' : 
                           product.type === 'EXPENSE' ? 'bg-red-100 text-red-800' : 
                           'bg-gray-100 text-gray-800'
@@ -499,7 +519,7 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
                           {product.type === 'SERVICE' ? 'Dịch vụ' : product.type === 'EXPENSE' ? 'Chi phí HĐ' : 'Hàng hóa'}
                         </span>
                         {product.category && (
-                          <span className="text-xs font-medium text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100">
+                          <span className="text-xs font-medium text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100 whitespace-nowrap">
                             {product.category}
                           </span>
                         )}
@@ -507,16 +527,16 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
                     )}
                   </td>
                   
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">{product.unit}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">{formatNumber(product.unitPrice)}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-center font-medium text-blue-600">{product.totalIn}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500 border-r border-gray-100">{product.unit}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900 border-r border-gray-100">{formatNumber(product.unitPrice)}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-center font-medium text-blue-600 border-r border-gray-100">{product.totalIn}</td>
                   
                   {activeTab !== 'EXPENSE' && (
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-center font-medium text-green-600">{product.totalOut}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-center font-medium text-green-600 border-r border-gray-100">{product.totalOut}</td>
                   )}
                   
                   {activeTab !== 'SERVICE' && (
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-center font-bold text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-center font-bold text-gray-900 border-r border-gray-100">
                       <span className={`px-2 py-1 rounded-full ${product.stock > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                         {product.stock}
                       </span>
@@ -668,20 +688,32 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-white sticky top-0 shadow-sm">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Số HĐ</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Loại</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Đối tác</th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">SL</th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Đơn giá</th>
+                      <th className="p-0 border-r border-gray-200">
+                        <div className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase overflow-hidden min-w-[100px]" style={{ resize: 'horizontal' }}>Ngày</div>
+                      </th>
+                      <th className="p-0 border-r border-gray-200">
+                        <div className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase overflow-hidden min-w-[120px]" style={{ resize: 'horizontal' }}>Số HĐ</div>
+                      </th>
+                      <th className="p-0 border-r border-gray-200">
+                        <div className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase overflow-hidden min-w-[100px]" style={{ resize: 'horizontal' }}>Loại</div>
+                      </th>
+                      <th className="p-0 border-r border-gray-200">
+                        <div className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase overflow-hidden min-w-[200px]" style={{ resize: 'horizontal' }}>Đối tác</div>
+                      </th>
+                      <th className="p-0 border-r border-gray-200">
+                        <div className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase overflow-hidden min-w-[80px]" style={{ resize: 'horizontal' }}>SL</div>
+                      </th>
+                      <th className="p-0 border-r border-gray-200">
+                        <div className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase overflow-hidden min-w-[120px]" style={{ resize: 'horizontal' }}>Đơn giá</div>
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-100">
                     {historyModal.history.map((h, idx) => (
                       <tr key={idx} className="hover:bg-blue-50 transition-colors">
-                        <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-900">{new Date(h.date).toLocaleDateString('vi-VN')}</td>
-                        <td className="px-6 py-3 whitespace-nowrap text-sm font-bold text-gray-900">{h.docNumber}</td>
-                        <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-900 border-r border-gray-100">{new Date(h.date).toLocaleDateString('vi-VN')}</td>
+                        <td className="px-6 py-3 whitespace-nowrap text-sm font-bold text-gray-900 border-r border-gray-100">{h.docNumber}</td>
+                        <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-500 border-r border-gray-100">
                           <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                             h.type === 'QUOTATION' ? 'bg-purple-100 text-purple-800' :
                             h.type === 'INPUT_INVOICE' ? 'bg-blue-100 text-blue-800' :
@@ -690,9 +722,9 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
                             {h.type === 'QUOTATION' ? 'Báo giá' : h.type === 'INPUT_INVOICE' ? 'Mua vào' : 'Bán ra'}
                           </span>
                         </td>
-                        <td className="px-6 py-3 text-sm text-gray-700 whitespace-normal break-words">{h.customerName}</td>
-                        <td className="px-6 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">{h.quantity}</td>
-                        <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-900 text-right">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(h.unitPrice)}</td>
+                        <td className="px-6 py-3 text-sm text-gray-700 whitespace-normal break-words border-r border-gray-100">{h.customerName}</td>
+                        <td className="px-6 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right border-r border-gray-100">{h.quantity}</td>
+                        <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-900 text-right border-r border-gray-100">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(h.unitPrice)}</td>
                       </tr>
                     ))}
                   </tbody>
