@@ -12,6 +12,7 @@ interface ProductsProps {
 export default function Products({ onNavigate, setPrefilledProducts, currentUser }: ProductsProps) {
   const products = useLiveQuery(() => db.products.toArray());
   const documents = useLiveQuery(() => db.documents.toArray());
+  const customers = useLiveQuery(() => db.customers.toArray());
   
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -22,6 +23,10 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
   const [editName, setEditName] = useState('');
   const [editType, setEditType] = useState<'PRODUCT' | 'SERVICE' | 'EXPENSE'>('PRODUCT');
   const [editCategory, setEditCategory] = useState('');
+
+  const [soldModal, setSoldModal] = useState<{ isOpen: boolean; productIds: number[] } | null>(null);
+  const [soldDate, setSoldDate] = useState(new Date().toISOString().split('T')[0]);
+  const [soldCustomerId, setSoldCustomerId] = useState<string>('');
 
   const [historyModal, setHistoryModal] = useState<{
     isOpen: boolean;
@@ -229,13 +234,74 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
 
 
 
-  const handleMarkAsSold = async () => {
-    if (confirm(`Chuyển ${selectedIds.length} mặt hàng đã chọn sang nhóm Đã Bán?\n(Thao tác này sẽ thiết lập Tồn kho = 0 để làm sạch danh sách)`)) {
-      for (const id of selectedIds) {
-        await db.products.update(id, { stock: 0 });
-      }
-      setSelectedIds([]);
+  const handleMarkAsSold = () => {
+    if (selectedIds.length === 0) return;
+    setSoldModal({ isOpen: true, productIds: selectedIds });
+  };
+
+  const handleConfirmSoldModal = async () => {
+    if (!soldModal || !soldCustomerId) {
+      alert("Vui lòng chọn khách hàng!");
+      return;
     }
+    const d = new Date(soldDate);
+    if (isNaN(d.getTime())) {
+      alert("Ngày bán không hợp lệ!");
+      return;
+    }
+
+    let actualCustomerId = parseInt(soldCustomerId);
+    
+    if (soldCustomerId === 'RETAIL') {
+      let retail = customers?.find(c => c.name.toLowerCase() === 'khách lẻ');
+      if (retail && retail.id) {
+        actualCustomerId = retail.id;
+      } else {
+        actualCustomerId = await db.customers.add({ name: 'Khách lẻ', taxCode: '', address: '' }) as number;
+      }
+    }
+
+    const itemsToSell = [];
+    let total = 0;
+
+    for (const id of soldModal.productIds) {
+      const prod = await db.products.get(id);
+      if (prod) {
+        const sellQty = prod.stock > 0 ? prod.stock : 1;
+        await db.products.update(id, { stock: 0 });
+        
+        itemsToSell.push({
+          productId: prod.id,
+          productName: prod.name,
+          unit: prod.unit,
+          quantity: sellQty,
+          unitPrice: prod.unitPrice,
+          taxRate: prod.taxRate || 0,
+          amount: sellQty * prod.unitPrice
+        });
+        total += sellQty * prod.unitPrice;
+      }
+    }
+
+    if (itemsToSell.length > 0) {
+      await db.documents.add({
+        type: 'OUTPUT_INVOICE',
+        docNumber: `PX-${Date.now().toString().slice(-6)}`,
+        customerId: actualCustomerId,
+        date: d,
+        items: itemsToSell,
+        subTotal: total,
+        taxAmount: 0,
+        total: total,
+        createdAt: new Date(),
+        status: 'COMPLETED'
+      });
+    }
+
+    setSoldModal(null);
+    setSelectedIds([]);
+    setSoldCustomerId('');
+    alert("Đã chuyển thành công sang Đã Bán và lưu thông tin xuất hàng!");
   };
 
   return (
@@ -519,6 +585,61 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium transition-colors"
               >
                 Xác nhận
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal chuyển trạng thái Đã Bán */}
+      {soldModal?.isOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white p-6 rounded-xl shadow-xl w-full max-w-md">
+            <h3 className="text-lg font-bold text-gray-800 mb-2">Chuyển sang Đã Bán</h3>
+            <p className="text-sm text-gray-600 mb-5">
+              Bạn đang chuyển {soldModal.productIds.length} mặt hàng sang nhóm Đã Bán. Hãy điền thông tin Hóa đơn bán ra để lưu vết.
+            </p>
+            
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Khách hàng / Đối tác</label>
+                <select 
+                  className="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm"
+                  value={soldCustomerId}
+                  onChange={e => setSoldCustomerId(e.target.value)}
+                >
+                  <option value="" disabled>-- Chọn khách hàng --</option>
+                  <option value="RETAIL" className="font-bold text-blue-600">Khách lẻ (Tự động thêm vào danh bạ)</option>
+                  {customers?.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Ngày bán</label>
+                <input 
+                  type="date" 
+                  className="w-full border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm"
+                  value={soldDate}
+                  onChange={e => setSoldDate(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <button 
+                onClick={() => setSoldModal(null)}
+                className="px-4 py-2 border border-gray-200 rounded-md text-gray-600 hover:bg-gray-50 font-medium transition-colors"
+              >
+                Hủy bỏ
+              </button>
+              <button 
+                onClick={handleConfirmSoldModal}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium transition-colors disabled:opacity-50"
+                disabled={!soldCustomerId}
+              >
+                Xác nhận Bán
               </button>
             </div>
           </div>
