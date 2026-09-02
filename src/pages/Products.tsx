@@ -441,9 +441,6 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
             <tr>
               <th className="px-4 py-3 text-left w-10 border-r border-gray-200"></th>
               <th className="p-0 border-r border-gray-200">
-                <div className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase overflow-hidden min-w-[100px]" style={{ resize: 'horizontal' }}>Mã SP</div>
-              </th>
-              <th className="p-0 border-r border-gray-200">
                 <div className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase overflow-hidden min-w-[200px]" style={{ resize: 'horizontal' }}>Tên sản phẩm / Dịch vụ</div>
               </th>
               <th className="p-0 border-r border-gray-200">
@@ -476,8 +473,8 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
               const isEditing = editingId === product.id;
               
               return (
-                <tr key={product.id} className={`hover:bg-blue-50 transition-colors cursor-pointer ${selectedIds.includes(product.id!) ? 'bg-blue-50' : ''}`} onDoubleClick={() => openHistoryModal(product)}>
-                  <td className="px-4 py-4 text-center border-r border-gray-100">
+                <tr key={product.id} className={`hover:bg-blue-50 transition-colors cursor-pointer ${selectedIds.includes(product.id!) ? 'bg-blue-50' : ''}`} onClick={() => openHistoryModal(product)}>
+                  <td className="px-4 py-4 text-center border-r border-gray-100" onClick={(e) => e.stopPropagation()}>
                     <input 
                       type="checkbox" 
                       className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
@@ -487,7 +484,6 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
                       title="Chọn để thao tác"
                     />
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-100">{product.code || '-'}</td>
                   
                   <td className="px-6 py-4 text-sm font-medium text-gray-900 border-r border-gray-100 max-w-md">
                     {isEditing ? (
@@ -561,7 +557,7 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
                     </td>
                   )}
                   
-                  <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium" onClick={(e) => e.stopPropagation()}>
                     {isEditing ? (
                       <div className="flex items-center space-x-2">
                         <button onClick={() => saveEdit(product.id!, product.name)} className="text-green-600 hover:text-green-900" title="Lưu">

@@ -402,10 +402,10 @@ function App() {
       )}
       
       {/* Nút Back Floating (Bong bóng PLT) */}
-      {historyStack.length > 0 && (
+      {(historyStack.length > 0 || activeTab !== 'dashboard') && (
         <button 
           onClick={handleBack}
-          className="fixed bottom-6 right-6 md:bottom-10 md:right-10 w-14 h-14 bg-white rounded-full shadow-2xl hover:shadow-xl flex items-center justify-center border border-gray-100 z-[60] print:hidden transition-transform hover:scale-105 group"
+          className="fixed bottom-6 right-6 md:bottom-10 md:right-10 w-14 h-14 bg-white rounded-full shadow-2xl hover:shadow-xl flex items-center justify-center border border-gray-200 z-[60] print:hidden transition-transform hover:scale-105 group"
           title="Quay lại thao tác trước (Back)"
         >
           <img src="/PLT-Logo-web.png" alt="Back" className="w-9 h-9 object-contain opacity-90 group-hover:opacity-100 transition-opacity" />

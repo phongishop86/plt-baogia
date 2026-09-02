@@ -160,7 +160,7 @@ export default function Customers() {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {sortedCustomers.map((customer) => (
-                <tr key={customer.id} className="hover:bg-blue-50 cursor-pointer" onDoubleClick={() => openDetailModal(customer)}>
+                <tr key={customer.id} className="hover:bg-blue-50 cursor-pointer" onClick={() => openDetailModal(customer)}>
                   <td className="px-6 py-4 text-sm font-medium text-gray-900 whitespace-normal break-words border-r border-gray-100">
                     {customer.name}
                     {customer.isSupplier && <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 whitespace-nowrap">Nhà cung cấp</span>}
@@ -168,7 +168,7 @@ export default function Customers() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-100">{customer.taxCode || '-'}</td>
                   <td className="px-6 py-4 text-sm text-gray-500 whitespace-normal break-words border-r border-gray-100">{customer.address || '-'}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-100">{customer.phone || '-'}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3">
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3" onClick={(e) => e.stopPropagation()}>
                     <button onClick={(e) => { e.stopPropagation(); openEditModal(customer); }} className="text-blue-600 hover:text-blue-900" title="Chỉnh sửa">
                       <Pencil size={18} />
                     </button>

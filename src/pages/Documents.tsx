@@ -304,7 +304,17 @@ export default function Documents({ setEditingQuotationId, currentUser, mode = '
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredDocs.map((doc) => (
-                <tr key={doc.id} className="hover:bg-gray-50">
+                <tr 
+                  key={doc.id} 
+                  className="hover:bg-gray-50 cursor-pointer"
+                  onClick={() => {
+                    if (doc.type === 'QUOTATION' && setEditingQuotationId) {
+                      setEditingQuotationId(doc.id!);
+                    } else if (setPreviewDoc) {
+                      setPreviewDoc(doc);
+                    }
+                  }}
+                >
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 border-r border-gray-100">{doc.docNumber}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-100">
                     <span className={`px-2 py-1 text-xs rounded-full ${doc.type === 'INPUT_INVOICE' ? 'bg-blue-100 text-blue-800' : doc.type === 'OUTPUT_INVOICE' ? 'bg-green-100 text-green-800' : 'bg-purple-100 text-purple-800'}`}>
@@ -314,7 +324,7 @@ export default function Documents({ setEditingQuotationId, currentUser, mode = '
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-100">{new Date(doc.date).toLocaleDateString('vi-VN')}</td>
                   <td className="px-6 py-4 text-sm text-gray-900 whitespace-normal break-words border-r border-gray-100">{doc.customer?.name}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right border-r border-gray-100">{formatNumber(doc.total)}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-center">
+                  <td className="px-6 py-4 whitespace-nowrap text-center" onClick={(e) => e.stopPropagation()}>
                     {doc.type === 'QUOTATION' ? (
                       <select 
                         value={doc.status || 'DRAFT'}
@@ -365,7 +375,7 @@ export default function Documents({ setEditingQuotationId, currentUser, mode = '
                       </div>
                     )}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right space-x-3">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right space-x-3" onClick={(e) => e.stopPropagation()}>
                     {doc.type === 'QUOTATION' && setEditingQuotationId && (
                       <>
                         {doc.status !== 'COMPLETED' && (
