@@ -60,6 +60,9 @@ export default function Dashboard() {
       const m = new Date(doc.date).toISOString().slice(0, 7);
       if (!monthlyStats[m]) monthlyStats[m] = { month: m, revenue: 0, cost: 0, opCost: 0 };
 
+      // Skip cancelled documents completely
+      if (doc.status === 'CANCELLED') return;
+
       if (doc.type === 'OUTPUT_INVOICE') {
         revenue += doc.subTotal;
         monthlyStats[m].revenue += doc.subTotal;
@@ -175,10 +178,10 @@ export default function Dashboard() {
       profit, 
       receivables, 
       payables,
-      unpaidOutputs: documents.filter(d => d.type === 'OUTPUT_INVOICE' && !d.paymentDate),
-      unpaidInputs: documents.filter(d => d.type === 'INPUT_INVOICE' && !d.paymentDate),
-      outputs: documents.filter(d => d.type === 'OUTPUT_INVOICE'),
-      inputs: documents.filter(d => d.type === 'INPUT_INVOICE'),
+      unpaidOutputs: documents.filter(d => d.type === 'OUTPUT_INVOICE' && !d.paymentDate && d.status !== 'CANCELLED'),
+      unpaidInputs: documents.filter(d => d.type === 'INPUT_INVOICE' && !d.paymentDate && d.status !== 'CANCELLED'),
+      outputs: documents.filter(d => d.type === 'OUTPUT_INVOICE' && d.status !== 'CANCELLED'),
+      inputs: documents.filter(d => d.type === 'INPUT_INVOICE' && d.status !== 'CANCELLED'),
       profitChartData,
       opCostDetails
     };

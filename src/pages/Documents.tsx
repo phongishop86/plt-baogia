@@ -333,15 +333,35 @@ export default function Documents({ setEditingQuotationId, currentUser, mode = '
                         <option value="CANCELLED">Đã hủy</option>
                       </select>
                     ) : (
-                      doc.paymentDate ? (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                          Đã TT ({new Date(doc.paymentDate).toLocaleDateString('vi-VN')})
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">
-                          Chưa TT
-                        </span>
-                      )
+                      <div className="flex flex-col items-center gap-1">
+                        {doc.status === 'CANCELLED' ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+                            Đã hủy (Không tính doanh thu)
+                          </span>
+                        ) : (
+                          doc.paymentDate ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                              Đã TT ({new Date(doc.paymentDate).toLocaleDateString('vi-VN')})
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">
+                              Chưa TT
+                            </span>
+                          )
+                        )}
+                        <select
+                          value={doc.status || 'COMPLETED'}
+                          onChange={async (e) => {
+                            if (e.target.value === 'CANCELLED' && !confirm('Việc hủy chứng từ này sẽ loại bỏ nó khỏi báo cáo doanh thu/chi phí. Bạn có chắc chắn?')) return;
+                            await db.documents.update(doc.id!, { status: e.target.value as any });
+                          }}
+                          className={`text-[10px] font-medium rounded px-1 outline-none cursor-pointer border ${doc.status === 'CANCELLED' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-gray-50 text-gray-600 border-gray-200'}`}
+                          title="Điều chỉnh trạng thái chứng từ (Hợp lệ / Hủy bỏ)"
+                        >
+                          <option value="COMPLETED">Hợp lệ</option>
+                          <option value="CANCELLED">Hủy bỏ (Trùng lặp)</option>
+                        </select>
+                      </div>
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-right space-x-3">
