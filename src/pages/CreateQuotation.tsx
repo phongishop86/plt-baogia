@@ -645,33 +645,30 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
       {/* ==== BIÊN BẢN BÀN GIAO ==== */}
       {(printMode === 'DELIVERY' || printMode === 'ALL') && (
         <div className={`hidden print:block text-sm font-[Times_New_Roman] ${printMode === 'ALL' ? 'break-before-page mt-8' : ''}`}>
-          <div className="text-center font-bold mb-4">
+          <div className="text-center font-bold mb-2">
             <h2 className="text-base uppercase">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</h2>
             <h3 className="text-sm">Độc lập – Tự do – Hạnh phúc</h3>
             <p className="font-normal italic mt-1">TP Hồ Chí Minh, ngày .... tháng .... năm 202...</p>
           </div>
           
-          <div className="text-center mb-6">
+          <div className="text-center mb-4">
             <h1 className="text-xl font-bold uppercase">BIÊN BẢN BÀN GIAO - NGHIỆM THU THIẾT BỊ/ DỊCH VỤ</h1>
             <p className="italic font-bold">Số: {docNumber}/BB-BGNTTBDV</p>
             <p className="italic">Căn cứ báo giá số: {docNumber}</p>
           </div>
 
-          <div className="mb-4 text-justify leading-relaxed">
+          <div className="mb-2 text-justify leading-normal">
             <p>Hôm nay, ngày .... tháng .... năm 202... tại <strong>{selectedCustomer?.name}</strong> chúng tôi gồm:</p>
             
-            <div className="mt-2 font-bold uppercase">A. BÊN A (Bên nhận hàng): {selectedCustomer?.name}</div>
+            <div className="mt-1 font-bold uppercase">A. BÊN A (Bên nhận hàng): {selectedCustomer?.name}</div>
             <p>Địa chỉ: {selectedCustomer?.address}</p>
             <p>MST: {selectedCustomer?.taxCode}</p>
-            <div className="flex justify-between w-full">
-              <p>Điện thoại: ....................................................................</p>
-            </div>
             <div className="flex justify-between w-full mt-1">
               <p>Người đại diện: Ông/Bà ................................................</p>
               <p className="w-64">Chức vụ: .......................................</p>
             </div>
 
-            <div className="mt-2 font-bold uppercase">B. BÊN B (Bên giao hàng): CÔNG TY TNHH PHÁT LỘC TECH</div>
+            <div className="mt-1 font-bold uppercase">B. BÊN B (Bên giao hàng): CÔNG TY TNHH PHÁT LỘC TECH</div>
             <p>Địa chỉ: Số 491/1 Trường Chinh, Phường Tân Bình, Thành phố Hồ Chí Minh</p>
             <p>Điện thoại: 0932 685 794</p>
             <div className="flex justify-between w-full mt-1">
@@ -681,7 +678,7 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
           </div>
 
           <div className="font-bold mb-1">1. Đối tượng bàn giao, nghiệm thu:</div>
-          <table className="w-full border-collapse border border-black mb-4">
+          <table className="w-full border-collapse border border-black mb-2">
             <thead>
               <tr>
                 <th className="border border-black p-1 text-center w-12">STT</th>
@@ -705,22 +702,22 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
           </table>
 
           <div className="font-bold mb-1">2. Thời gian bàn giao, nghiệm thu:</div>
-          <p className="mb-1">Các bên tiến hành nghiệm thu vào lúc:</p>
-          <p className="mb-1">– Thời gian bắt đầu: ............................................................................................................................................................</p>
-          <p className="mb-4">– Thời gian kết thúc: ............................................................................................................................................................</p>
+          <p className="mb-0">Các bên tiến hành nghiệm thu vào lúc:</p>
+          <p className="mb-0">– Thời gian bắt đầu: ............................................................................................................................................................</p>
+          <p className="mb-2">– Thời gian kết thúc: ............................................................................................................................................................</p>
 
           <div className="font-bold mb-1">3. Kết quả nghiệm thu:</div>
-          <p className="mb-1">– Số lượng: ..........................................................................................................................................................................</p>
-          <p className="mb-1">– Chất lượng từng loại: ......................................................................................................................................................</p>
-          <p className="mb-4">– Các nội dung khác: ..........................................................................................................................................................</p>
+          <p className="mb-0">– Số lượng: ..........................................................................................................................................................................</p>
+          <p className="mb-0">– Chất lượng từng loại: ......................................................................................................................................................</p>
+          <p className="mb-2">– Các nội dung khác: ..........................................................................................................................................................</p>
 
           <div className="font-bold mb-1">4. Kết luận:</div>
-          <p className="text-justify mb-4 leading-relaxed">
+          <p className="text-justify mb-2 leading-tight">
             Sau khi kết thúc nghiệm thu, các bên đi đến thống nhất bàn giao và thực hiện việc ký tên xác nhận bên dưới.<br/>
             Biên bản được lập thành 02 bản có giá trị pháp lý như nhau, mỗi bên giữ 01 bản để làm căn cứ thực hiện.
           </p>
           
-          <div className="flex justify-between text-center font-bold uppercase px-8 pb-16">
+          <div className="flex justify-between text-center font-bold uppercase px-8 pb-12">
             <div>
               BÊN A<br/>
               <span className="italic font-normal text-sm capitalize">(Ký và ghi rõ họ tên)</span>
@@ -736,7 +733,7 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
       {/* ==== ĐỀ NGHỊ THANH TOÁN ==== */}
       {(printMode === 'PAYMENT' || printMode === 'ALL') && (
         <div className={`hidden print:block text-sm font-[Times_New_Roman] ${printMode === 'ALL' ? 'break-before-page mt-8' : ''}`}>
-          <div className="flex justify-between items-start mb-6 font-bold">
+          <div className="flex justify-between items-start mb-4 font-bold">
             <div className="text-center w-1/2">
               <h2 className="text-base uppercase">CÔNG TY TNHH PHÁT LỘC TECH</h2>
               <p className="font-normal">Số: ......../PLT-ĐNTT</p>
@@ -749,17 +746,17 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
             </div>
           </div>
 
-          <div className="text-center mb-8">
+          <div className="text-center mb-6">
             <h1 className="text-xl font-bold uppercase">CÔNG VĂN ĐỀ NGHỊ THANH TOÁN</h1>
           </div>
 
-          <div className="mb-4 leading-relaxed">
+          <div className="mb-2 leading-normal">
             <p><span className="font-bold inline-block w-20">Kính gửi:</span> <span className="font-bold uppercase">{selectedCustomer?.name}</span></p>
             <p><span className="font-bold inline-block w-20">Địa chỉ:</span> {selectedCustomer?.address}</p>
             <p><span className="font-bold inline-block w-20">MST:</span> {selectedCustomer?.taxCode}</p>
           </div>
 
-          <div className="text-justify space-y-2 mb-6 leading-relaxed">
+          <div className="text-justify space-y-1 mb-4 leading-normal">
             <p className="indent-8">
               Căn cứ báo giá số <strong>{docNumber}</strong> giữa Công ty Phát Lộc Tech và <strong>{selectedCustomer?.name}</strong> về việc cung cấp trang thiết bị/ dịch vụ tin học;
             </p>
@@ -770,34 +767,34 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
               Theo điều khoản thanh toán trong hợp đồng nêu trên (Bên A sẽ thanh toán cho Bên B số tiền tương ứng với 100% giá trị quyết toán hợp đồng sau khi hết thời hạn bảo hành), cụ thể như sau:
             </p>
             
-            <p className="mt-4">
+            <p className="mt-2">
               <strong>Giá trị đơn hàng: {formatCurrency(calculateSubTotal() + calculateTax())}</strong><br/>
               <strong>Bằng chữ: </strong> <span className="italic font-medium">{numberToVietnameseWords(calculateSubTotal() + calculateTax())}</span>
             </p>
             
-            <p className="indent-8 mt-4">
+            <p className="indent-8 mt-2">
               Nay, Công ty Phát Lộc Tech làm công văn này đề nghị <strong>{selectedCustomer?.name}</strong> thanh toán cho chúng tôi số tiền <strong>{formatCurrency(calculateSubTotal() + calculateTax())}</strong> theo thông tin tài khoản thanh toán như sau:
             </p>
 
-            <p className="mt-4">
+            <p className="mt-2">
               <strong>Đơn vị thụ hưởng: CÔNG TY TNHH PHÁT LỘC TECH</strong><br/>
               <strong>Số tài khoản: 115003041055 tại Ngân hàng TMCP Công Thương Việt Nam - Chi nhánh Long An</strong>
             </p>
             
-            <p className="mt-4">
+            <p className="mt-2">
               Rất mong sự quan tâm giải quyết của Quý Công Ty.<br/>
               Xin trân trọng cảm ơn!
             </p>
           </div>
 
-          <div className="flex justify-between mt-8 px-8">
+          <div className="flex justify-between mt-6 px-8">
             <div className="w-1/3">
               <p className="font-bold italic">Nơi nhận:</p>
               <p className="italic">Như trên;</p>
             </div>
-            <div className="w-1/3 text-center pb-12">
+            <div className="w-1/3 text-center pb-8">
               <p className="font-bold uppercase">ĐẠI DIỆN DOANH NGHIỆP</p>
-              <p className="font-bold uppercase mb-16">GIÁM ĐỐC</p>
+              <p className="font-bold uppercase mb-12">GIÁM ĐỐC</p>
               <p className="italic font-normal">(Ký, ghi rõ họ tên và đóng dấu)</p>
             </div>
           </div>
