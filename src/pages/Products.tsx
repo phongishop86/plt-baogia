@@ -367,14 +367,6 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
               📦 Hàng hóa
             </button>
             <button
-              onClick={() => { setActiveTab('SERVICE'); setSelectedIds([]); }}
-              className={`flex-1 sm:flex-none px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                activeTab === 'SERVICE' ? 'bg-white text-purple-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              ⚙️ Dịch vụ
-            </button>
-            <button
               onClick={() => { setActiveTab('SOLD_OUT'); setSelectedIds([]); }}
               className={`flex-1 sm:flex-none px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
                 activeTab === 'SOLD_OUT' ? 'bg-white text-amber-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'

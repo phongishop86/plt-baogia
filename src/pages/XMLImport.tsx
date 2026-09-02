@@ -6,6 +6,7 @@ import { db } from '../db/db';
 export default function XMLImport() {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<any[]>([]);
+  const [skipDocCreation, setSkipDocCreation] = useState(false);
   // MST của Phát Lộc Tech để tự động phân loại hóa đơn
   const PLT_TAX_CODE = '0319347662';
 
@@ -111,25 +112,27 @@ export default function XMLImport() {
           }
         }
         
-        // 3. Save Document
-        await db.documents.add({
-          type: invoiceType === 'INPUT' ? 'INPUT_INVOICE' : 'OUTPUT_INVOICE',
-          docNumber: invoiceInfo.docNumber,
-          customerId,
-          date: invoiceInfo.date,
-          subTotal: invoiceInfo.subTotal,
-          taxAmount: invoiceInfo.taxAmount,
-          total: invoiceInfo.total,
-          items: products.map((p: any) => ({
-            productName: p.name || '',
-            unit: p.unit || '',
-            quantity: p.quantity || 1, 
-            unitPrice: p.unitPrice || 0,
-            taxRate: p.taxRate || 0,
-            amount: p.amount || (p.quantity * p.unitPrice)
-          })),
-          createdAt: new Date()
-        });
+        // 3. Save Document (if not skipped)
+        if (!skipDocCreation) {
+          await db.documents.add({
+            type: invoiceType === 'INPUT' ? 'INPUT_INVOICE' : 'OUTPUT_INVOICE',
+            docNumber: invoiceInfo.docNumber,
+            customerId,
+            date: invoiceInfo.date,
+            subTotal: invoiceInfo.subTotal,
+            taxAmount: invoiceInfo.taxAmount,
+            total: invoiceInfo.total,
+            items: products.map((p: any) => ({
+              productName: p.name || '',
+              unit: p.unit || '',
+              quantity: p.quantity || 1, 
+              unitPrice: p.unitPrice || 0,
+              taxRate: p.taxRate || 0,
+              amount: p.amount || (p.quantity * p.unitPrice)
+            })),
+            createdAt: new Date()
+          });
+        }
 
         newResults.push({ file: file.name, status: 'success', docNumber: invoiceInfo.docNumber });
       } catch (err: any) {
@@ -155,6 +158,16 @@ export default function XMLImport() {
           <input type="file" accept=".xml" multiple className="hidden" onChange={handleFileUpload} disabled={loading} />
         </label>
         <p className="text-sm text-gray-500 italic">Hệ thống sẽ tự động phân loại hóa đơn Bán ra hay Mua vào dựa trên Mã số thuế của công ty (0319347662).</p>
+        
+        <label className="flex items-center space-x-2 mt-4 cursor-pointer text-gray-700 font-medium">
+          <input 
+            type="checkbox" 
+            checked={skipDocCreation} 
+            onChange={(e) => setSkipDocCreation(e.target.checked)} 
+            className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500" 
+          />
+          <span>Chỉ cập nhật Tồn kho (Không tạo Hóa đơn vào danh sách Chứng từ)</span>
+        </label>
       </div>
 
       {loading && <p className="mt-6 text-center text-blue-600 font-medium">Đang xử lý các file...</p>}

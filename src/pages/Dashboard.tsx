@@ -667,7 +667,19 @@ export default function Dashboard() {
         <StatCard onClick={() => setDetailView('CUSTOMERS')} title="Khách hàng / Đối tác" value={stats.customers.length.toString()} icon={<Users size={24} className="text-blue-500" />} />
         <StatCard onClick={() => setDetailView('PRODUCTS')} title="Mã hàng tồn kho" value={stats.products.filter(p => !isOperatingCostProduct(p)).length.toString()} icon={<Box size={24} className="text-purple-500" />} />
         <StatCard onClick={() => setDetailView('PRODUCTS')} title="Giá trị Tồn kho" value={formatCurrency(stats.inventoryValue)} icon={<DollarSign size={24} className="text-indigo-500" />} bgColor="bg-indigo-50" />
-        <StatCard onClick={() => setDetailView('DOCUMENTS')} title="Tổng số Chứng từ" value={stats.documents.length.toString()} icon={<FileText size={24} className="text-gray-500" />} />
+        <StatCard 
+          onClick={() => setDetailView('DOCUMENTS')} 
+          title="Tổng số Chứng từ" 
+          value={stats.documents.length.toString()} 
+          icon={<FileText size={24} className="text-gray-500" />} 
+          subtitle={
+            <div className="text-[11px] text-gray-500 mt-1 space-y-0.5">
+              <p>• Báo giá: {stats.documents.filter(d => d.type === 'QUOTATION').length}</p>
+              <p>• Mua vào: {stats.documents.filter(d => d.type === 'INPUT_INVOICE').length}</p>
+              <p>• Bán ra: {stats.documents.filter(d => d.type === 'OUTPUT_INVOICE').length}</p>
+            </div>
+          }
+        />
       </div>
       
       <h3 className="text-lg font-semibold text-gray-800 mt-8 mb-4 border-b pb-2">Tài chính (Tạm tính)</h3>
@@ -724,7 +736,7 @@ export default function Dashboard() {
   );
 }
 
-function StatCard({ title, value, icon, bgColor = "bg-gray-50", onClick }: { title: string, value: string, icon: React.ReactNode, bgColor?: string, onClick?: () => void }) {
+function StatCard({ title, value, icon, bgColor = "bg-gray-50", onClick, subtitle }: { title: string, value: string, icon: React.ReactNode, bgColor?: string, onClick?: () => void, subtitle?: React.ReactNode }) {
   return (
     <div 
       onClick={onClick}
@@ -736,6 +748,7 @@ function StatCard({ title, value, icon, bgColor = "bg-gray-50", onClick }: { tit
       <div>
         <p className="text-sm text-gray-500 font-medium">{title}</p>
         <p className="text-xl font-bold text-gray-900 mt-1">{value}</p>
+        {subtitle && <div className="mt-1">{subtitle}</div>}
       </div>
     </div>
   );
