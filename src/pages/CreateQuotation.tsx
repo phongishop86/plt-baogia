@@ -715,12 +715,12 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
           <p className="mb-4">– Các nội dung khác: ..........................................................................................................................................................</p>
 
           <div className="font-bold mb-1">4. Kết luận:</div>
-          <p className="text-justify mb-8 leading-relaxed">
+          <p className="text-justify mb-4 leading-relaxed">
             Sau khi kết thúc nghiệm thu, các bên đi đến thống nhất bàn giao và thực hiện việc ký tên xác nhận bên dưới.<br/>
             Biên bản được lập thành 02 bản có giá trị pháp lý như nhau, mỗi bên giữ 01 bản để làm căn cứ thực hiện.
           </p>
           
-          <div className="flex justify-between text-center font-bold uppercase px-8 pb-32">
+          <div className="flex justify-between text-center font-bold uppercase px-8 pb-16">
             <div>
               BÊN A<br/>
               <span className="italic font-normal text-sm capitalize">(Ký và ghi rõ họ tên)</span>
@@ -790,14 +790,14 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
             </p>
           </div>
 
-          <div className="flex justify-between mt-12 px-8">
+          <div className="flex justify-between mt-8 px-8">
             <div className="w-1/3">
               <p className="font-bold italic">Nơi nhận:</p>
               <p className="italic">Như trên;</p>
             </div>
-            <div className="w-1/3 text-center pb-32">
+            <div className="w-1/3 text-center pb-12">
               <p className="font-bold uppercase">ĐẠI DIỆN DOANH NGHIỆP</p>
-              <p className="font-bold uppercase mb-20">GIÁM ĐỐC</p>
+              <p className="font-bold uppercase mb-16">GIÁM ĐỐC</p>
               <p className="italic font-normal">(Ký, ghi rõ họ tên và đóng dấu)</p>
             </div>
           </div>
