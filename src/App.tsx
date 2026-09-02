@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FileText, Users, Box, LayoutDashboard, Upload, FilePlus, Settings as SettingsIcon, Wallet, Menu, X, LogOut, UserCircle, CloudUpload, AlertCircle, Search } from 'lucide-react';
+import { FileText, Users, Box, LayoutDashboard, Upload, FilePlus, Settings as SettingsIcon, Wallet, Menu, X, LogOut, UserCircle, CloudUpload, AlertCircle, Search, ArrowLeft } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { findBackupFile, uploadBackup, DRIVE_SCOPE } from './utils/googleDrive';
 import { db } from './db/db';
@@ -99,19 +99,33 @@ function App() {
   }, []);
 
   // Update default tab based on role when user logs in
+  const [historyStack, setHistoryStack] = useState<string[]>([]);
+
   useEffect(() => {
-    if (currentUser) {
-      if (currentUser.role === 'ADMIN' || currentUser.role === 'KETOAN') {
-        setActiveTab('dashboard');
-      } else {
-        setActiveTab('products');
-      }
+    if (currentUser && currentUser.role !== 'ADMIN' && currentUser.role !== 'KETOAN') {
+      setActiveTab('products');
+    } else {
+      setActiveTab('dashboard');
     }
   }, [currentUser]);
 
   const handleTabClick = (tab: string) => {
+    if (tab !== activeTab) {
+      setHistoryStack(prev => [...prev, activeTab]);
+    }
     setActiveTab(tab);
     setIsMobileMenuOpen(false);
+  };
+
+  const handleBack = () => {
+    if (historyStack.length > 0) {
+      const newStack = [...historyStack];
+      const prevTab = newStack.pop()!;
+      setHistoryStack(newStack);
+      setActiveTab(prevTab);
+    } else {
+      setActiveTab('dashboard');
+    }
   };
 
   if (!currentUser) {
@@ -133,16 +147,15 @@ function App() {
       )}
 
       {/* Sidebar */}
-      <aside 
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 flex flex-col transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 print:hidden ${
-          isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
-      >
+      <aside className={`fixed inset-y-0 left-0 w-64 bg-white border-r border-gray-200 z-50 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 flex flex-col ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} print:hidden`}>
         <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
+          <button 
+            onClick={() => handleTabClick('dashboard')}
+            className="flex items-center space-x-3 focus:outline-none hover:opacity-80 transition-opacity"
+          >
             <img src="/PLT-Logo-web.png" alt="PLT Logo" className="w-9 h-9 object-contain bg-white rounded" />
             <h1 className="font-bold text-lg text-gray-800 tracking-wide">PLT ERP</h1>
-          </div>
+          </button>
           <button 
             className="md:hidden text-gray-500 hover:text-gray-700" 
             onClick={() => setIsMobileMenuOpen(false)}
@@ -386,6 +399,20 @@ function App() {
             </div>
           </div>
         </div>
+      )}
+      
+      {/* Nút Back Floating (Bong bóng PLT) */}
+      {historyStack.length > 0 && (
+        <button 
+          onClick={handleBack}
+          className="fixed bottom-6 right-6 md:bottom-10 md:right-10 w-14 h-14 bg-white rounded-full shadow-2xl hover:shadow-xl flex items-center justify-center border border-gray-100 z-[60] print:hidden transition-transform hover:scale-105 group"
+          title="Quay lại thao tác trước (Back)"
+        >
+          <img src="/PLT-Logo-web.png" alt="Back" className="w-9 h-9 object-contain opacity-90 group-hover:opacity-100 transition-opacity" />
+          <div className="absolute -top-1 -left-1 bg-blue-600 text-white rounded-full p-1 shadow-sm opacity-90 group-hover:opacity-100">
+            <ArrowLeft size={14} strokeWidth={3} />
+          </div>
+        </button>
       )}
     </div>
   );
