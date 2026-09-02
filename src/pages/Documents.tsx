@@ -147,6 +147,7 @@ export default function Documents({ setEditingQuotationId, currentUser, mode = '
     let payables = 0; // Phải trả (INPUT chưa thanh toán)
     
     filteredDocs.forEach(doc => {
+      if (doc.status === 'CANCELLED') return;
       if (!doc.paymentDate) {
         if (doc.type === 'OUTPUT_INVOICE') receivables += doc.total;
         if (doc.type === 'INPUT_INVOICE') payables += doc.total;

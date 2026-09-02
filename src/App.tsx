@@ -162,32 +162,10 @@ function App() {
           )}
           {isKetoan && (
             <NavItem 
-              icon={<Users size={20} />} 
-              label="Khách hàng / Đối tác" 
-              active={activeTab === 'customers'} 
-              onClick={() => handleTabClick('customers')} 
-            />
-          )}
-          <NavItem 
-            icon={<Box size={20} />} 
-            label="Quản lý Tồn kho" 
-            active={activeTab === 'products'} 
-            onClick={() => handleTabClick('products')} 
-          />
-          {isKetoan && (
-            <NavItem 
               icon={<FileText size={20} />} 
               label="Hồ sơ Chứng từ" 
               active={activeTab === 'documents'} 
               onClick={() => handleTabClick('documents')} 
-            />
-          )}
-          {isKetoan && (
-            <NavItem 
-              icon={<Wallet size={20} />} 
-              label="Quỹ & Tạm ứng" 
-              active={activeTab === 'fund'} 
-              onClick={() => handleTabClick('fund')} 
             />
           )}
           {isAdmin && (
@@ -198,12 +176,34 @@ function App() {
               onClick={() => handleTabClick('xml')} 
             />
           )}
+          {isKetoan && (
+            <NavItem 
+              icon={<Users size={20} />} 
+              label="Khách hàng / Đối tác" 
+              active={activeTab === 'customers'} 
+              onClick={() => handleTabClick('customers')} 
+            />
+          )}
           <NavItem 
             icon={<FilePlus size={20} className="text-blue-500" />} 
             label="Quản lý Báo giá" 
             active={activeTab === 'quotations'} 
             onClick={() => handleTabClick('quotations')} 
           />
+          <NavItem 
+            icon={<Box size={20} />} 
+            label="Quản lý Tồn kho" 
+            active={activeTab === 'products'} 
+            onClick={() => handleTabClick('products')} 
+          />
+          {isKetoan && (
+            <NavItem 
+              icon={<Wallet size={20} />} 
+              label="Quỹ & Tạm ứng" 
+              active={activeTab === 'fund'} 
+              onClick={() => handleTabClick('fund')} 
+            />
+          )}
           <NavItem 
             icon={<Search size={20} className="text-orange-500" />} 
             label="Tìm Nguồn Hàng" 
