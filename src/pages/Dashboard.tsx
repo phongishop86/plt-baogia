@@ -282,12 +282,12 @@ export default function Dashboard() {
         break;
       case 'PRODUCTS':
         title = 'Phân tích Tồn kho (Loại trừ Chi phí/Dịch vụ)';
-        data = stats.products.filter(p => !isOperatingCostProduct(p));
+        data = stats.products.filter(p => !isOperatingCostProduct(p) && (p.stock || 0) > 0);
         
         // Nhóm theo Danh mục (category)
         const categoryMap: Record<string, { name: string, totalValue: number, count: number }> = {};
         data.forEach(p => {
-          const typeName = p.type === 'SERVICE' ? 'Dịch vụ' : p.type === 'EXPENSE' ? 'Chi phí' : 'Chưa phân loại';
+          const typeName = p.type === 'EXPENSE' ? 'Chi phí' : 'Hàng hóa';
           const cat = p.category || typeName;
           if (!categoryMap[cat]) categoryMap[cat] = { name: cat, totalValue: 0, count: 0 };
           categoryMap[cat].totalValue += (p.stock || 0) * p.unitPrice;
@@ -296,7 +296,6 @@ export default function Dashboard() {
         const categoryPieData = Object.values(categoryMap).sort((a,b) => b.totalValue - a.totalValue);
 
         const topByValue = [...data]
-          .filter(p => p.type !== 'SERVICE')
           .map(p => ({ ...p, totalValue: (p.stock||0) * p.unitPrice }))
           .sort((a,b) => b.totalValue - a.totalValue)
           .slice(0, 10);
@@ -665,7 +664,7 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <StatCard onClick={() => setDetailView('CUSTOMERS')} title="Khách hàng / Đối tác" value={stats.customers.length.toString()} icon={<Users size={24} className="text-blue-500" />} />
-        <StatCard onClick={() => setDetailView('PRODUCTS')} title="Mã hàng tồn kho" value={stats.products.filter(p => !isOperatingCostProduct(p)).length.toString()} icon={<Box size={24} className="text-purple-500" />} />
+        <StatCard onClick={() => setDetailView('PRODUCTS')} title="Mã hàng tồn kho" value={stats.products.filter(p => !isOperatingCostProduct(p) && (p.stock || 0) > 0).length.toString()} icon={<Box size={24} className="text-purple-500" />} />
         <StatCard onClick={() => setDetailView('PRODUCTS')} title="Giá trị Tồn kho" value={formatCurrency(stats.inventoryValue)} icon={<DollarSign size={24} className="text-indigo-500" />} bgColor="bg-indigo-50" />
         <StatCard 
           onClick={() => setDetailView('DOCUMENTS')} 

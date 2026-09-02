@@ -336,7 +336,7 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
         <div>
           <h3 className="font-semibold text-gray-800 flex items-center gap-2">
             <CheckSquare className="w-5 h-5 text-blue-600" />
-            Danh sách Hàng hóa & Dịch vụ
+            Danh sách Tồn kho & Chi phí
           </h3>
           <p className="text-sm text-gray-500 mt-1">Dữ liệu được trích xuất tự động từ Hóa đơn điện tử</p>
         </div>
@@ -364,7 +364,7 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
                 activeTab === 'PRODUCT' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'
               }`}
             >
-              📦 Hàng hóa
+              📦 Tồn kho
             </button>
             <button
               onClick={() => { setActiveTab('SOLD_OUT'); setSelectedIds([]); }}

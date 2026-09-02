@@ -170,7 +170,7 @@ function App() {
           )}
           <NavItem 
             icon={<Box size={20} />} 
-            label="Sản phẩm / Tồn kho" 
+            label="Quản lý Tồn kho" 
             active={activeTab === 'products'} 
             onClick={() => handleTabClick('products')} 
           />
@@ -267,7 +267,7 @@ function App() {
               activeTab === 'create-quote' ? (editingQuotationId ? 'Sửa Báo Giá' : 'Tạo Báo Giá Mới') :
               activeTab === 'quotations' ? 'Quản lý Báo giá' :
               activeTab === 'customers' ? 'Quản lý Khách Hàng / Đối tác' :
-              activeTab === 'products' ? 'Quản lý Sản Phẩm / Tồn kho' :
+              activeTab === 'products' ? 'Quản lý Tồn kho' :
               activeTab === 'documents' ? 'Quản lý Hồ sơ Chứng từ' :
               activeTab === 'fund' ? 'Quản lý Quỹ & Tạm ứng' :
               activeTab === 'settings' ? 'Cài đặt Hệ thống' :
