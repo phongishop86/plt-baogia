@@ -29,6 +29,7 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
 
   // Modal tạo khách hàng mới
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
+  const [printMode, setPrintMode] = useState<'QUOTATION' | 'DELIVERY' | 'PAYMENT' | 'ALL'>('QUOTATION');
   const [newCustomer, setNewCustomer] = useState({ name: '', taxCode: '', address: '', phone: '', email: '' });
 
   const handleCreateCustomer = async (e: React.FormEvent) => {
@@ -217,12 +218,58 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
     }
   };
 
-  const handlePrint = () => {
+  const executePrint = (mode: 'QUOTATION' | 'DELIVERY' | 'PAYMENT' | 'ALL') => {
     if (!selectedCustomerId) {
-      alert('Vui lòng chọn khách hàng để in báo giá!');
+      alert('Vui lòng chọn khách hàng để in!');
       return;
     }
-    window.print();
+    setPrintMode(mode);
+    setTimeout(() => {
+      window.print();
+    }, 300);
+  };
+
+  const numberToVietnameseWords = (amount: number): string => {
+    if (amount === 0) return 'Không đồng';
+    const units = ['không', 'một', 'hai', 'ba', 'bốn', 'năm', 'sáu', 'bảy', 'tám', 'chín'];
+    const blockUnit = ['', 'nghìn', 'triệu', 'tỷ', 'nghìn tỷ', 'triệu tỷ'];
+
+    let str = Math.floor(amount).toString();
+    let chunks: string[] = [];
+    while (str.length > 0) {
+      chunks.push(str.slice(-3));
+      str = str.slice(0, -3);
+    }
+
+    function readThree(n: string, isFirst: boolean): string {
+      let num = parseInt(n, 10);
+      if (num === 0) return '';
+      let [h, t, u] = n.padStart(3, '0').split('').map(Number);
+      let res = [];
+      if (h > 0 || !isFirst) res.push(units[h], 'trăm');
+      
+      if (t === 0) {
+        if (u > 0 && (h > 0 || !isFirst)) res.push('lẻ');
+      } else if (t === 1) {
+        res.push('mười');
+      } else {
+        res.push(units[t], 'mươi');
+      }
+
+      if (u === 1 && t > 1) res.push('mốt');
+      else if (u === 5 && t > 0) res.push('lăm');
+      else if (u > 0) res.push(units[u]);
+
+      return res.join(' ');
+    }
+
+    let words = [];
+    for (let i = chunks.length - 1; i >= 0; i--) {
+      let w = readThree(chunks[i], i === chunks.length - 1);
+      if (w) words.push(w, blockUnit[i]);
+    }
+    const result = words.join(' ').trim().replace(/\s+/g, ' ');
+    return result.charAt(0).toUpperCase() + result.slice(1) + ' đồng.';
   };
 
   const formatCurrency = (val: number) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
@@ -265,9 +312,11 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-6 print:shadow-none print:border-none print:p-0">
       
-      {/* HEADER CHO IN ẤN (Chỉ hiển thị khi in) */}
-      <div className="hidden print:block mb-6 text-sm font-[Times_New_Roman]">
-        <div className="flex items-center space-x-6 pb-4 border-b border-gray-300 mb-4">
+      {/* ==== BÁO GIÁ VÀ GIAO DIỆN CHÍNH ==== */}
+      <div className={printMode === 'DELIVERY' || printMode === 'PAYMENT' ? 'print:hidden space-y-6' : 'space-y-6'}>
+        {/* HEADER CHO IN ẤN (Chỉ hiển thị khi in) */}
+        <div className="hidden print:block mb-6 text-sm font-[Times_New_Roman]">
+          <div className="flex items-center space-x-6 pb-4 border-b border-gray-300 mb-4">
           <div className="w-40 flex-shrink-0">
             <img src="/PLT-logo.png" alt="PLT Logo" className="w-full h-auto max-h-32 object-contain" />
           </div>
@@ -569,13 +618,20 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
         >
           <span>📧 Gửi Email</span>
         </button>
-        <button 
-          onClick={handlePrint}
-          className="flex items-center space-x-2 bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-md font-medium transition-colors"
-        >
-          <Printer size={18} />
-          <span>In Báo Giá</span>
-        </button>
+        
+        <div className="relative group">
+          <button className="flex items-center space-x-2 bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-md font-medium transition-colors">
+            <Printer size={18} />
+            <span>In Chứng Từ ▾</span>
+          </button>
+          <div className="absolute right-0 bottom-full mb-2 hidden group-hover:block bg-white shadow-xl border border-gray-200 rounded-md w-48 overflow-hidden z-10">
+            <button onClick={() => executePrint('QUOTATION')} className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm font-medium text-gray-800">In Báo Giá</button>
+            <button onClick={() => executePrint('DELIVERY')} className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm border-t font-medium text-gray-800">In Biên Bản Bàn Giao</button>
+            <button onClick={() => executePrint('PAYMENT')} className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm border-t font-medium text-gray-800">In Đề Nghị Thanh Toán</button>
+            <button onClick={() => executePrint('ALL')} className="w-full text-left px-4 py-2 hover:bg-blue-50 text-sm border-t font-bold text-blue-700">In Trọn Bộ (3 Trang)</button>
+          </div>
+        </div>
+
         <button 
           onClick={() => handleSaveQuotation('PENDING')}
           className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-md font-bold shadow-md transition-colors"
@@ -583,6 +639,170 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
           Lưu Báo Giá
         </button>
       </div>
+
+      </div> {/* END OF QUOTATION MAIN WRAPPER */}
+
+      {/* ==== BIÊN BẢN BÀN GIAO ==== */}
+      {(printMode === 'DELIVERY' || printMode === 'ALL') && (
+        <div className={`hidden print:block text-sm font-[Times_New_Roman] ${printMode === 'ALL' ? 'break-before-page mt-8' : ''}`}>
+          <div className="text-center font-bold mb-4">
+            <h2 className="text-base uppercase">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</h2>
+            <h3 className="text-sm">Độc lập – Tự do – Hạnh phúc</h3>
+            <p className="font-normal italic mt-1">TP Hồ Chí Minh, ngày .... tháng .... năm 202...</p>
+          </div>
+          
+          <div className="text-center mb-6">
+            <h1 className="text-xl font-bold uppercase">BIÊN BẢN BÀN GIAO - NGHIỆM THU THIẾT BỊ/ DỊCH VỤ</h1>
+            <p className="italic font-bold">Số: {docNumber}/BB-BGNTTBDV</p>
+            <p className="italic">Căn cứ báo giá số: {docNumber}</p>
+          </div>
+
+          <div className="mb-4 text-justify leading-relaxed">
+            <p>Hôm nay, ngày .... tháng .... năm 202... tại <strong>{selectedCustomer?.name}</strong> chúng tôi gồm:</p>
+            
+            <div className="mt-2 font-bold uppercase">A. BÊN A (Bên nhận hàng): {selectedCustomer?.name}</div>
+            <p>Địa chỉ: {selectedCustomer?.address}</p>
+            <p>MST: {selectedCustomer?.taxCode}</p>
+            <div className="flex justify-between w-full">
+              <p>Điện thoại: ....................................................................</p>
+            </div>
+            <div className="flex justify-between w-full mt-1">
+              <p>Người đại diện: Ông/Bà ................................................</p>
+              <p className="w-64">Chức vụ: .......................................</p>
+            </div>
+
+            <div className="mt-2 font-bold uppercase">B. BÊN B (Bên giao hàng): CÔNG TY TNHH PHÁT LỘC TECH</div>
+            <p>Địa chỉ: Số 491/1 Trường Chinh, Phường Tân Bình, Thành phố Hồ Chí Minh</p>
+            <p>Điện thoại: 0932 685 794</p>
+            <div className="flex justify-between w-full mt-1">
+              <p>Người đại diện: Ông Nguyễn Thanh Phong</p>
+              <p className="w-64">Chức vụ: Giám đốc</p>
+            </div>
+          </div>
+
+          <div className="font-bold mb-1">1. Đối tượng bàn giao, nghiệm thu:</div>
+          <table className="w-full border-collapse border border-black mb-4">
+            <thead>
+              <tr>
+                <th className="border border-black p-1 text-center w-12">STT</th>
+                <th className="border border-black p-1 text-center">Tên thiết bị, dịch vụ</th>
+                <th className="border border-black p-1 text-center w-16">ĐVT</th>
+                <th className="border border-black p-1 text-center w-20">Số lượng</th>
+                <th className="border border-black p-1 text-center w-24">Ghi chú</th>
+              </tr>
+            </thead>
+            <tbody>
+              {selectedItems.map((item, idx) => (
+                <tr key={item.tempId}>
+                  <td className="border border-black p-1 text-center align-top">{idx + 1}</td>
+                  <td className="border border-black p-1 align-top whitespace-pre-wrap">{item.name}</td>
+                  <td className="border border-black p-1 text-center align-top">{item.unit}</td>
+                  <td className="border border-black p-1 text-center align-top">{item.quantity}</td>
+                  <td className="border border-black p-1 text-center align-top">Mới 100%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <div className="font-bold mb-1">2. Thời gian bàn giao, nghiệm thu:</div>
+          <p className="mb-1">Các bên tiến hành nghiệm thu vào lúc:</p>
+          <p className="mb-1">– Thời gian bắt đầu: ............................................................................................................................................................</p>
+          <p className="mb-4">– Thời gian kết thúc: ............................................................................................................................................................</p>
+
+          <div className="font-bold mb-1">3. Kết quả nghiệm thu:</div>
+          <p className="mb-1">– Số lượng: ..........................................................................................................................................................................</p>
+          <p className="mb-1">– Chất lượng từng loại: ......................................................................................................................................................</p>
+          <p className="mb-4">– Các nội dung khác: ..........................................................................................................................................................</p>
+
+          <div className="font-bold mb-1">4. Kết luận:</div>
+          <p className="text-justify mb-8 leading-relaxed">
+            Sau khi kết thúc nghiệm thu, các bên đi đến thống nhất bàn giao và thực hiện việc ký tên xác nhận bên dưới.<br/>
+            Biên bản được lập thành 02 bản có giá trị pháp lý như nhau, mỗi bên giữ 01 bản để làm căn cứ thực hiện.
+          </p>
+          
+          <div className="flex justify-between text-center font-bold uppercase px-8 pb-32">
+            <div>
+              BÊN A<br/>
+              <span className="italic font-normal text-sm capitalize">(Ký và ghi rõ họ tên)</span>
+            </div>
+            <div>
+              BÊN B<br/>
+              <span className="italic font-normal text-sm capitalize">(Ký và ghi rõ họ tên)</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==== ĐỀ NGHỊ THANH TOÁN ==== */}
+      {(printMode === 'PAYMENT' || printMode === 'ALL') && (
+        <div className={`hidden print:block text-sm font-[Times_New_Roman] ${printMode === 'ALL' ? 'break-before-page mt-8' : ''}`}>
+          <div className="flex justify-between items-start mb-6 font-bold">
+            <div className="text-center w-1/2">
+              <h2 className="text-base uppercase">CÔNG TY TNHH PHÁT LỘC TECH</h2>
+              <p className="font-normal">Số: ......../PLT-ĐNTT</p>
+            </div>
+            <div className="text-center w-1/2">
+              <h2 className="text-base uppercase">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</h2>
+              <h3 className="text-sm">Độc lập – Tự do – Hạnh phúc</h3>
+              <p className="font-normal">-----oOo-----</p>
+              <p className="font-normal italic mt-1">TP Hồ Chí Minh, ngày .... tháng .... năm 202...</p>
+            </div>
+          </div>
+
+          <div className="text-center mb-8">
+            <h1 className="text-xl font-bold uppercase">CÔNG VĂN ĐỀ NGHỊ THANH TOÁN</h1>
+          </div>
+
+          <div className="mb-4 leading-relaxed">
+            <p><span className="font-bold inline-block w-20">Kính gửi:</span> <span className="font-bold uppercase">{selectedCustomer?.name}</span></p>
+            <p><span className="font-bold inline-block w-20">Địa chỉ:</span> {selectedCustomer?.address}</p>
+            <p><span className="font-bold inline-block w-20">MST:</span> {selectedCustomer?.taxCode}</p>
+          </div>
+
+          <div className="text-justify space-y-2 mb-6 leading-relaxed">
+            <p className="indent-8">
+              Căn cứ báo giá số <strong>{docNumber}</strong> giữa Công ty Phát Lộc Tech và <strong>{selectedCustomer?.name}</strong> về việc cung cấp trang thiết bị/ dịch vụ tin học;
+            </p>
+            <p className="indent-8">
+              Căn cứ Biên bản bàn giao, nghiệm thu hoàn thành Số: <strong>{docNumber}/BB-BGNTTBDV</strong>;
+            </p>
+            <p className="indent-8">
+              Theo điều khoản thanh toán trong hợp đồng nêu trên (Bên A sẽ thanh toán cho Bên B số tiền tương ứng với 100% giá trị quyết toán hợp đồng sau khi hết thời hạn bảo hành), cụ thể như sau:
+            </p>
+            
+            <p className="mt-4">
+              <strong>Giá trị đơn hàng: {formatCurrency(calculateSubTotal() + calculateTax())}</strong><br/>
+              <strong>Bằng chữ: </strong> <span className="italic font-medium">{numberToVietnameseWords(calculateSubTotal() + calculateTax())}</span>
+            </p>
+            
+            <p className="indent-8 mt-4">
+              Nay, Công ty Phát Lộc Tech làm công văn này đề nghị <strong>{selectedCustomer?.name}</strong> thanh toán cho chúng tôi số tiền <strong>{formatCurrency(calculateSubTotal() + calculateTax())}</strong> theo thông tin tài khoản thanh toán như sau:
+            </p>
+
+            <p className="mt-4">
+              <strong>Đơn vị thụ hưởng: CÔNG TY TNHH PHÁT LỘC TECH</strong><br/>
+              <strong>Số tài khoản: 115003041055 tại Ngân hàng TMCP Công Thương Việt Nam - Chi nhánh Long An</strong>
+            </p>
+            
+            <p className="mt-4">
+              Rất mong sự quan tâm giải quyết của Quý Công Ty.<br/>
+              Xin trân trọng cảm ơn!
+            </p>
+          </div>
+
+          <div className="flex justify-between mt-12 px-8">
+            <div className="w-1/3">
+              <p className="font-bold italic">Nơi nhận:</p>
+              <p className="italic">Như trên;</p>
+            </div>
+            <div className="w-1/3 text-center pb-32">
+              <p className="font-bold uppercase">ĐẠI DIỆN DOANH NGHIỆP</p>
+              <p className="font-bold uppercase mb-20">GIÁM ĐỐC</p>
+              <p className="italic font-normal">(Ký, ghi rõ họ tên và đóng dấu)</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal Tạo khách hàng nhanh */}
       {isCustomerModalOpen && (
