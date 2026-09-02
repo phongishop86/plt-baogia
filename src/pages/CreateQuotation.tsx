@@ -620,7 +620,7 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
           <span>📧 Gửi Email</span>
         </button>
         
-        <div className="relative" onMouseLeave={() => setIsPrintMenuOpen(false)}>
+        <div className="relative">
           <button 
             onClick={() => setIsPrintMenuOpen(!isPrintMenuOpen)}
             className="flex items-center space-x-2 bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-md font-medium transition-colors"
@@ -629,11 +629,13 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
             <span>In Chứng Từ ▾</span>
           </button>
           {isPrintMenuOpen && (
-            <div className="absolute right-0 bottom-full mb-2 bg-white shadow-xl border border-gray-200 rounded-md w-48 overflow-hidden z-50">
-              <button onClick={() => { setIsPrintMenuOpen(false); executePrint('QUOTATION'); }} className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm font-medium text-gray-800">In Báo Giá</button>
-              <button onClick={() => { setIsPrintMenuOpen(false); executePrint('DELIVERY'); }} className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm border-t font-medium text-gray-800">In Biên Bản Bàn Giao</button>
-              <button onClick={() => { setIsPrintMenuOpen(false); executePrint('PAYMENT'); }} className="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm border-t font-medium text-gray-800">In Đề Nghị Thanh Toán</button>
-              <button onClick={() => { setIsPrintMenuOpen(false); executePrint('ALL'); }} className="w-full text-left px-4 py-2 hover:bg-blue-50 text-sm border-t font-bold text-blue-700">In Trọn Bộ (3 Trang)</button>
+            <div className="absolute right-0 bottom-full pb-2 z-50">
+              <div className="bg-white shadow-xl border border-gray-200 rounded-md w-48 overflow-hidden">
+                <button onClick={() => { setIsPrintMenuOpen(false); executePrint('QUOTATION'); }} className="w-full text-left px-4 py-3 hover:bg-gray-100 text-sm font-medium text-gray-800">In Báo Giá</button>
+                <button onClick={() => { setIsPrintMenuOpen(false); executePrint('DELIVERY'); }} className="w-full text-left px-4 py-3 hover:bg-gray-100 text-sm border-t font-medium text-gray-800">In Biên Bản Bàn Giao</button>
+                <button onClick={() => { setIsPrintMenuOpen(false); executePrint('PAYMENT'); }} className="w-full text-left px-4 py-3 hover:bg-gray-100 text-sm border-t font-medium text-gray-800">In Đề Nghị Thanh Toán</button>
+                <button onClick={() => { setIsPrintMenuOpen(false); executePrint('ALL'); }} className="w-full text-left px-4 py-3 hover:bg-blue-50 text-sm border-t font-bold text-blue-700">In Trọn Bộ (3 Trang)</button>
+              </div>
             </div>
           )}
         </div>
