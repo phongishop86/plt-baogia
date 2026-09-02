@@ -218,7 +218,7 @@ export default function Documents({ setEditingQuotationId, currentUser, mode = '
                   }}
                   className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 whitespace-nowrap"
                 >
-                  + Tạo mới
+                  + Lập báo giá
                 </button>
               </>
             )}
@@ -367,12 +367,25 @@ export default function Documents({ setEditingQuotationId, currentUser, mode = '
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-right space-x-3">
                     {doc.type === 'QUOTATION' && setEditingQuotationId && (
-                      <button 
-                        className="text-amber-600 hover:text-amber-900 font-medium"
-                        onClick={() => setEditingQuotationId(doc.id!)}
-                      >
-                        Sửa
-                      </button>
+                      <>
+                        {doc.status !== 'COMPLETED' && (
+                          <button 
+                            className="text-amber-600 hover:text-amber-900 font-medium mr-3"
+                            onClick={() => setEditingQuotationId(doc.id!)}
+                          >
+                            Xem/Sửa
+                          </button>
+                        )}
+                        {doc.status === 'COMPLETED' && (
+                          <button 
+                            className="text-green-700 hover:text-green-900 font-bold bg-green-100 hover:bg-green-200 px-3 py-1 rounded-md text-xs mr-3 transition-colors"
+                            onClick={() => setEditingQuotationId(doc.id!)}
+                            title="Mở ra để in các biểu mẫu Bàn giao, Đề nghị thanh toán..."
+                          >
+                            Hoàn thiện Hồ sơ
+                          </button>
+                        )}
+                      </>
                     )}
                     <button 
                       className="text-indigo-600 hover:text-indigo-900 font-medium"
