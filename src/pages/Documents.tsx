@@ -203,10 +203,10 @@ export default function Documents({ setEditingQuotationId, currentUser, mode = '
                   className="text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-blue-500"
                 >
                   <option value="ALL">Tất cả Trạng thái</option>
-                  <option value="DRAFT">Nháp (Tạo mới)</option>
+                  <option value="DRAFT">Nháp</option>
                   <option value="PENDING">Lưu chờ gửi</option>
-                  <option value="SENT">Đã gửi khách</option>
-                  <option value="COMPLETED">Đã chốt (Thành công)</option>
+                  <option value="SENT">Đã chào giá</option>
+                  <option value="COMPLETED">Đã chốt - Đã gửi hàng</option>
                   <option value="CANCELLED">Đã hủy</option>
                 </select>
                 <button
@@ -326,10 +326,10 @@ export default function Documents({ setEditingQuotationId, currentUser, mode = '
                           'bg-red-50 text-red-700 border-red-200'
                         }`}
                       >
-                        <option value="DRAFT">Nháp (Tạo mới)</option>
+                        <option value="DRAFT">Nháp</option>
                         <option value="PENDING">Lưu chờ gửi</option>
-                        <option value="SENT">Đã gửi khách</option>
-                        <option value="COMPLETED">Đã chốt (Thành công)</option>
+                        <option value="SENT">Đã chào giá</option>
+                        <option value="COMPLETED">Đã chốt - Đã gửi hàng</option>
                         <option value="CANCELLED">Đã hủy</option>
                       </select>
                     ) : (
