@@ -652,7 +652,7 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
 
       {/* ==== BIÊN BẢN BÀN GIAO ==== */}
       {(printMode === 'DELIVERY' || printMode === 'ALL') && (
-        <div className={`hidden print:block text-sm font-[Times_New_Roman] ${printMode === 'ALL' ? 'break-before-page mt-8' : ''}`}>
+        <div className={`hidden print:block text-[13px] leading-snug font-[Times_New_Roman] ${printMode === 'ALL' ? 'break-before-page mt-8' : ''}`}>
           <div className="text-center font-bold mb-2">
             <h2 className="text-base uppercase">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</h2>
             <h3 className="text-sm">Độc lập – Tự do – Hạnh phúc</h3>
@@ -725,7 +725,7 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
             Biên bản được lập thành 02 bản có giá trị pháp lý như nhau, mỗi bên giữ 01 bản để làm căn cứ thực hiện.
           </p>
           
-          <div className="flex justify-between text-center font-bold uppercase px-8 pb-12">
+          <div className="flex justify-between text-center font-bold uppercase px-8 pb-6">
             <div>
               BÊN A<br/>
               <span className="italic font-normal text-sm capitalize">(Ký và ghi rõ họ tên)</span>
@@ -740,7 +740,7 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
 
       {/* ==== ĐỀ NGHỊ THANH TOÁN ==== */}
       {(printMode === 'PAYMENT' || printMode === 'ALL') && (
-        <div className={`hidden print:block text-sm font-[Times_New_Roman] ${printMode === 'ALL' ? 'break-before-page mt-8' : ''}`}>
+        <div className={`hidden print:block text-[13px] leading-snug font-[Times_New_Roman] ${printMode === 'ALL' ? 'break-before-page mt-8' : ''}`}>
           <div className="flex justify-between items-start mb-4 font-bold">
             <div className="text-center w-1/2">
               <h2 className="text-base uppercase">CÔNG TY TNHH PHÁT LỘC TECH</h2>
@@ -800,9 +800,9 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
               <p className="font-bold italic">Nơi nhận:</p>
               <p className="italic">Như trên;</p>
             </div>
-            <div className="w-1/3 text-center pb-8">
+            <div className="w-1/3 text-center pb-4">
               <p className="font-bold uppercase">ĐẠI DIỆN DOANH NGHIỆP</p>
-              <p className="font-bold uppercase mb-12">GIÁM ĐỐC</p>
+              <p className="font-bold uppercase mb-6">GIÁM ĐỐC</p>
               <p className="italic font-normal">(Ký, ghi rõ họ tên và đóng dấu)</p>
             </div>
           </div>

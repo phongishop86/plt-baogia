@@ -86,13 +86,15 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
   const productStats = useMemo(() => {
     if (!products || !documents) return [];
 
-    const statsMap: Record<number, { totalIn: number, totalOut: number }> = {};
+    const statsMap: Record<number, { totalIn: number, totalOut: number, lastInDate: Date | null, lastInPrice: number, lastOutDate: Date | null, lastOutPrice: number }> = {};
     products.forEach(p => {
-      statsMap[p.id!] = { totalIn: 0, totalOut: 0 };
+      statsMap[p.id!] = { totalIn: 0, totalOut: 0, lastInDate: null, lastInPrice: 0, lastOutDate: null, lastOutPrice: 0 };
     });
 
     documents.forEach(doc => {
       if (!doc.items || !Array.isArray(doc.items)) return;
+      const docDate = new Date(doc.date);
+      
       doc.items.forEach(item => {
         const normalize = (str?: string) => (str || '').toString().trim().toLowerCase();
         const product = products.find(p => 
@@ -102,22 +104,39 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
         
         if (product && product.id) {
           const qty = Number(item.quantity) || 0;
+          const price = Number(item.unitPrice) || 0;
+          
           if (doc.type === 'INPUT_INVOICE') {
             statsMap[product.id].totalIn += qty;
-          } else if (doc.type === 'OUTPUT_INVOICE' || doc.type === 'DELIVERY_NOTE') {
-            statsMap[product.id].totalOut += qty;
+            if (!statsMap[product.id].lastInDate || docDate >= statsMap[product.id].lastInDate!) {
+              statsMap[product.id].lastInDate = docDate;
+              statsMap[product.id].lastInPrice = price;
+            }
+          } else if (doc.type === 'OUTPUT_INVOICE' || doc.type === 'DELIVERY_NOTE' || doc.type === 'QUOTATION') {
+            if (doc.type !== 'QUOTATION') statsMap[product.id].totalOut += qty;
+            
+            // Dùng cả Báo giá và Bán ra để làm Giá bán tham khảo
+            if (!statsMap[product.id].lastOutDate || docDate >= statsMap[product.id].lastOutDate!) {
+              statsMap[product.id].lastOutDate = docDate;
+              statsMap[product.id].lastOutPrice = price;
+            }
           }
         }
       });
     });
 
-    return products.map(p => ({
-      ...p,
-      type: p.type || 'PRODUCT',
-      category: p.category || '',
-      totalIn: statsMap[p.id!].totalIn,
-      totalOut: statsMap[p.id!].totalOut
-    })).filter(p => {
+    return products.map(p => {
+      const pStats = statsMap[p.id!];
+      return {
+        ...p,
+        type: p.type || 'PRODUCT',
+        category: p.category || '',
+        totalIn: pStats.totalIn,
+        totalOut: pStats.totalOut,
+        lastInPrice: pStats.lastInPrice,
+        lastOutPrice: pStats.lastOutPrice > 0 ? pStats.lastOutPrice : p.unitPrice // fallback
+      };
+    }).filter(p => {
       const matchSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           (p.code && p.code.toLowerCase().includes(searchQuery.toLowerCase()));
       
@@ -450,7 +469,10 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
                 <div className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase overflow-hidden min-w-[80px]" style={{ resize: 'horizontal' }}>ĐVT</div>
               </th>
               <th className="p-0 border-r border-gray-200">
-                <div className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase overflow-hidden min-w-[120px]" style={{ resize: 'horizontal' }}>Đơn giá</div>
+                <div className="px-6 py-3 text-right text-xs font-medium text-blue-600 uppercase overflow-hidden min-w-[120px]" style={{ resize: 'horizontal' }}>Giá nhập<br/>(gần nhất)</div>
+              </th>
+              <th className="p-0 border-r border-gray-200">
+                <div className="px-6 py-3 text-right text-xs font-medium text-green-600 uppercase overflow-hidden min-w-[120px]" style={{ resize: 'horizontal' }}>Giá bán<br/>(gần nhất)</div>
               </th>
               <th className="p-0 border-r border-gray-200">
                 <div className="px-6 py-3 text-center text-xs font-medium text-blue-600 uppercase overflow-hidden min-w-[100px]" style={{ resize: 'horizontal' }}>Tổng Mua</div>
@@ -542,7 +564,8 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
                   </td>
                   
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500 border-r border-gray-100">{product.unit}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900 border-r border-gray-100">{formatNumber(product.unitPrice)}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500 border-r border-gray-100">{product.lastInPrice ? formatNumber(product.lastInPrice) : '-'}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-bold text-gray-900 border-r border-gray-100">{formatNumber(product.lastOutPrice)}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-center font-medium text-blue-600 border-r border-gray-100">{product.totalIn}</td>
                   
                   {activeTab !== 'EXPENSE' && (
