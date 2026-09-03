@@ -421,7 +421,7 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
                     }}
                     className="text-gray-900 cursor-pointer select-none relative py-2 px-3 hover:bg-blue-50 border-b border-gray-100 last:border-0"
                   >
-                    <span className="block font-medium truncate">{p.name}</span>
+                    <span className="block font-medium break-words whitespace-pre-wrap">{p.name}</span>
                     <span className="block text-xs text-gray-500 mt-0.5">
                       Mã: <span className="font-medium text-gray-700">{p.code || '-'}</span> | 
                       Tồn: <span className="font-medium text-green-600">{p.stock}</span> | 
@@ -446,13 +446,13 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
           <table className="min-w-full divide-y divide-gray-200 print:border-collapse print:border-2 print:border-black font-[Times_New_Roman] print:table-fixed">
             <thead className="bg-gray-50 print:bg-gray-200">
               <tr>
-                <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 uppercase print:border print:border-black w-12 print:w-[6%] hidden print:table-cell">STT</th>
-                <th className="px-4 py-2 text-center text-xs font-bold text-gray-700 uppercase print:border print:border-black print:w-[44%]">Tên hàng hóa, dịch vụ</th>
-                <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 uppercase print:border print:border-black w-20 print:w-[10%]">ĐVT</th>
-                <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 uppercase print:border print:border-black w-24 print:w-[10%]">Số lượng</th>
-                <th className="px-4 py-2 text-center text-xs font-bold text-gray-700 uppercase print:border print:border-black w-32 print:w-[15%]">Đơn Giá</th>
+                <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 uppercase print:border print:border-black w-12 print:w-[5%] hidden print:table-cell">STT</th>
+                <th className="px-4 py-2 text-center text-xs font-bold text-gray-700 uppercase print:border print:border-black print:w-[55%]">Tên hàng hóa, dịch vụ</th>
+                <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 uppercase print:border print:border-black w-20 print:w-[8%]">ĐVT</th>
+                <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 uppercase print:border print:border-black w-24 print:w-[8%]">Số lượng</th>
+                <th className="px-4 py-2 text-center text-xs font-bold text-gray-700 uppercase print:border print:border-black w-32 print:w-[12%]">Đơn Giá</th>
                 <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 uppercase print:border print:border-black w-20 print:hidden">Thuế</th>
-                <th className="px-4 py-2 text-center text-xs font-bold text-gray-700 uppercase print:border print:border-black w-32 print:w-[15%]">Thành tiền</th>
+                <th className="px-4 py-2 text-center text-xs font-bold text-gray-700 uppercase print:border print:border-black w-32 print:w-[12%]">Thành tiền</th>
                 <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase print:hidden w-16"></th>
               </tr>
             </thead>
