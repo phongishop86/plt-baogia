@@ -37,8 +37,8 @@
 
 @media print {
   @page {
-    size: auto;
-    margin: 0; /* Margin = 0 sẽ buộc trình duyệt không chèn Watermark (URL, Ngày giờ, Tiêu đề) vào Header/Footer */
+    size: A4 portrait;
+    margin: 12mm; 
   }
   
   /* Đảm bảo nền trắng khi in */
@@ -46,6 +46,6 @@
     background-color: white !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
-    padding: 15mm !important; /* Tạo lề nhân tạo cho trang giấy thay cho @page margin để text không sát mép */
+    padding: 0 !important;
   }
 }

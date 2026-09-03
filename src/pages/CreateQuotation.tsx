@@ -448,11 +448,11 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
               <tr>
                 <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 uppercase print:border print:border-black w-12 hidden print:table-cell">STT</th>
                 <th className="px-4 py-2 text-center text-xs font-bold text-gray-700 uppercase print:border print:border-black">Tên hàng hóa, dịch vụ</th>
-                <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 uppercase print:border print:border-black w-20">ĐVT</th>
-                <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 uppercase print:border print:border-black w-24">Số lượng</th>
-                <th className="px-4 py-2 text-center text-xs font-bold text-gray-700 uppercase print:border print:border-black w-32">Đơn Giá</th>
+                <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 uppercase print:border print:border-black w-20 print:w-12">ĐVT</th>
+                <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 uppercase print:border print:border-black w-24 print:w-16">Số lượng</th>
+                <th className="px-4 py-2 text-center text-xs font-bold text-gray-700 uppercase print:border print:border-black w-32 print:w-24">Đơn Giá</th>
                 <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 uppercase print:border print:border-black w-20 print:hidden">Thuế</th>
-                <th className="px-4 py-2 text-center text-xs font-bold text-gray-700 uppercase print:border print:border-black w-32">Thành tiền</th>
+                <th className="px-4 py-2 text-center text-xs font-bold text-gray-700 uppercase print:border print:border-black w-32 print:w-24">Thành tiền</th>
                 <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase print:hidden w-16"></th>
               </tr>
             </thead>
@@ -691,9 +691,9 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
               <tr>
                 <th className="border border-black p-1 text-center w-12">STT</th>
                 <th className="border border-black p-1 text-center">Tên thiết bị, dịch vụ</th>
-                <th className="border border-black p-1 text-center w-16">ĐVT</th>
-                <th className="border border-black p-1 text-center w-20">Số lượng</th>
-                <th className="border border-black p-1 text-center w-24">Ghi chú</th>
+                <th className="border border-black p-1 text-center w-12">ĐVT</th>
+                <th className="border border-black p-1 text-center w-16">Số lượng</th>
+                <th className="border border-black p-1 text-center w-20">Ghi chú</th>
               </tr>
             </thead>
             <tbody>
