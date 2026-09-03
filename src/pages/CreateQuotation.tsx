@@ -443,16 +443,16 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
 
       {selectedItems.length > 0 && (
         <div className="mt-4 border rounded-md overflow-x-auto print:overflow-visible print:border-none print:mt-2">
-          <table className="min-w-full divide-y divide-gray-200 print:border-collapse print:border-2 print:border-black font-[Times_New_Roman]">
+          <table className="min-w-full divide-y divide-gray-200 print:border-collapse print:border-2 print:border-black font-[Times_New_Roman] print:table-fixed">
             <thead className="bg-gray-50 print:bg-gray-200">
               <tr>
-                <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 uppercase print:border print:border-black w-12 hidden print:table-cell">STT</th>
-                <th className="px-4 py-2 text-center text-xs font-bold text-gray-700 uppercase print:border print:border-black">Tên hàng hóa, dịch vụ</th>
-                <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 uppercase print:border print:border-black w-20 print:w-12">ĐVT</th>
-                <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 uppercase print:border print:border-black w-24 print:w-16">Số lượng</th>
-                <th className="px-4 py-2 text-center text-xs font-bold text-gray-700 uppercase print:border print:border-black w-32 print:w-24">Đơn Giá</th>
+                <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 uppercase print:border print:border-black w-12 print:w-[6%] hidden print:table-cell">STT</th>
+                <th className="px-4 py-2 text-center text-xs font-bold text-gray-700 uppercase print:border print:border-black print:w-[44%]">Tên hàng hóa, dịch vụ</th>
+                <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 uppercase print:border print:border-black w-20 print:w-[10%]">ĐVT</th>
+                <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 uppercase print:border print:border-black w-24 print:w-[10%]">Số lượng</th>
+                <th className="px-4 py-2 text-center text-xs font-bold text-gray-700 uppercase print:border print:border-black w-32 print:w-[15%]">Đơn Giá</th>
                 <th className="px-2 py-2 text-center text-xs font-bold text-gray-700 uppercase print:border print:border-black w-20 print:hidden">Thuế</th>
-                <th className="px-4 py-2 text-center text-xs font-bold text-gray-700 uppercase print:border print:border-black w-32 print:w-24">Thành tiền</th>
+                <th className="px-4 py-2 text-center text-xs font-bold text-gray-700 uppercase print:border print:border-black w-32 print:w-[15%]">Thành tiền</th>
                 <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase print:hidden w-16"></th>
               </tr>
             </thead>
@@ -686,14 +686,14 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
           </div>
 
           <div className="font-bold mb-1">1. Đối tượng bàn giao, nghiệm thu:</div>
-          <table className="w-full border-collapse border border-black mb-2">
+          <table className="w-full border-collapse border border-black mb-2 print:table-fixed">
             <thead>
               <tr>
-                <th className="border border-black p-1 text-center w-12">STT</th>
-                <th className="border border-black p-1 text-center">Tên thiết bị, dịch vụ</th>
-                <th className="border border-black p-1 text-center w-12">ĐVT</th>
-                <th className="border border-black p-1 text-center w-16">Số lượng</th>
-                <th className="border border-black p-1 text-center w-20">Ghi chú</th>
+                <th className="border border-black p-1 text-center w-12 print:w-[6%]">STT</th>
+                <th className="border border-black p-1 text-center print:w-[54%]">Tên thiết bị, dịch vụ</th>
+                <th className="border border-black p-1 text-center w-12 print:w-[10%]">ĐVT</th>
+                <th className="border border-black p-1 text-center w-16 print:w-[10%]">Số lượng</th>
+                <th className="border border-black p-1 text-center w-20 print:w-[20%]">Ghi chú</th>
               </tr>
             </thead>
             <tbody>
