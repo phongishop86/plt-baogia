@@ -275,8 +275,8 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
 
   const formatCurrency = (val: number) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
   
-  // Chỉ lấy sản phẩm có tồn kho > 0
-  const availableProducts = products?.filter(p => (p.stock || 0) > 0) || [];
+  // Lấy toàn bộ sản phẩm để có thể báo giá kể cả khi tồn kho = 0
+  const availableProducts = products || [];
   const searchNormalized = searchQuery.trim().toLowerCase();
   
   // Thuật toán tìm kiếm tương đối
@@ -408,7 +408,7 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
             <ul className="absolute z-10 w-full bg-white border border-gray-300 shadow-lg max-h-60 rounded-md py-1 text-base overflow-auto focus:outline-none sm:text-sm mt-1">
               {filteredProducts.length === 0 ? (
                 <li className="text-gray-500 relative cursor-default select-none py-2 px-3">
-                  Không tìm thấy sản phẩm hoặc sản phẩm đã hết hàng.
+                  Không tìm thấy sản phẩm.
                 </li>
               ) : (
                 filteredProducts.map(p => (
