@@ -118,6 +118,13 @@ export interface ProjectContract {
   createdAt?: Date;
 }
 
+export interface DocTemplate {
+  id: string; // 'QUOTATION' | 'CONTRACT_PERSONNEL' | 'PAYMENT_REQUEST' | 'HANDOVER'
+  fileName: string;
+  fileData: ArrayBuffer;
+  updatedAt: Date;
+}
+
 export class PLTDatabase extends Dexie {
   customers!: Table<Customer, number>;
   products!: Table<Product, number>;
@@ -127,6 +134,7 @@ export class PLTDatabase extends Dexie {
   projects!: Table<Project, number>;
   personnel!: Table<Personnel, number>;
   projectContracts!: Table<ProjectContract, number>;
+  templates!: Table<DocTemplate, string>;
 
   constructor() {
     super('PLTERPDatabase');
@@ -157,6 +165,17 @@ export class PLTDatabase extends Dexie {
       projects: '++id, code, name, status',
       personnel: '++id, cccd, fullName',
       projectContracts: '++id, projectId, personnelId'
+    });
+    this.version(5).stores({
+      customers: '++id, taxCode, name',
+      products: '++id, code, name',
+      documents: '++id, type, docNumber, customerId, date',
+      transactions: '++id, date, type',
+      users: '++id, username, role',
+      projects: '++id, code, name, status',
+      personnel: '++id, cccd, fullName',
+      projectContracts: '++id, projectId, personnelId',
+      templates: 'id'
     });
   }
 }

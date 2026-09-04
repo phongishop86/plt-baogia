@@ -1,8 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, type Project, type Personnel, type ProjectContract } from '../db/db';
 import { Plus, X, Pencil, Trash2, Briefcase, Users, FileText, ChevronLeft, Calendar, Printer } from 'lucide-react';
 import { formatCurrency } from '../lib/VNDToWords';
+import PizZip from 'pizzip';
+import Docxtemplater from 'docxtemplater';
+import { saveAs } from 'file-saver';
 
 export default function Projects() {
   const [activeTab, setActiveTab] = useState<'PROJECTS' | 'PERSONNEL' | 'DETAIL'>('PROJECTS');
@@ -477,16 +480,66 @@ function ProjectDetail({ projectId, onBack }: { projectId: number, onBack: () =>
   const [taxRateTNCN, setTaxRateTNCN] = useState('10');
   const [jobDescription, setJobDescription] = useState('');
   const [location, setLocation] = useState('');
-  const [printingContractId, setPrintingContractId] = useState<number | null>(null);
+  const [exportingId, setExportingId] = useState<number | null>(null);
 
-  useEffect(() => {
-    if (printingContractId) {
-      setTimeout(() => {
-        window.print();
-        setPrintingContractId(null);
-      }, 500);
+  const handleExportWord = async (contract: ProjectContract) => {
+    try {
+      setExportingId(contract.id!);
+      const template = await db.templates.get('CONTRACT_PERSONNEL');
+      if (!template) {
+        alert("Chưa có mẫu Hợp đồng Giao khoán! Vui lòng vào Cài đặt -> Quản lý Biểu mẫu để tải mẫu lên.");
+        setExportingId(null);
+        return;
+      }
+      
+      const p = allPersonnel?.find(x => x.id === contract.personnelId);
+      if (!p) return;
+
+      const zip = new PizZip(template.fileData);
+      const doc = new Docxtemplater(zip, { paragraphLoop: true, linebreaks: true });
+
+      const d = new Date(contract.startDate);
+      const amountWord = formatCurrency(contract.amount);
+      const netAmountWord = formatCurrency(contract.netAmount);
+
+      doc.render({
+        projectName: project?.name || '',
+        fullName: p.fullName || '',
+        cccd: p.cccd || '',
+        cccdDate: p.cccdDate ? new Date(p.cccdDate).toLocaleDateString('vi-VN') : '',
+        address: p.address || '',
+        phone: p.phone || '',
+        bankAccount: p.bankAccount || '',
+        bankName: p.bankName || '',
+        specialization: p.specialization || '',
+        jobDescription: contract.jobDescription || '',
+        location: contract.location || '',
+        startDate: d.toLocaleDateString('vi-VN'),
+        day: d.getDate().toString().padStart(2, '0'),
+        month: (d.getMonth() + 1).toString().padStart(2, '0'),
+        year: d.getFullYear(),
+        quantity: contract.quantity,
+        unitPrice: new Intl.NumberFormat('vi-VN').format(contract.unitPrice),
+        amount: new Intl.NumberFormat('vi-VN').format(contract.amount),
+        amountWord: amountWord.charAt(0).toUpperCase() + amountWord.slice(1),
+        taxRateTNCN: contract.taxRateTNCN,
+        netAmount: new Intl.NumberFormat('vi-VN').format(contract.netAmount),
+        netAmountWord: netAmountWord.charAt(0).toUpperCase() + netAmountWord.slice(1),
+      });
+
+      const out = doc.getZip().generate({
+        type: 'blob',
+        mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      });
+      
+      saveAs(out, `Hop_Dong_Giao_Khoan_${p.fullName.replace(/\s+/g, '_')}.docx`);
+    } catch (error) {
+      console.error(error);
+      alert("Có lỗi khi xuất file Word. Vui lòng kiểm tra lại template.");
+    } finally {
+      setExportingId(null);
     }
-  }, [printingContractId]);
+  };
 
   if (!project) return <div>Đang tải...</div>;
 
@@ -542,8 +595,7 @@ function ProjectDetail({ projectId, onBack }: { projectId: number, onBack: () =>
   };
 
   return (
-    <>
-    <div className="space-y-6 print:hidden">
+    <div className="space-y-6">
       <div className="flex items-center space-x-4 mb-4">
         <button onClick={onBack} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
           <ChevronLeft size={24} />
@@ -617,8 +669,8 @@ function ProjectDetail({ projectId, onBack }: { projectId: number, onBack: () =>
                       <td className="px-4 py-3 text-right text-sm text-red-600">{c.taxRateTNCN}% <br/><span className="text-xs">(-{new Intl.NumberFormat('vi-VN').format(c.amount - c.netAmount)} ₫)</span></td>
                       <td className="px-4 py-3 text-right text-sm font-bold text-green-600">{new Intl.NumberFormat('vi-VN').format(c.netAmount)} ₫</td>
                       <td className="px-4 py-3 text-center text-sm font-medium flex items-center justify-center space-x-2">
-                        <button onClick={() => setPrintingContractId(c.id!)} className="text-blue-600 hover:text-blue-900 p-1.5 bg-blue-50 rounded-md" title="In hợp đồng">
-                          <Printer size={16} />
+                        <button onClick={() => handleExportWord(c)} disabled={exportingId === c.id} className="text-blue-600 hover:text-blue-900 p-1.5 bg-blue-50 rounded-md disabled:opacity-50" title="Xuất hợp đồng ra file Word">
+                          <Printer size={16} className={exportingId === c.id ? "animate-pulse" : ""} />
                         </button>
                         <button onClick={() => { if (confirm('Xóa hợp đồng này?')) db.projectContracts.delete(c.id!); }} className="text-red-600 hover:text-red-900 p-1.5 bg-red-50 rounded-md" title="Xóa hợp đồng">
                           <Trash2 size={16} />
@@ -701,114 +753,7 @@ function ProjectDetail({ projectId, onBack }: { projectId: number, onBack: () =>
         </div>
       )}
     </div>
-    {printingContractId && <PrintContract contract={contracts!.find(c => c.id === printingContractId)!} project={project} personnel={allPersonnel!.find(p => p.id === contracts!.find(c => c.id === printingContractId)?.personnelId)!} />}
-    </>
   );
 }
 
-// ==========================================
-// THÀNH PHẦN 4: IN HỢP ĐỒNG GIAO KHOÁN
-// ==========================================
-function PrintContract({ contract, project, personnel }: { contract: ProjectContract, project: Project, personnel: Personnel }) {
-  const d = new Date(contract.startDate);
-  const day = d.getDate().toString().padStart(2, '0');
-  const month = (d.getMonth() + 1).toString().padStart(2, '0');
-  const year = d.getFullYear();
 
-  return (
-    <div className="hidden print:block font-[Times_New_Roman] text-[13pt] leading-tight">
-      <div className="text-center font-bold mb-4">
-        <h2 className="text-[14pt]">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</h2>
-        <h3 className="text-[13pt] underline mb-2">Độc lập - Tự do - Hạnh phúc</h3>
-        <p className="italic font-normal">TP.Hồ Chí Minh, ngày {day} tháng {month} năm {year}</p>
-      </div>
-
-      <div className="text-center font-bold mb-6">
-        <h1 className="text-[16pt]">HỢP ĐỒNG GIAO KHOÁN</h1>
-        <p className="font-normal">Số: {contract.id}/{year}/HĐGK</p>
-        <p className="italic font-normal">(V/v Giao khoán công việc {project.name})</p>
-      </div>
-
-      <div className="italic mb-4 text-justify space-y-1">
-        <p>- Căn cứ Bộ luật Dân sự của Quốc hội nước Cộng Hòa Xã Hội Chủ Nghĩa Việt Nam số 91/2015/QH13 ngày 24/11/2015;</p>
-        <p>- Căn cứ Luật Thương mại của Quốc hội nước Cộng Hoà Xã hội Chủ Nghĩa Việt Nam số 36/2005/QH11 ngày 14/06/2005;</p>
-        <p>- Căn cứ nhu cầu và khả năng của hai bên.</p>
-      </div>
-
-      <p className="mb-2">Chúng tôi gồm:</p>
-      
-      <p className="font-bold mb-2">BÊN A: CÔNG TY TNHH PHÁT LỌC TECH</p>
-      <table className="w-full border-collapse border border-black mb-4">
-        <tbody>
-          <tr><td className="border border-black p-1 w-[120px]">Địa chỉ</td><td className="border border-black p-1">: Số 491/1 Trường Chinh, Phường Tân Bình, Thành phố Hồ Chí Minh</td></tr>
-          <tr><td className="border border-black p-1">Mã số thuế</td><td className="border border-black p-1">: 0319347662</td></tr>
-          <tr><td className="border border-black p-1">Tài khoản</td><td className="border border-black p-1">: 115003041055– Ngân hàng TMCP Công Thương Việt Nam – CN Long An</td></tr>
-          <tr><td className="border border-black p-1">Người đại diện</td><td className="border border-black p-1">: <b>Ông Nguyễn Thanh Phong</b> Chức vụ: <b>Giám đốc</b></td></tr>
-          <tr><td className="border border-black p-1">Email</td><td className="border border-black p-1">: phatloctech.ltd@gmail.com</td></tr>
-          <tr><td className="border border-black p-1">Điện thoại</td><td className="border border-black p-1">: 0932 685 794</td></tr>
-        </tbody>
-      </table>
-
-      <p className="font-bold mb-2">BÊN B: {personnel.fullName.toUpperCase()}</p>
-      <table className="w-full border-collapse border border-black mb-6">
-        <tbody>
-          <tr><td className="border border-black p-1 w-[120px]">Địa chỉ</td><td className="border border-black p-1">: {personnel.address || '......................................................'}</td></tr>
-          <tr><td className="border border-black p-1">CCCD</td><td className="border border-black p-1">: {personnel.cccd}</td></tr>
-          <tr><td className="border border-black p-1">Ngày cấp</td><td className="border border-black p-1">: {personnel.cccdDate ? new Date(personnel.cccdDate).toLocaleDateString('vi-VN') : '.......................................'}</td></tr>
-          <tr><td className="border border-black p-1">Chuyên môn</td><td className="border border-black p-1">: {personnel.specialization || '......................................................'}</td></tr>
-          <tr><td className="border border-black p-1">Điện thoại</td><td className="border border-black p-1">: {personnel.phone || '......................................................'}</td></tr>
-        </tbody>
-      </table>
-
-      <p className="mb-4">Hai bên thoả thuận ký kết hợp đồng với những điều khoản cụ thể như sau:</p>
-
-      <p className="font-bold uppercase underline mb-1">ĐIỀU 1: NỘI DUNG HỢP ĐỒNG</p>
-      <p>1.1 Bên A thuê bên B thực hiện các công việc cho dự án <b>{project.name}</b> với các công việc như sau:</p>
-      <div className="ml-4 mb-2">
-        <p>a. {contract.jobDescription || 'Thực hiện công việc theo sự phân công của quản lý'}</p>
-        <p>b. Địa chỉ thực hiện theo điều 3 hợp đồng</p>
-        <p>c. Thời gian làm việc theo quy định của Pháp luật đến khi hoàn thành công việc được giao</p>
-      </div>
-
-      <p className="font-bold uppercase underline mb-1">ĐIỀU 2: CHI PHÍ VÀ HÌNH THỨC THANH TOÁN</p>
-      <p className="font-bold">Giá trị Hợp đồng là: {new Intl.NumberFormat('vi-VN').format(contract.amount)} đồng</p>
-      <p className="italic mb-2">(Bằng chữ: <span className="capitalize">{formatCurrency(contract.amount)}</span> đồng)</p>
-      <p>- Bao gồm:</p>
-      <p>+ Khoán thù lao mà Bên B nhận được khi thực hiện công việc</p>
-      <p>+ Các chi phí khác như ăn uống, trong quá trình thực hiện công việc</p>
-      <p className="mb-2">+ Chi phí xăng xe, đi lại khi thực hiện công trình</p>
-      <p className="mb-4">2.1 Phương thức thanh toán:<br/>Thanh toán 100% giá trị hợp đồng sau khi hoàn thành công việc</p>
-
-      <p className="font-bold uppercase underline mb-1">ĐIỀU 3: ĐỊA ĐIỂM VÀ THỜI GIAN THỰC HIỆN HỢP ĐỒNG</p>
-      <p>3.1. Địa điểm thực hiện: {contract.location || 'Tại công trình'}</p>
-      <p className="mb-4">3.2. Thời gian thực hiện: đến khi hoàn thành công việc được giao tại công trình.</p>
-
-      <p className="font-bold uppercase underline mb-1">ĐIỀU 4: QUYỀN VÀ NGHĨA VỤ MỖI BÊN</p>
-      <p>4.1. Quyền và nghĩa vụ của Bên A:</p>
-      <p className="ml-2">+ Bên A cam kết thanh toán cho Bên B theo giá trị hợp đồng và phương thức thanh toán nêu tại Điều 2 và Điều 3 của hợp đồng này cũng như thực hiện đầy đủ nghĩa vụ và trách nhiệm khác được quy định trong hợp đồng.</p>
-      <p className="ml-2 mb-2">+ Kiểm tra kĩ thuật lắp đặt khi bên B thi công tại công trình, Bên A có quyền yêu cầu thay đổi nếu nhận thấy phương án thi công không đúng thiết kế đã thống nhất.</p>
-      <p>4.2. Quyền và nghĩa vụ của Bên B:</p>
-      <p className="ml-2 mb-4">+ Cung cấp đầy đủ dịch vụ kĩ thuật và nhân công để thực hiện hợp đồng này, đồng thời cam kết thực hiện đầy đủ các nghĩa vụ và trách nhiệm được nêu trong hợp đồng.</p>
-
-      <p className="font-bold uppercase underline mb-1">ĐIỀU 5. HIỆU LỰC HỢP ĐỒNG</p>
-      <p>5.1. Hợp đồng có hiệu lực kể từ ngày bên cuối cùng ký hợp đồng.</p>
-      <p>5.2. Hợp đồng này vẫn có giá trị trong trường hợp hai Bên có bất kỳ sự thay đổi nào về tổ chức, nhân sự, lãnh đạo.</p>
-      <p className="mb-4">5.3. Hợp đồng tự động thanh lý khi hai bên đã hoàn thành xong nghĩa vụ của mình</p>
-      
-      <p className="mb-6">Hợp đồng được lập thành 02 (hai) bản, có giá trị như nhau. Bên A giữ 01 (một) bản, Bên B giữ 01 (một) bản.</p>
-
-      <div className="flex justify-between text-center font-bold px-12">
-        <div>
-          <p>ĐẠI DIỆN BÊN A</p>
-          <br/><br/><br/><br/>
-          <p>NGUYỄN THANH PHONG</p>
-        </div>
-        <div>
-          <p>ĐẠI DIỆN BÊN B</p>
-          <br/><br/><br/><br/>
-          <p>{personnel.fullName.toUpperCase()}</p>
-        </div>
-      </div>
-    </div>
-  );
-}

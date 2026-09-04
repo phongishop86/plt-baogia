@@ -15,6 +15,7 @@ import Login from './pages/Login';
 import UsersManagement from './pages/UsersManagement';
 import Sourcing from './pages/Sourcing';
 import Projects from './pages/Projects';
+import TemplateManagement from './pages/TemplateManagement';
 import { type User } from './db/db';
 
 function App() {
@@ -230,6 +231,14 @@ function App() {
           
           {isAdmin && (
             <NavItem 
+              icon={<FileText size={20} className="text-gray-500" />} 
+              label="Quản lý Biểu mẫu" 
+              active={activeTab === 'templates'} 
+              onClick={() => handleTabClick('templates')} 
+            />
+          )}
+          {isAdmin && (
+            <NavItem 
               icon={<SettingsIcon size={20} className="text-gray-500" />} 
               label="Cài đặt (Đồng bộ)" 
               active={activeTab === 'settings'} 
@@ -356,6 +365,7 @@ function App() {
           {activeTab === 'sourcing' && <Sourcing />}
           {activeTab === 'settings' && isAdmin && <Settings />}
           {activeTab === 'users' && isAdmin && <UsersManagement />}
+          {activeTab === 'templates' && isAdmin && <TemplateManagement />}
         </div>
       </main>
 
