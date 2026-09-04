@@ -525,6 +525,7 @@ function ProjectDetail({ projectId, onBack }: { projectId: number, onBack: () =>
   const [taxRateTNCN, setTaxRateTNCN] = useState('10');
   const [jobDescription, setJobDescription] = useState('');
   const [location, setLocation] = useState('');
+  const [deviceQuantity, setDeviceQuantity] = useState('0');
   const [exportingId, setExportingId] = useState<number | null>(null);
 
   const handleExportWord = async (contract: ProjectContract) => {
@@ -559,6 +560,7 @@ function ProjectDetail({ projectId, onBack }: { projectId: number, onBack: () =>
         specialization: p.specialization || '',
         jobDescription: contract.jobDescription || '',
         location: contract.location || '',
+        deviceQuantity: contract.deviceQuantity || 0,
         startDate: d.toLocaleDateString('vi-VN'),
         day: d.getDate().toString().padStart(2, '0'),
         month: (d.getMonth() + 1).toString().padStart(2, '0'),
@@ -601,6 +603,22 @@ function ProjectDetail({ projectId, onBack }: { projectId: number, onBack: () =>
     setTaxRateTNCN('10');
     setJobDescription('');
     setLocation(project.name || '');
+    setDeviceQuantity('0');
+    setShowModal(true);
+  };
+
+  const openEditContract = (c: ProjectContract) => {
+    setEditingId(c.id!);
+    setPersonnelId(c.personnelId.toString());
+    setStartDate(new Date(c.startDate).toISOString().split('T')[0]);
+    setEndDate(new Date(c.endDate).toISOString().split('T')[0]);
+    setUnit(c.unit as any);
+    setQuantity(c.quantity.toString());
+    setUnitPrice(c.unitPrice.toString());
+    setTaxRateTNCN(c.taxRateTNCN.toString());
+    setJobDescription(c.jobDescription || '');
+    setLocation(c.location || '');
+    setDeviceQuantity((c.deviceQuantity || 0).toString());
     setShowModal(true);
   };
 
@@ -628,6 +646,7 @@ function ProjectDetail({ projectId, onBack }: { projectId: number, onBack: () =>
       netAmount,
       jobDescription,
       location,
+      deviceQuantity: parseFloat(deviceQuantity) || 0,
       createdAt: new Date()
     };
 
@@ -781,11 +800,15 @@ function ProjectDetail({ projectId, onBack }: { projectId: number, onBack: () =>
                       <td className="px-4 py-3 text-right text-sm">
                         <div>{c.quantity} <span className="text-xs text-gray-500">({c.unit === 'DAY' ? 'Ngày' : c.unit === 'MONTH' ? 'Tháng' : c.unit === 'DEVICE' ? 'Thiết bị' : c.unit === 'UNIT' ? 'Đơn vị' : 'Khoán'})</span></div>
                         <div className="font-medium text-gray-700">x {new Intl.NumberFormat('vi-VN').format(c.unitPrice)} ₫</div>
+                        {c.deviceQuantity ? <div className="text-xs text-blue-600 mt-1" title="Số lượng thiết bị phân bổ">(Giao: {c.deviceQuantity} thiết bị)</div> : null}
                       </td>
                       <td className="px-4 py-3 text-right text-sm font-bold text-gray-900">{new Intl.NumberFormat('vi-VN').format(c.amount)} ₫</td>
                       <td className="px-4 py-3 text-right text-sm text-red-600">{c.taxRateTNCN}% <br/><span className="text-xs">(-{new Intl.NumberFormat('vi-VN').format(c.amount - c.netAmount)} ₫)</span></td>
                       <td className="px-4 py-3 text-right text-sm font-bold text-green-600">{new Intl.NumberFormat('vi-VN').format(c.netAmount)} ₫</td>
                       <td className="px-4 py-3 text-center text-sm font-medium flex items-center justify-center space-x-2">
+                        <button onClick={() => openEditContract(c)} className="text-blue-600 hover:text-blue-900 p-1.5 bg-blue-50 rounded-md" title="Sửa hợp đồng">
+                          <Pencil size={16} />
+                        </button>
                         <button onClick={() => handleExportWord(c)} disabled={exportingId === c.id} className="text-blue-600 hover:text-blue-900 p-1.5 bg-blue-50 rounded-md disabled:opacity-50" title="Xuất hợp đồng ra file Word">
                           <Printer size={16} className={exportingId === c.id ? "animate-pulse" : ""} />
                         </button>
@@ -856,9 +879,13 @@ function ProjectDetail({ projectId, onBack }: { projectId: number, onBack: () =>
                     setUnitPrice(val ? new Intl.NumberFormat('vi-VN').format(parseInt(val)) : '');
                   }} className="w-full border p-2 rounded-md font-bold text-blue-600" />
                 </div>
-                <div className="col-span-2">
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Trích thuế TNCN (%)</label>
                   <input type="number" step="0.1" value={taxRateTNCN} onChange={e => setTaxRateTNCN(e.target.value)} className="w-full border p-2 rounded-md" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Thiết bị điều phối (nếu có)</label>
+                  <input type="number" step="0.1" value={deviceQuantity} onChange={e => setDeviceQuantity(e.target.value)} className="w-full border p-2 rounded-md" placeholder="VD: 5" />
                 </div>
               </div>
               <div className="pt-4 flex justify-end space-x-3 border-t">

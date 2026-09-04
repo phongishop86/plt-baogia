@@ -116,6 +116,7 @@ export interface ProjectContract {
   notes?: string;
   jobDescription?: string; // Nội dung công việc
   location?: string; // Địa điểm thực hiện
+  deviceQuantity?: number; // Số lượng thiết bị phân phối/điều phối
   createdAt?: Date;
 }
 
