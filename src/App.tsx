@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FileText, Users, Box, LayoutDashboard, Upload, FilePlus, Settings as SettingsIcon, Wallet, Menu, X, LogOut, UserCircle, CloudUpload, AlertCircle, Search, ArrowLeft } from 'lucide-react';
+import { FileText, Users, Box, LayoutDashboard, Upload, FilePlus, Settings as SettingsIcon, Wallet, Menu, X, LogOut, UserCircle, CloudUpload, AlertCircle, Search, ArrowLeft, Briefcase } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { findBackupFile, uploadBackup, DRIVE_SCOPE } from './utils/googleDrive';
 import { db } from './db/db';
@@ -14,6 +14,7 @@ import Settings from './pages/Settings';
 import Login from './pages/Login';
 import UsersManagement from './pages/UsersManagement';
 import Sourcing from './pages/Sourcing';
+import Projects from './pages/Projects';
 import { type User } from './db/db';
 
 function App() {
@@ -211,6 +212,14 @@ function App() {
           />
           {isKetoan && (
             <NavItem 
+              icon={<Briefcase size={20} className="text-purple-600" />} 
+              label="Quản lý Dự án" 
+              active={activeTab === 'projects'} 
+              onClick={() => handleTabClick('projects')} 
+            />
+          )}
+          {isKetoan && (
+            <NavItem 
               icon={<Wallet size={20} />} 
               label="Quỹ & Tạm ứng" 
               active={activeTab === 'fund'} 
@@ -310,6 +319,7 @@ function App() {
               currentUser={currentUser}
             />
           )}
+          {activeTab === 'projects' && isKetoan && <Projects />}
           {activeTab === 'documents' && isKetoan && (
             <Documents 
               mode="DOCUMENTS"

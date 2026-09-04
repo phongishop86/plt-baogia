@@ -70,12 +70,57 @@ export interface User {
   createdAt?: Date;
 }
 
+export interface Project {
+  id?: number;
+  name: string;
+  code: string;
+  status: 'PLANNING' | 'IN_PROGRESS' | 'COMPLETED' | 'ON_HOLD' | 'CANCELLED';
+  startDate?: Date;
+  endDate?: Date;
+  progress: number;
+  budget?: number;
+  notes?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface Personnel {
+  id?: number;
+  fullName: string;
+  cccd: string;
+  type: 'FULL_TIME' | 'CONTRACT' | 'SEASONAL';
+  phone?: string;
+  email?: string;
+  bankAccount?: string; // Số tài khoản
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface ProjectContract {
+  id?: number;
+  projectId: number;
+  personnelId: number;
+  startDate: Date;
+  endDate: Date;
+  unitPrice: number;
+  unit: 'DAY' | 'MONTH' | 'PROJECT';
+  quantity: number;
+  taxRateTNCN: number;
+  amount: number;
+  netAmount: number;
+  notes?: string;
+  createdAt?: Date;
+}
+
 export class PLTDatabase extends Dexie {
   customers!: Table<Customer, number>;
   products!: Table<Product, number>;
   documents!: Table<Document, number>;
   transactions!: Table<Transaction, number>;
   users!: Table<User, number>;
+  projects!: Table<Project, number>;
+  personnel!: Table<Personnel, number>;
+  projectContracts!: Table<ProjectContract, number>;
 
   constructor() {
     super('PLTERPDatabase');
@@ -96,6 +141,16 @@ export class PLTDatabase extends Dexie {
       documents: '++id, type, docNumber, customerId, date',
       transactions: '++id, date, type',
       users: '++id, username, role'
+    });
+    this.version(4).stores({
+      customers: '++id, taxCode, name',
+      products: '++id, code, name',
+      documents: '++id, type, docNumber, customerId, date',
+      transactions: '++id, date, type',
+      users: '++id, username, role',
+      projects: '++id, code, name, status',
+      personnel: '++id, cccd, fullName',
+      projectContracts: '++id, projectId, personnelId'
     });
   }
 }
