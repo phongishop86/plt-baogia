@@ -38,7 +38,7 @@
 @media print {
   @page {
     size: A4 portrait;
-    margin: 12mm; 
+    margin: 0; /* Margin 0 buộc trình duyệt ẩn Header/Footer (Ngày giờ, Link, Tiêu đề) */
   }
   
   /* Đảm bảo nền trắng khi in */
@@ -46,6 +46,6 @@
     background-color: white !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
-    padding: 0 !important;
+    padding: 12mm !important; /* Tạo lề thủ công thay cho margin của trang để nội dung không bị dính sát mép */
   }
 }
