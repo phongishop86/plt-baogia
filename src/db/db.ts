@@ -79,6 +79,7 @@ export interface Project {
   endDate?: Date;
   progress: number;
   budget?: number;
+  contractValue?: number; // Giá trị hợp đồng (với đối tác)
   notes?: string;
   createdAt?: Date;
   updatedAt?: Date;
@@ -118,6 +119,28 @@ export interface ProjectContract {
   createdAt?: Date;
 }
 
+export interface ProjectUnit {
+  id?: number;
+  projectId: number;
+  name: string;
+  deadline?: Date;
+  status: 'NOT_STARTED' | 'IN_PROGRESS' | 'DOCS_PENDING' | 'COMPLETED';
+  personnelId?: number; // Người phụ trách
+  notes?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface ProjectExpense {
+  id?: number;
+  projectId: number;
+  category: 'OPERATION' | 'ENTERTAINMENT' | 'EQUIPMENT' | 'OTHER';
+  amount: number;
+  date: Date;
+  description: string;
+  createdAt?: Date;
+}
+
 export interface DocTemplate {
   id: string; // 'QUOTATION' | 'CONTRACT_PERSONNEL' | 'PAYMENT_REQUEST' | 'HANDOVER'
   fileName: string;
@@ -134,6 +157,8 @@ export class PLTDatabase extends Dexie {
   projects!: Table<Project, number>;
   personnel!: Table<Personnel, number>;
   projectContracts!: Table<ProjectContract, number>;
+  projectUnits!: Table<ProjectUnit, number>;
+  projectExpenses!: Table<ProjectExpense, number>;
   templates!: Table<DocTemplate, string>;
 
   constructor() {
@@ -175,6 +200,19 @@ export class PLTDatabase extends Dexie {
       projects: '++id, code, name, status',
       personnel: '++id, cccd, fullName',
       projectContracts: '++id, projectId, personnelId',
+      templates: 'id'
+    });
+    this.version(6).stores({
+      customers: '++id, taxCode, name',
+      products: '++id, code, name',
+      documents: '++id, type, docNumber, customerId, date',
+      transactions: '++id, date, type',
+      users: '++id, username, role',
+      projects: '++id, code, name, status',
+      personnel: '++id, cccd, fullName',
+      projectContracts: '++id, projectId, personnelId',
+      projectUnits: '++id, projectId, status, personnelId',
+      projectExpenses: '++id, projectId, category, date',
       templates: 'id'
     });
   }

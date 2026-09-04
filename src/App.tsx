@@ -229,7 +229,7 @@ function App() {
           
           {isAdmin && <div className="my-4 border-t border-gray-200 mx-2"></div>}
           
-          {isAdmin && (
+          {isKetoan && (
             <NavItem 
               icon={<FileText size={20} className="text-gray-500" />} 
               label="Quản lý Biểu mẫu" 
@@ -304,6 +304,7 @@ function App() {
               activeTab === 'fund' ? 'Quản lý Quỹ & Tạm ứng' :
               activeTab === 'settings' ? 'Cài đặt Hệ thống' :
               activeTab === 'users' ? 'Quản lý Tài khoản (Users)' :
+              activeTab === 'templates' ? 'Quản lý Biểu mẫu (Word)' :
               'Tổng quan (Dashboard)'
             }</h2>
           </div>
@@ -365,7 +366,7 @@ function App() {
           {activeTab === 'sourcing' && <Sourcing />}
           {activeTab === 'settings' && isAdmin && <Settings />}
           {activeTab === 'users' && isAdmin && <UsersManagement />}
-          {activeTab === 'templates' && isAdmin && <TemplateManagement />}
+          {activeTab === 'templates' && isKetoan && <TemplateManagement />}
         </div>
       </main>
 
