@@ -278,6 +278,7 @@ function PersonnelList() {
   const [type, setType] = useState<Personnel['type']>('CONTRACT');
   const [phone, setPhone] = useState('');
   const [bankAccount, setBankAccount] = useState('');
+  const [bankName, setBankName] = useState('');
   const [address, setAddress] = useState('');
   const [cccdDate, setCccdDate] = useState('');
   const [specialization, setSpecialization] = useState('');
@@ -289,6 +290,7 @@ function PersonnelList() {
     setType('CONTRACT');
     setPhone('');
     setBankAccount('');
+    setBankName('');
     setAddress('');
     setCccdDate('');
     setSpecialization('');
@@ -302,6 +304,7 @@ function PersonnelList() {
     setType(p.type);
     setPhone(p.phone || '');
     setBankAccount(p.bankAccount || '');
+    setBankName(p.bankName || '');
     setAddress(p.address || '');
     setCccdDate(p.cccdDate || '');
     setSpecialization(p.specialization || '');
@@ -312,7 +315,7 @@ function PersonnelList() {
     e.preventDefault();
     if (!fullName || !cccd) return alert("Vui lòng điền Họ tên và CCCD");
     
-    const pData = { fullName, cccd, type, phone, bankAccount, address, cccdDate, specialization, updatedAt: new Date() };
+    const pData = { fullName, cccd, type, phone, bankAccount, bankName, address, cccdDate, specialization, updatedAt: new Date() };
 
     if (editingId) {
       await db.personnel.update(editingId, pData);
@@ -371,7 +374,10 @@ function PersonnelList() {
                     <div className="text-sm text-gray-900">{p.phone}</div>
                     {p.address && <div className="text-xs text-gray-500 truncate max-w-[200px]" title={p.address}>{p.address}</div>}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-700">{p.bankAccount}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-blue-700">{p.bankAccount}</div>
+                    {p.bankName && <div className="text-xs text-gray-500">{p.bankName}</div>}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                     <button onClick={() => openEditModal(p)} className="text-blue-600 hover:text-blue-900 p-1.5 bg-blue-50 rounded-md mr-2"><Pencil size={16} /></button>
                     <button onClick={() => {
@@ -425,14 +431,18 @@ function PersonnelList() {
                   <input value={specialization} onChange={e => setSpecialization(e.target.value)} className="w-full border p-2 rounded-md" />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Số điện thoại</label>
                   <input value={phone} onChange={e => setPhone(e.target.value)} className="w-full border p-2 rounded-md" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Số tài khoản</label>
-                  <input value={bankAccount} onChange={e => setBankAccount(e.target.value)} placeholder="STK - Ngân hàng" className="w-full border p-2 rounded-md" />
+                  <input value={bankAccount} onChange={e => setBankAccount(e.target.value)} placeholder="Nhập số tài khoản" className="w-full border p-2 rounded-md" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tên Ngân hàng</label>
+                  <input value={bankName} onChange={e => setBankName(e.target.value)} placeholder="Ví dụ: Vietcombank" className="w-full border p-2 rounded-md" />
                 </div>
               </div>
               <div className="pt-4 flex justify-end space-x-3 border-t">
@@ -593,7 +603,7 @@ function ProjectDetail({ projectId, onBack }: { projectId: number, onBack: () =>
                       <td className="px-4 py-3">
                         <div className="font-bold text-sm text-gray-900">{p?.fullName || 'Không xác định'}</div>
                         <div className="text-xs text-gray-500">CCCD: {p?.cccd}</div>
-                        <div className="text-xs text-blue-600">{p?.bankAccount}</div>
+                        <div className="text-xs text-blue-600">{p?.bankAccount}{p?.bankName ? ` - ${p.bankName}` : ''}</div>
                       </td>
                       <td className="px-4 py-3 text-xs text-center text-gray-600">
                         <div className="flex items-center justify-center space-x-1"><Calendar size={12}/> <span>{new Date(c.startDate).toLocaleDateString('vi-VN')}</span></div>

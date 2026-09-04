@@ -92,6 +92,7 @@ export interface Personnel {
   phone?: string;
   email?: string;
   bankAccount?: string; // Số tài khoản
+  bankName?: string; // Tên ngân hàng
   address?: string; // Địa chỉ
   cccdDate?: string; // Ngày cấp CCCD
   specialization?: string; // Chuyên môn
