@@ -182,14 +182,7 @@ function App() {
               onClick={() => handleTabClick('documents')} 
             />
           )}
-          {isAdmin && (
-            <NavItem 
-              icon={<Upload size={20} />} 
-              label="Import Hóa Đơn (XML)" 
-              active={activeTab === 'xml'} 
-              onClick={() => handleTabClick('xml')} 
-            />
-          )}
+
           {isKetoan && (
             <NavItem 
               icon={<Users size={20} />} 
@@ -249,6 +242,14 @@ function App() {
               label="Quản lý Tài khoản" 
               active={activeTab === 'users'} 
               onClick={() => handleTabClick('users')} 
+            />
+          )}
+          {isAdmin && (
+            <NavItem 
+              icon={<Upload size={20} />} 
+              label="Import Hóa Đơn (XML)" 
+              active={activeTab === 'xml'} 
+              onClick={() => handleTabClick('xml')} 
             />
           )}
         </nav>
