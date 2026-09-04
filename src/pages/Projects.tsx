@@ -523,6 +523,8 @@ function ProjectDetail({ projectId, onBack }: { projectId: number, onBack: () =>
         amount: new Intl.NumberFormat('vi-VN').format(contract.amount),
         amountWord: amountWord.charAt(0).toUpperCase() + amountWord.slice(1),
         taxRateTNCN: contract.taxRateTNCN,
+        taxAmount: new Intl.NumberFormat('vi-VN').format(contract.amount - contract.netAmount),
+        taxAmountWord: formatCurrency(contract.amount - contract.netAmount).charAt(0).toUpperCase() + formatCurrency(contract.amount - contract.netAmount).slice(1),
         netAmount: new Intl.NumberFormat('vi-VN').format(contract.netAmount),
         netAmountWord: netAmountWord.charAt(0).toUpperCase() + netAmountWord.slice(1),
       });
