@@ -350,8 +350,14 @@ function PersonnelList() {
             ) : (
               personnel?.map(p => (
                 <tr key={p.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">{p.fullName}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{p.cccd}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-bold text-gray-900">{p.fullName}</div>
+                    {p.specialization && <div className="text-xs font-normal text-gray-500">{p.specialization}</div>}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">{p.cccd}</div>
+                    {p.cccdDate && <div className="text-xs text-gray-500">Cấp: {new Date(p.cccdDate).toLocaleDateString('vi-VN')}</div>}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
                     <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
                       p.type === 'FULL_TIME' ? 'bg-purple-100 text-purple-800' :
@@ -361,7 +367,10 @@ function PersonnelList() {
                       {p.type === 'FULL_TIME' ? 'Chuyên trách' : p.type === 'CONTRACT' ? 'Khoán' : 'Thời vụ'}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{p.phone}</td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-gray-900">{p.phone}</div>
+                    {p.address && <div className="text-xs text-gray-500 truncate max-w-[200px]" title={p.address}>{p.address}</div>}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-700">{p.bankAccount}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                     <button onClick={() => openEditModal(p)} className="text-blue-600 hover:text-blue-900 p-1.5 bg-blue-50 rounded-md mr-2"><Pencil size={16} /></button>
