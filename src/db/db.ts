@@ -103,7 +103,7 @@ export interface ProjectContract {
   startDate: Date;
   endDate: Date;
   unitPrice: number;
-  unit: 'DAY' | 'MONTH' | 'PROJECT';
+  unit: string;
   quantity: number;
   taxRateTNCN: number;
   amount: number;

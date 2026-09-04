@@ -107,7 +107,7 @@ function ProjectList({ onOpenDetail }: { onOpenDetail: (id: number) => void }) {
       code,
       status,
       progress,
-      budget: budget ? parseFloat(budget.replace(/,/g, '')) : 0,
+      budget: budget ? parseFloat(String(budget).replace(/\D/g, '')) : 0,
       notes,
       updatedAt: new Date()
     };
@@ -452,7 +452,7 @@ function ProjectDetail({ projectId, onBack }: { projectId: number, onBack: () =>
     if (!personnelId || !unitPrice) return alert("Vui lòng nhập nhân sự và đơn giá");
 
     const qty = parseFloat(quantity) || 0;
-    const price = parseFloat(unitPrice.replace(/,/g, '')) || 0;
+    const price = parseFloat(String(unitPrice).replace(/\D/g, '')) || 0;
     const tax = parseFloat(taxRateTNCN) || 0;
     
     const amount = qty * price;
@@ -548,7 +548,7 @@ function ProjectDetail({ projectId, onBack }: { projectId: number, onBack: () =>
                         <div className="flex items-center justify-center space-x-1 mt-1"><Calendar size={12}/> <span>{new Date(c.endDate).toLocaleDateString('vi-VN')}</span></div>
                       </td>
                       <td className="px-4 py-3 text-right text-sm">
-                        <div>{c.quantity} <span className="text-xs text-gray-500">({c.unit === 'DAY' ? 'Ngày' : c.unit === 'MONTH' ? 'Tháng' : 'Khoán'})</span></div>
+                        <div>{c.quantity} <span className="text-xs text-gray-500">({c.unit === 'DAY' ? 'Ngày' : c.unit === 'MONTH' ? 'Tháng' : c.unit === 'DEVICE' ? 'Thiết bị' : c.unit === 'UNIT' ? 'Đơn vị' : 'Khoán'})</span></div>
                         <div className="font-medium text-gray-700">x {new Intl.NumberFormat('vi-VN').format(c.unitPrice)} ₫</div>
                       </td>
                       <td className="px-4 py-3 text-right text-sm font-bold text-gray-900">{new Intl.NumberFormat('vi-VN').format(c.amount)} ₫</td>
@@ -599,6 +599,8 @@ function ProjectDetail({ projectId, onBack }: { projectId: number, onBack: () =>
                     <option value="PROJECT">Khoán gọn Dự án</option>
                     <option value="MONTH">Theo Tháng</option>
                     <option value="DAY">Theo Ngày</option>
+                    <option value="DEVICE">Thiết bị</option>
+                    <option value="UNIT">Đơn vị</option>
                   </select>
                 </div>
                 <div>
