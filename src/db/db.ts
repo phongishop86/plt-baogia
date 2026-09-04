@@ -92,6 +92,9 @@ export interface Personnel {
   phone?: string;
   email?: string;
   bankAccount?: string; // Số tài khoản
+  address?: string; // Địa chỉ
+  cccdDate?: string; // Ngày cấp CCCD
+  specialization?: string; // Chuyên môn
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -109,6 +112,8 @@ export interface ProjectContract {
   amount: number;
   netAmount: number;
   notes?: string;
+  jobDescription?: string; // Nội dung công việc
+  location?: string; // Địa điểm thực hiện
   createdAt?: Date;
 }
 

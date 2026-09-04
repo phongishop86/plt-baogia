@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, type Project, type Personnel, type ProjectContract } from '../db/db';
-import { Plus, X, Pencil, Trash2, Briefcase, Users, FileText, ChevronLeft, Calendar } from 'lucide-react';
+import { Plus, X, Pencil, Trash2, Briefcase, Users, FileText, ChevronLeft, Calendar, Printer } from 'lucide-react';
+import { formatCurrency } from '../lib/VNDToWords';
 
 export default function Projects() {
   const [activeTab, setActiveTab] = useState<'PROJECTS' | 'PERSONNEL' | 'DETAIL'>('PROJECTS');
@@ -277,6 +278,9 @@ function PersonnelList() {
   const [type, setType] = useState<Personnel['type']>('CONTRACT');
   const [phone, setPhone] = useState('');
   const [bankAccount, setBankAccount] = useState('');
+  const [address, setAddress] = useState('');
+  const [cccdDate, setCccdDate] = useState('');
+  const [specialization, setSpecialization] = useState('');
 
   const openAddModal = () => {
     setEditingId(null);
@@ -285,6 +289,9 @@ function PersonnelList() {
     setType('CONTRACT');
     setPhone('');
     setBankAccount('');
+    setAddress('');
+    setCccdDate('');
+    setSpecialization('');
     setShowModal(true);
   };
 
@@ -295,6 +302,9 @@ function PersonnelList() {
     setType(p.type);
     setPhone(p.phone || '');
     setBankAccount(p.bankAccount || '');
+    setAddress(p.address || '');
+    setCccdDate(p.cccdDate || '');
+    setSpecialization(p.specialization || '');
     setShowModal(true);
   };
 
@@ -302,7 +312,7 @@ function PersonnelList() {
     e.preventDefault();
     if (!fullName || !cccd) return alert("Vui lòng điền Họ tên và CCCD");
     
-    const pData = { fullName, cccd, type, phone, bankAccount, updatedAt: new Date() };
+    const pData = { fullName, cccd, type, phone, bankAccount, address, cccdDate, specialization, updatedAt: new Date() };
 
     if (editingId) {
       await db.personnel.update(editingId, pData);
@@ -384,6 +394,16 @@ function PersonnelList() {
                   <input required value={cccd} onChange={e => setCccd(e.target.value)} className="w-full border p-2 rounded-md" />
                 </div>
                 <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Ngày cấp</label>
+                  <input type="date" value={cccdDate} onChange={e => setCccdDate(e.target.value)} className="w-full border p-2 rounded-md" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Địa chỉ</label>
+                <input value={address} onChange={e => setAddress(e.target.value)} className="w-full border p-2 rounded-md" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Loại hình</label>
                   <select value={type} onChange={e => setType(e.target.value as any)} className="w-full border p-2 rounded-md">
                     <option value="FULL_TIME">Chuyên trách</option>
@@ -391,14 +411,20 @@ function PersonnelList() {
                     <option value="SEASONAL">Thời vụ</option>
                   </select>
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Chuyên môn</label>
+                  <input value={specialization} onChange={e => setSpecialization(e.target.value)} className="w-full border p-2 rounded-md" />
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Số điện thoại</label>
-                <input value={phone} onChange={e => setPhone(e.target.value)} className="w-full border p-2 rounded-md" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Số tài khoản ngân hàng</label>
-                <input value={bankAccount} onChange={e => setBankAccount(e.target.value)} placeholder="STK - Tên ngân hàng" className="w-full border p-2 rounded-md" />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Số điện thoại</label>
+                  <input value={phone} onChange={e => setPhone(e.target.value)} className="w-full border p-2 rounded-md" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Số tài khoản</label>
+                  <input value={bankAccount} onChange={e => setBankAccount(e.target.value)} placeholder="STK - Ngân hàng" className="w-full border p-2 rounded-md" />
+                </div>
               </div>
               <div className="pt-4 flex justify-end space-x-3 border-t">
                 <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 border rounded-md">Hủy</button>
@@ -429,7 +455,19 @@ function ProjectDetail({ projectId, onBack }: { projectId: number, onBack: () =>
   const [unit, setUnit] = useState<ProjectContract['unit']>('PROJECT');
   const [quantity, setQuantity] = useState('1');
   const [unitPrice, setUnitPrice] = useState('');
-  const [taxRateTNCN, setTaxRateTNCN] = useState('10'); // mặc định 10%
+  const [taxRateTNCN, setTaxRateTNCN] = useState('10');
+  const [jobDescription, setJobDescription] = useState('');
+  const [location, setLocation] = useState('');
+  const [printingContractId, setPrintingContractId] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (printingContractId) {
+      setTimeout(() => {
+        window.print();
+        setPrintingContractId(null);
+      }, 500);
+    }
+  }, [printingContractId]);
 
   if (!project) return <div>Đang tải...</div>;
 
@@ -444,6 +482,8 @@ function ProjectDetail({ projectId, onBack }: { projectId: number, onBack: () =>
     setQuantity('1');
     setUnitPrice('');
     setTaxRateTNCN('10');
+    setJobDescription('');
+    setLocation(project.name || '');
     setShowModal(true);
   };
 
@@ -469,6 +509,8 @@ function ProjectDetail({ projectId, onBack }: { projectId: number, onBack: () =>
       taxRateTNCN: tax,
       amount,
       netAmount,
+      jobDescription,
+      location,
       createdAt: new Date()
     };
 
@@ -481,7 +523,8 @@ function ProjectDetail({ projectId, onBack }: { projectId: number, onBack: () =>
   };
 
   return (
-    <div className="space-y-6">
+    <>
+    <div className="space-y-6 print:hidden">
       <div className="flex items-center space-x-4 mb-4">
         <button onClick={onBack} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
           <ChevronLeft size={24} />
@@ -554,8 +597,11 @@ function ProjectDetail({ projectId, onBack }: { projectId: number, onBack: () =>
                       <td className="px-4 py-3 text-right text-sm font-bold text-gray-900">{new Intl.NumberFormat('vi-VN').format(c.amount)} ₫</td>
                       <td className="px-4 py-3 text-right text-sm text-red-600">{c.taxRateTNCN}% <br/><span className="text-xs">(-{new Intl.NumberFormat('vi-VN').format(c.amount - c.netAmount)} ₫)</span></td>
                       <td className="px-4 py-3 text-right text-sm font-bold text-green-600">{new Intl.NumberFormat('vi-VN').format(c.netAmount)} ₫</td>
-                      <td className="px-4 py-3 text-center text-sm font-medium">
-                        <button onClick={() => { if (confirm('Xóa hợp đồng này?')) db.projectContracts.delete(c.id!); }} className="text-red-600 hover:text-red-900 p-1.5 bg-red-50 rounded-md">
+                      <td className="px-4 py-3 text-center text-sm font-medium flex items-center justify-center space-x-2">
+                        <button onClick={() => setPrintingContractId(c.id!)} className="text-blue-600 hover:text-blue-900 p-1.5 bg-blue-50 rounded-md" title="In hợp đồng">
+                          <Printer size={16} />
+                        </button>
+                        <button onClick={() => { if (confirm('Xóa hợp đồng này?')) db.projectContracts.delete(c.id!); }} className="text-red-600 hover:text-red-900 p-1.5 bg-red-50 rounded-md" title="Xóa hợp đồng">
                           <Trash2 size={16} />
                         </button>
                       </td>
@@ -585,6 +631,14 @@ function ProjectDetail({ projectId, onBack }: { projectId: number, onBack: () =>
                 {allPersonnel?.length === 0 && <p className="text-xs text-red-500 mt-1">Chưa có hồ sơ nhân sự nào. Vui lòng sang tab Hồ sơ Nhân sự để thêm.</p>}
               </div>
               <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Nội dung công việc</label>
+                  <textarea rows={2} value={jobDescription} onChange={e => setJobDescription(e.target.value)} placeholder="Mô tả công việc giao khoán..." className="w-full border p-2 rounded-md"></textarea>
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Địa điểm thực hiện</label>
+                  <input value={location} onChange={e => setLocation(e.target.value)} className="w-full border p-2 rounded-md" />
+                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Ngày bắt đầu</label>
                   <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full border p-2 rounded-md" />
@@ -627,6 +681,115 @@ function ProjectDetail({ projectId, onBack }: { projectId: number, onBack: () =>
           </div>
         </div>
       )}
+    </div>
+    {printingContractId && <PrintContract contract={contracts!.find(c => c.id === printingContractId)!} project={project} personnel={allPersonnel!.find(p => p.id === contracts!.find(c => c.id === printingContractId)?.personnelId)!} />}
+    </>
+  );
+}
+
+// ==========================================
+// THÀNH PHẦN 4: IN HỢP ĐỒNG GIAO KHOÁN
+// ==========================================
+function PrintContract({ contract, project, personnel }: { contract: ProjectContract, project: Project, personnel: Personnel }) {
+  const d = new Date(contract.startDate);
+  const day = d.getDate().toString().padStart(2, '0');
+  const month = (d.getMonth() + 1).toString().padStart(2, '0');
+  const year = d.getFullYear();
+
+  return (
+    <div className="hidden print:block font-[Times_New_Roman] text-[13pt] leading-tight">
+      <div className="text-center font-bold mb-4">
+        <h2 className="text-[14pt]">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</h2>
+        <h3 className="text-[13pt] underline mb-2">Độc lập - Tự do - Hạnh phúc</h3>
+        <p className="italic font-normal">TP.Hồ Chí Minh, ngày {day} tháng {month} năm {year}</p>
+      </div>
+
+      <div className="text-center font-bold mb-6">
+        <h1 className="text-[16pt]">HỢP ĐỒNG GIAO KHOÁN</h1>
+        <p className="font-normal">Số: {contract.id}/{year}/HĐGK</p>
+        <p className="italic font-normal">(V/v Giao khoán công việc {project.name})</p>
+      </div>
+
+      <div className="italic mb-4 text-justify space-y-1">
+        <p>- Căn cứ Bộ luật Dân sự của Quốc hội nước Cộng Hòa Xã Hội Chủ Nghĩa Việt Nam số 91/2015/QH13 ngày 24/11/2015;</p>
+        <p>- Căn cứ Luật Thương mại của Quốc hội nước Cộng Hoà Xã hội Chủ Nghĩa Việt Nam số 36/2005/QH11 ngày 14/06/2005;</p>
+        <p>- Căn cứ nhu cầu và khả năng của hai bên.</p>
+      </div>
+
+      <p className="mb-2">Chúng tôi gồm:</p>
+      
+      <p className="font-bold mb-2">BÊN A: CÔNG TY TNHH PHÁT LỌC TECH</p>
+      <table className="w-full border-collapse border border-black mb-4">
+        <tbody>
+          <tr><td className="border border-black p-1 w-[120px]">Địa chỉ</td><td className="border border-black p-1">: Số 491/1 Trường Chinh, Phường Tân Bình, Thành phố Hồ Chí Minh</td></tr>
+          <tr><td className="border border-black p-1">Mã số thuế</td><td className="border border-black p-1">: 0319347662</td></tr>
+          <tr><td className="border border-black p-1">Tài khoản</td><td className="border border-black p-1">: 115003041055– Ngân hàng TMCP Công Thương Việt Nam – CN Long An</td></tr>
+          <tr><td className="border border-black p-1">Người đại diện</td><td className="border border-black p-1">: <b>Ông Nguyễn Thanh Phong</b> Chức vụ: <b>Giám đốc</b></td></tr>
+          <tr><td className="border border-black p-1">Email</td><td className="border border-black p-1">: phatloctech.ltd@gmail.com</td></tr>
+          <tr><td className="border border-black p-1">Điện thoại</td><td className="border border-black p-1">: 0932 685 794</td></tr>
+        </tbody>
+      </table>
+
+      <p className="font-bold mb-2">BÊN B: {personnel.fullName.toUpperCase()}</p>
+      <table className="w-full border-collapse border border-black mb-6">
+        <tbody>
+          <tr><td className="border border-black p-1 w-[120px]">Địa chỉ</td><td className="border border-black p-1">: {personnel.address || '......................................................'}</td></tr>
+          <tr><td className="border border-black p-1">CCCD</td><td className="border border-black p-1">: {personnel.cccd}</td></tr>
+          <tr><td className="border border-black p-1">Ngày cấp</td><td className="border border-black p-1">: {personnel.cccdDate ? new Date(personnel.cccdDate).toLocaleDateString('vi-VN') : '.......................................'}</td></tr>
+          <tr><td className="border border-black p-1">Chuyên môn</td><td className="border border-black p-1">: {personnel.specialization || '......................................................'}</td></tr>
+          <tr><td className="border border-black p-1">Điện thoại</td><td className="border border-black p-1">: {personnel.phone || '......................................................'}</td></tr>
+        </tbody>
+      </table>
+
+      <p className="mb-4">Hai bên thoả thuận ký kết hợp đồng với những điều khoản cụ thể như sau:</p>
+
+      <p className="font-bold uppercase underline mb-1">ĐIỀU 1: NỘI DUNG HỢP ĐỒNG</p>
+      <p>1.1 Bên A thuê bên B thực hiện các công việc cho dự án <b>{project.name}</b> với các công việc như sau:</p>
+      <div className="ml-4 mb-2">
+        <p>a. {contract.jobDescription || 'Thực hiện công việc theo sự phân công của quản lý'}</p>
+        <p>b. Địa chỉ thực hiện theo điều 3 hợp đồng</p>
+        <p>c. Thời gian làm việc theo quy định của Pháp luật đến khi hoàn thành công việc được giao</p>
+      </div>
+
+      <p className="font-bold uppercase underline mb-1">ĐIỀU 2: CHI PHÍ VÀ HÌNH THỨC THANH TOÁN</p>
+      <p className="font-bold">Giá trị Hợp đồng là: {new Intl.NumberFormat('vi-VN').format(contract.amount)} đồng</p>
+      <p className="italic mb-2">(Bằng chữ: <span className="capitalize">{formatCurrency(contract.amount)}</span> đồng)</p>
+      <p>- Bao gồm:</p>
+      <p>+ Khoán thù lao mà Bên B nhận được khi thực hiện công việc</p>
+      <p>+ Các chi phí khác như ăn uống, trong quá trình thực hiện công việc</p>
+      <p className="mb-2">+ Chi phí xăng xe, đi lại khi thực hiện công trình</p>
+      <p className="mb-4">2.1 Phương thức thanh toán:<br/>Thanh toán 100% giá trị hợp đồng sau khi hoàn thành công việc</p>
+
+      <p className="font-bold uppercase underline mb-1">ĐIỀU 3: ĐỊA ĐIỂM VÀ THỜI GIAN THỰC HIỆN HỢP ĐỒNG</p>
+      <p>3.1. Địa điểm thực hiện: {contract.location || 'Tại công trình'}</p>
+      <p className="mb-4">3.2. Thời gian thực hiện: đến khi hoàn thành công việc được giao tại công trình.</p>
+
+      <p className="font-bold uppercase underline mb-1">ĐIỀU 4: QUYỀN VÀ NGHĨA VỤ MỖI BÊN</p>
+      <p>4.1. Quyền và nghĩa vụ của Bên A:</p>
+      <p className="ml-2">+ Bên A cam kết thanh toán cho Bên B theo giá trị hợp đồng và phương thức thanh toán nêu tại Điều 2 và Điều 3 của hợp đồng này cũng như thực hiện đầy đủ nghĩa vụ và trách nhiệm khác được quy định trong hợp đồng.</p>
+      <p className="ml-2 mb-2">+ Kiểm tra kĩ thuật lắp đặt khi bên B thi công tại công trình, Bên A có quyền yêu cầu thay đổi nếu nhận thấy phương án thi công không đúng thiết kế đã thống nhất.</p>
+      <p>4.2. Quyền và nghĩa vụ của Bên B:</p>
+      <p className="ml-2 mb-4">+ Cung cấp đầy đủ dịch vụ kĩ thuật và nhân công để thực hiện hợp đồng này, đồng thời cam kết thực hiện đầy đủ các nghĩa vụ và trách nhiệm được nêu trong hợp đồng.</p>
+
+      <p className="font-bold uppercase underline mb-1">ĐIỀU 5. HIỆU LỰC HỢP ĐỒNG</p>
+      <p>5.1. Hợp đồng có hiệu lực kể từ ngày bên cuối cùng ký hợp đồng.</p>
+      <p>5.2. Hợp đồng này vẫn có giá trị trong trường hợp hai Bên có bất kỳ sự thay đổi nào về tổ chức, nhân sự, lãnh đạo.</p>
+      <p className="mb-4">5.3. Hợp đồng tự động thanh lý khi hai bên đã hoàn thành xong nghĩa vụ của mình</p>
+      
+      <p className="mb-6">Hợp đồng được lập thành 02 (hai) bản, có giá trị như nhau. Bên A giữ 01 (một) bản, Bên B giữ 01 (một) bản.</p>
+
+      <div className="flex justify-between text-center font-bold px-12">
+        <div>
+          <p>ĐẠI DIỆN BÊN A</p>
+          <br/><br/><br/><br/>
+          <p>NGUYỄN THANH PHONG</p>
+        </div>
+        <div>
+          <p>ĐẠI DIỆN BÊN B</p>
+          <br/><br/><br/><br/>
+          <p>{personnel.fullName.toUpperCase()}</p>
+        </div>
+      </div>
     </div>
   );
 }
