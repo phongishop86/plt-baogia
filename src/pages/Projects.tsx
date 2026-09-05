@@ -1169,6 +1169,65 @@ function ProjectUnitsTab({ projectId }: { projectId: number }) {
     return 0;
   });
 
+  const handleExportExcel = async () => {
+    try {
+      const ExcelJS = (await import('exceljs')).default;
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Danh sách');
+      
+      worksheet.columns = [
+        { header: 'Mã CN', key: 'code', width: 15 },
+        { header: 'Tên CN', key: 'name', width: 40 },
+        { header: 'Địa chỉ', key: 'address', width: 40 },
+        { header: 'Cán bộ IT đầu mối', key: 'contactName', width: 25 },
+        { header: 'Điện thoại liên hệ', key: 'contactPhone', width: 20 },
+        { header: 'CHỦNG LOẠI THIẾT BỊ', key: 'deviceType', width: 25 },
+        { header: 'Hãng', key: 'deviceBrand', width: 15 },
+        { header: 'Serial', key: 'deviceSerial', width: 25 },
+        { header: 'Thời gian dự kiến', key: 'deadline', width: 20 },
+        { header: 'Nhân sự HT', key: 'personnel', width: 25 },
+        { header: 'Thời gian thực tế', key: 'actualTime', width: 20 },
+        { header: 'Tiến độ', key: 'status', width: 25 },
+        { header: 'Ghi chú', key: 'notes', width: 30 }
+      ];
+
+      sortedUnits.forEach(u => {
+        const p = allPersonnel?.find(x => x.id === u.personnelId);
+        let statusText = '';
+        if (u.status === 'COMPLETED') statusText = 'Hoàn thành';
+        else if (u.status === 'DOCS_PENDING') statusText = 'Đang hoàn thiện HS';
+        else if (u.status === 'IN_PROGRESS') statusText = 'Đang thực hiện';
+        else statusText = 'Chưa triển khai';
+
+        worksheet.addRow({
+          code: u.code || '',
+          name: u.name || '',
+          address: u.address || '',
+          contactName: u.contactName || '',
+          contactPhone: u.contactPhone || '',
+          deviceType: u.deviceType || '',
+          deviceBrand: u.deviceBrand || '',
+          deviceSerial: u.deviceSerial || '',
+          deadline: u.deadline ? new Date(u.deadline).toLocaleDateString('vi-VN') : '',
+          personnel: p?.fullName || '',
+          actualTime: u.actualTime ? new Date(u.actualTime).toLocaleDateString('vi-VN') : '',
+          status: statusText,
+          notes: u.notes || ''
+        });
+      });
+
+      // Format header row
+      worksheet.getRow(1).font = { bold: true };
+      worksheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } };
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      saveAs(new Blob([buffer]), `Danh_sach_trien_khai_${new Date().toISOString().split('T')[0]}.xlsx`);
+    } catch (err) {
+      console.error(err);
+      alert('Lỗi xuất file Excel!');
+    }
+  };
+
   const allSelected = sortedUnits.length > 0 && selectedIds.length === sortedUnits.length;
 
   return (
@@ -1183,13 +1242,16 @@ function ProjectUnitsTab({ projectId }: { projectId: number }) {
             onChange={e => setFilterText(e.target.value)}
             className="border p-1.5 rounded-md text-sm min-w-[200px]"
           />
-          <button onClick={handleDownloadTemplate} className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-2 py-1.5 rounded-md text-sm font-medium flex items-center transition-colors">
-            <Download size={16} className="mr-1" /> Tải mẫu
+          <button onClick={handleDownloadTemplate} className="text-gray-600 hover:text-gray-900 hover:bg-gray-200 px-2 py-1.5 rounded-md text-sm font-medium flex items-center transition-colors" title="Tải file mẫu import">
+            <Download size={16} className="mr-1" /> File mẫu
           </button>
           <label className="bg-green-600 hover:bg-green-700 text-white px-2 py-1.5 rounded-md text-sm font-medium flex items-center cursor-pointer transition-colors">
             <Upload size={16} className="mr-1" /> Import
             <input type="file" accept=".xlsx" className="hidden" onChange={handleImportExcel} />
           </label>
+          <button onClick={handleExportExcel} className="bg-orange-500 hover:bg-orange-600 text-white px-2 py-1.5 rounded-md text-sm font-medium flex items-center transition-colors">
+            <Download size={16} className="mr-1" /> Export
+          </button>
           <button onClick={openAdd} className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1.5 rounded-md text-sm font-medium flex items-center transition-colors">
             <Plus size={16} className="mr-1" /> Thêm mới
           </button>
