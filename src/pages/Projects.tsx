@@ -925,6 +925,56 @@ function ProjectUnitsTab({ projectId }: { projectId: number }) {
   const [personnelId, setPersonnelId] = useState('');
   const [notes, setNotes] = useState('');
 
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [filterText, setFilterText] = useState('');
+  const [sortField, setSortField] = useState<string>('code');
+  const [sortAsc, setSortAsc] = useState<boolean>(true);
+
+  const toggleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked && units) {
+      setSelectedIds(units.map(u => u.id!));
+    } else {
+      setSelectedIds([]);
+    }
+  };
+
+  const toggleSelect = (id: number) => {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  const handleBatchDelete = async () => {
+    if (!selectedIds.length) return;
+    if (confirm(`Bạn có chắc chắn muốn xóa ${selectedIds.length} dòng đã chọn?`)) {
+      await db.projectUnits.bulkDelete(selectedIds);
+      setSelectedIds([]);
+    }
+  };
+
+  const handleBatchStatusChange = async (newStatus: 'NOT_STARTED' | 'IN_PROGRESS' | 'DOCS_PENDING' | 'COMPLETED') => {
+    if (!selectedIds.length) return;
+    const updates = selectedIds.map(id => ({ key: id, changes: { status: newStatus, updatedAt: new Date() } }));
+    try {
+      await db.transaction('rw', db.projectUnits, async () => {
+        for (const update of updates) {
+          await db.projectUnits.update(update.key, update.changes);
+        }
+      });
+      setSelectedIds([]);
+    } catch (err) {
+      console.error(err);
+      alert('Lỗi cập nhật tiến độ hàng loạt!');
+    }
+  };
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortAsc(!sortAsc);
+    } else {
+      setSortField(field);
+      setSortAsc(true);
+    }
+  };
+
   const openAdd = () => {
     setEditingId(null);
     setCode('');
@@ -1097,67 +1147,137 @@ function ProjectUnitsTab({ projectId }: { projectId: number }) {
     if (e.target) e.target.value = '';
   };
 
+  const filteredUnits = (units || []).filter(u => {
+    if (!filterText) return true;
+    const txt = filterText.toLowerCase();
+    return (
+      (u.name && u.name.toLowerCase().includes(txt)) ||
+      (u.code && u.code.toLowerCase().includes(txt)) ||
+      (u.address && u.address.toLowerCase().includes(txt))
+    );
+  });
+
+  const sortedUnits = [...filteredUnits].sort((a, b) => {
+    let valA = (a as any)[sortField] || '';
+    let valB = (b as any)[sortField] || '';
+    if (sortField === 'personnelId') {
+      valA = allPersonnel?.find(x => x.id === a.personnelId)?.fullName || '';
+      valB = allPersonnel?.find(x => x.id === b.personnelId)?.fullName || '';
+    }
+    if (valA < valB) return sortAsc ? -1 : 1;
+    if (valA > valB) return sortAsc ? 1 : -1;
+    return 0;
+  });
+
+  const allSelected = sortedUnits.length > 0 && selectedIds.length === sortedUnits.length;
+
   return (
-    <div className="bg-white shadow-sm border border-gray-200 rounded-lg overflow-hidden">
-      <div className="p-4 border-b flex justify-between items-center bg-gray-50">
+    <div className="bg-white shadow-sm border border-gray-200 rounded-lg overflow-hidden flex flex-col h-full">
+      <div className="p-4 border-b bg-gray-50 flex flex-col sm:flex-row justify-between items-center gap-4">
         <h3 className="font-bold text-gray-800">Quản lý Chi nhánh / Điểm triển khai</h3>
-        <div className="flex items-center space-x-3">
-          <button onClick={handleDownloadTemplate} className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-3 py-1.5 rounded-md text-sm font-medium flex items-center transition-colors">
-            <Download size={16} className="mr-1" /> Tải file mẫu
+        <div className="flex items-center space-x-2">
+          <input
+            type="text"
+            placeholder="Tìm kiếm mã, tên, địa chỉ..."
+            value={filterText}
+            onChange={e => setFilterText(e.target.value)}
+            className="border p-1.5 rounded-md text-sm min-w-[200px]"
+          />
+          <button onClick={handleDownloadTemplate} className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-2 py-1.5 rounded-md text-sm font-medium flex items-center transition-colors">
+            <Download size={16} className="mr-1" /> Tải mẫu
           </button>
-          <label className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-md text-sm font-medium flex items-center cursor-pointer transition-colors">
-            <Upload size={16} className="mr-1" /> Import Excel
+          <label className="bg-green-600 hover:bg-green-700 text-white px-2 py-1.5 rounded-md text-sm font-medium flex items-center cursor-pointer transition-colors">
+            <Upload size={16} className="mr-1" /> Import
             <input type="file" accept=".xlsx" className="hidden" onChange={handleImportExcel} />
           </label>
-          <button onClick={openAdd} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-md text-sm font-medium flex items-center transition-colors">
-            <Plus size={16} className="mr-1" /> Thêm điểm
+          <button onClick={openAdd} className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1.5 rounded-md text-sm font-medium flex items-center transition-colors">
+            <Plus size={16} className="mr-1" /> Thêm mới
           </button>
         </div>
       </div>
-      <div className="overflow-x-auto">
+      
+      {selectedIds.length > 0 && (
+        <div className="bg-blue-50 px-4 py-2 border-b flex items-center justify-between">
+          <span className="text-sm font-medium text-blue-800">Đã chọn {selectedIds.length} dòng</span>
+          <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2 border-r border-blue-200 pr-3">
+              <span className="text-sm text-blue-700">Đổi trạng thái:</span>
+              <select 
+                className="text-sm border-blue-300 rounded-md py-1 bg-white text-gray-700 focus:ring-blue-500 focus:border-blue-500"
+                onChange={e => {
+                  if(e.target.value) handleBatchStatusChange(e.target.value as any);
+                  e.target.value = '';
+                }}
+                defaultValue=""
+              >
+                <option value="" disabled>-- Chọn --</option>
+                <option value="NOT_STARTED">Chưa triển khai</option>
+                <option value="IN_PROGRESS">Đang thực hiện</option>
+                <option value="DOCS_PENDING">Đang hoàn thiện HS</option>
+                <option value="COMPLETED">Đã hoàn thành</option>
+              </select>
+            </div>
+            <button onClick={handleBatchDelete} className="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 text-sm rounded-md shadow-sm flex items-center">
+              <Trash2 size={14} className="mr-1" /> Xóa dòng
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="overflow-x-auto w-full max-w-[calc(100vw-300px)]">
         <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-white">
+          <thead className="bg-gray-100">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Mã CN</th>
-              <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Tên chi nhánh</th>
-              <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Cán bộ IT</th>
-              <th className="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase">Thời gian</th>
-              <th className="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase">Trạng thái</th>
-              <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Người phụ trách</th>
-              <th className="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase">Thao tác</th>
+              <th className="px-3 py-3 text-center w-10 border-r">
+                <input type="checkbox" checked={allSelected} onChange={toggleSelectAll} className="w-4 h-4" />
+              </th>
+              <th onClick={() => handleSort('code')} className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase cursor-pointer hover:bg-gray-200 border-r min-w-[100px]">Mã CN {sortField === 'code' ? (sortAsc ? '↑' : '↓') : ''}</th>
+              <th onClick={() => handleSort('name')} className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase cursor-pointer hover:bg-gray-200 border-r min-w-[200px]">Tên CN {sortField === 'name' ? (sortAsc ? '↑' : '↓') : ''}</th>
+              <th onClick={() => handleSort('address')} className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase cursor-pointer hover:bg-gray-200 border-r min-w-[250px]">Địa chỉ {sortField === 'address' ? (sortAsc ? '↑' : '↓') : ''}</th>
+              <th onClick={() => handleSort('contactName')} className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase cursor-pointer hover:bg-gray-200 border-r min-w-[150px]">Cán bộ IT {sortField === 'contactName' ? (sortAsc ? '↑' : '↓') : ''}</th>
+              <th onClick={() => handleSort('contactPhone')} className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase cursor-pointer hover:bg-gray-200 border-r min-w-[120px]">SĐT liên hệ {sortField === 'contactPhone' ? (sortAsc ? '↑' : '↓') : ''}</th>
+              <th onClick={() => handleSort('deviceType')} className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase cursor-pointer hover:bg-gray-200 border-r min-w-[150px]">Loại thiết bị {sortField === 'deviceType' ? (sortAsc ? '↑' : '↓') : ''}</th>
+              <th onClick={() => handleSort('deviceBrand')} className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase cursor-pointer hover:bg-gray-200 border-r min-w-[100px]">Hãng {sortField === 'deviceBrand' ? (sortAsc ? '↑' : '↓') : ''}</th>
+              <th onClick={() => handleSort('deviceSerial')} className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase cursor-pointer hover:bg-gray-200 border-r min-w-[150px]">Serial {sortField === 'deviceSerial' ? (sortAsc ? '↑' : '↓') : ''}</th>
+              <th onClick={() => handleSort('deadline')} className="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase cursor-pointer hover:bg-gray-200 border-r min-w-[120px]">TG dự kiến {sortField === 'deadline' ? (sortAsc ? '↑' : '↓') : ''}</th>
+              <th onClick={() => handleSort('personnelId')} className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase cursor-pointer hover:bg-gray-200 border-r min-w-[150px]">Nhân sự HT {sortField === 'personnelId' ? (sortAsc ? '↑' : '↓') : ''}</th>
+              <th onClick={() => handleSort('actualTime')} className="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase cursor-pointer hover:bg-gray-200 border-r min-w-[120px]">TG thực tế {sortField === 'actualTime' ? (sortAsc ? '↑' : '↓') : ''}</th>
+              <th onClick={() => handleSort('status')} className="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase cursor-pointer hover:bg-gray-200 border-r min-w-[130px]">Tiến độ {sortField === 'status' ? (sortAsc ? '↑' : '↓') : ''}</th>
+              <th className="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase bg-white sticky right-0 shadow-[-4px_0_10px_rgba(0,0,0,0.05)]">Thao tác</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {units?.length === 0 ? (
-              <tr><td colSpan={7} className="px-6 py-8 text-center text-gray-500">Chưa có chi nhánh nào.</td></tr>
+            {sortedUnits.length === 0 ? (
+              <tr><td colSpan={14} className="px-6 py-8 text-center text-gray-500">Chưa có chi nhánh nào phù hợp.</td></tr>
             ) : (
-              units?.map(u => {
+              sortedUnits.map(u => {
                 const p = allPersonnel?.find(x => x.id === u.personnelId);
                 const isOverdue = u.deadline && new Date(u.deadline) < new Date() && u.status !== 'COMPLETED';
+                const isSelected = selectedIds.includes(u.id!);
                 return (
-                  <tr key={u.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-sm font-bold text-gray-600">{u.code || '-'}</td>
-                    <td className="px-4 py-3 text-sm font-bold text-gray-900">
-                      <div>{u.name}</div>
-                      {u.deviceType && <div className="text-xs text-gray-500 font-normal mt-1">{u.deviceType} {u.deviceBrand ? `(${u.deviceBrand})` : ''}</div>}
+                  <tr key={u.id} className={`hover:bg-blue-50 ${isSelected ? 'bg-blue-50' : ''}`}>
+                    <td className="px-3 py-3 text-center border-r">
+                      <input type="checkbox" checked={isSelected} onChange={() => toggleSelect(u.id!)} className="w-4 h-4" />
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-600">
-                      <div>{u.contactName || '-'}</div>
-                      <div className="text-xs">{u.contactPhone}</div>
+                    <td className="px-4 py-3 text-sm text-gray-900 border-r truncate max-w-[150px]" title={u.code}>{u.code || '-'}</td>
+                    <td className="px-4 py-3 text-sm font-bold text-gray-900 border-r truncate max-w-[200px]" title={u.name}>{u.name}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700 border-r truncate max-w-[250px]" title={u.address}>{u.address || '-'}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700 border-r truncate max-w-[150px]" title={u.contactName}>{u.contactName || '-'}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700 border-r truncate max-w-[150px]" title={u.contactPhone}>{u.contactPhone || '-'}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700 border-r truncate max-w-[150px]" title={u.deviceType}>{u.deviceType || '-'}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700 border-r truncate max-w-[150px]" title={u.deviceBrand}>{u.deviceBrand || '-'}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700 border-r truncate max-w-[150px]" title={u.deviceSerial}>{u.deviceSerial || '-'}</td>
+                    
+                    <td className="px-4 py-3 text-sm text-center border-r">
+                      <span className={isOverdue ? 'text-red-600 font-bold' : 'text-gray-700'}>
+                        {u.deadline ? new Date(u.deadline).toLocaleDateString('vi-VN') : '-'}
+                      </span>
                     </td>
-                    <td className="px-4 py-3 text-xs text-center">
-                      {u.deadline && (
-                        <div className={`font-bold ${isOverdue ? 'text-red-600' : 'text-gray-600'}`} title="Dự kiến">
-                          DK: {new Date(u.deadline).toLocaleDateString('vi-VN')}
-                        </div>
-                      )}
-                      {u.actualTime && (
-                        <div className="text-green-600 mt-1" title="Thực tế">
-                          TT: {new Date(u.actualTime).toLocaleDateString('vi-VN')}
-                        </div>
-                      )}
+                    <td className="px-4 py-3 text-sm text-gray-700 border-r truncate max-w-[150px]" title={p?.fullName}>{p?.fullName || '-'}</td>
+                    <td className="px-4 py-3 text-sm text-center border-r text-green-700 font-medium">
+                      {u.actualTime ? new Date(u.actualTime).toLocaleDateString('vi-VN') : '-'}
                     </td>
-                    <td className="px-4 py-3 text-sm text-center">
+                    <td className="px-4 py-3 text-sm text-center border-r">
                       <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
                         u.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
                         u.status === 'DOCS_PENDING' ? 'bg-yellow-100 text-yellow-800' :
@@ -1167,8 +1287,8 @@ function ProjectUnitsTab({ projectId }: { projectId: number }) {
                         {u.status === 'COMPLETED' ? 'Hoàn thành' : u.status === 'DOCS_PENDING' ? 'Đang hoàn thiện HS' : u.status === 'IN_PROGRESS' ? 'Đang thực hiện' : 'Chưa triển khai'}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-700">{p?.fullName || '-'}</td>
-                    <td className="px-4 py-3 text-center text-sm font-medium flex items-center justify-center space-x-2">
+                    
+                    <td className="px-4 py-3 text-center text-sm font-medium flex items-center justify-center space-x-2 bg-white sticky right-0 shadow-[-4px_0_10px_rgba(0,0,0,0.05)]">
                       <button onClick={() => openEdit(u)} className="text-blue-600 hover:text-blue-900 p-1.5 bg-blue-50 rounded-md"><Pencil size={16} /></button>
                       <button onClick={() => { if (confirm('Xóa chi nhánh này?')) db.projectUnits.delete(u.id!); }} className="text-red-600 hover:text-red-900 p-1.5 bg-red-50 rounded-md"><Trash2 size={16} /></button>
                     </td>
