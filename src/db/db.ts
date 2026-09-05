@@ -123,10 +123,18 @@ export interface ProjectContract {
 export interface ProjectUnit {
   id?: number;
   projectId: number;
-  name: string;
-  deadline?: Date;
-  status: 'NOT_STARTED' | 'IN_PROGRESS' | 'DOCS_PENDING' | 'COMPLETED';
-  personnelId?: number; // Người phụ trách
+  code?: string; // Mã CN
+  name: string; // Tên CN
+  address?: string; // Địa chỉ mới
+  contactName?: string; // Cán bộ IT đầu mối
+  contactPhone?: string; // Điện thoại liên hệ
+  deviceType?: string; // Chủng loại thiết bị
+  deviceBrand?: string; // Hãng
+  deviceSerial?: string; // Serial
+  deadline?: Date; // Thời gian dự kiến
+  actualTime?: Date; // Thời gian thực tế
+  status: 'NOT_STARTED' | 'IN_PROGRESS' | 'DOCS_PENDING' | 'COMPLETED'; // Tiến độ
+  personnelId?: number; // Nhân sự HT (2)
   notes?: string;
   createdAt?: Date;
   updatedAt?: Date;

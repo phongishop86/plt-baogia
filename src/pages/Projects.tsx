@@ -911,16 +911,32 @@ function ProjectUnitsTab({ projectId }: { projectId: number }) {
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   
+  const [code, setCode] = useState('');
   const [name, setName] = useState('');
+  const [address, setAddress] = useState('');
+  const [contactName, setContactName] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
+  const [deviceType, setDeviceType] = useState('');
+  const [deviceBrand, setDeviceBrand] = useState('');
+  const [deviceSerial, setDeviceSerial] = useState('');
   const [deadline, setDeadline] = useState('');
+  const [actualTime, setActualTime] = useState('');
   const [status, setStatus] = useState<'NOT_STARTED' | 'IN_PROGRESS' | 'DOCS_PENDING' | 'COMPLETED'>('NOT_STARTED');
   const [personnelId, setPersonnelId] = useState('');
   const [notes, setNotes] = useState('');
 
   const openAdd = () => {
     setEditingId(null);
+    setCode('');
     setName('');
+    setAddress('');
+    setContactName('');
+    setContactPhone('');
+    setDeviceType('');
+    setDeviceBrand('');
+    setDeviceSerial('');
     setDeadline('');
+    setActualTime('');
     setStatus('NOT_STARTED');
     setPersonnelId('');
     setNotes('');
@@ -929,8 +945,16 @@ function ProjectUnitsTab({ projectId }: { projectId: number }) {
 
   const openEdit = (u: any) => {
     setEditingId(u.id);
-    setName(u.name);
+    setCode(u.code || '');
+    setName(u.name || '');
+    setAddress(u.address || '');
+    setContactName(u.contactName || '');
+    setContactPhone(u.contactPhone || '');
+    setDeviceType(u.deviceType || '');
+    setDeviceBrand(u.deviceBrand || '');
+    setDeviceSerial(u.deviceSerial || '');
     setDeadline(u.deadline ? new Date(u.deadline).toISOString().split('T')[0] : '');
+    setActualTime(u.actualTime ? new Date(u.actualTime).toISOString().split('T')[0] : '');
     setStatus(u.status);
     setPersonnelId(u.personnelId?.toString() || '');
     setNotes(u.notes || '');
@@ -943,8 +967,16 @@ function ProjectUnitsTab({ projectId }: { projectId: number }) {
 
     const data = {
       projectId,
+      code,
       name,
+      address,
+      contactName,
+      contactPhone,
+      deviceType,
+      deviceBrand,
+      deviceSerial,
       deadline: deadline ? new Date(deadline) : undefined,
+      actualTime: actualTime ? new Date(actualTime) : undefined,
       status,
       personnelId: personnelId ? parseInt(personnelId) : undefined,
       notes,
@@ -965,12 +997,22 @@ function ProjectUnitsTab({ projectId }: { projectId: number }) {
     const worksheet = workbook.addWorksheet('Danh sách');
     
     worksheet.columns = [
-      { header: 'Tên chi nhánh (*)', key: 'name', width: 40 },
-      { header: 'Ghi chú', key: 'notes', width: 30 }
+      { header: 'Mã CN', key: 'code', width: 15 },
+      { header: 'Tên CN (*)', key: 'name', width: 40 },
+      { header: 'Địa chỉ mới', key: 'address', width: 40 },
+      { header: 'Cán bộ IT đầu mối', key: 'contactName', width: 25 },
+      { header: 'Điện thoại liên hệ', key: 'contactPhone', width: 20 },
+      { header: 'CHỦNG LOẠI THIẾT BỊ', key: 'deviceType', width: 25 },
+      { header: 'Hãng', key: 'deviceBrand', width: 15 },
+      { header: 'Serial', key: 'deviceSerial', width: 25 },
+      { header: 'Thời gian dự kiến (YYYY-MM-DD)', key: 'deadline', width: 30 },
+      { header: 'Nhân sự HT', key: 'personnel', width: 25 },
+      { header: 'Thời gian thực tế (YYYY-MM-DD)', key: 'actualTime', width: 30 },
+      { header: 'Tiến độ (0-100)', key: 'status', width: 15 },
+      { header: 'Ghi chú', key: 'notes', width: 20 }
     ];
     
-    worksheet.addRow({ name: 'Chi nhánh 1', notes: 'Ghi chú 1' });
-    worksheet.addRow({ name: 'Chi nhánh 2', notes: '' });
+    worksheet.addRow({ code: 'CN01', name: 'Chi nhánh 1', address: 'Hà Nội', contactName: 'Nguyễn Văn A', contactPhone: '0901234567', deviceType: 'Server', deviceBrand: 'Dell', deviceSerial: 'SN123', deadline: '2026-10-01', personnel: '', actualTime: '', status: '0', notes: '' });
 
     const buffer = await workbook.xlsx.writeBuffer();
     saveAs(new Blob([buffer]), 'Mau_Import_Chi_Nhanh.xlsx');
@@ -989,19 +1031,57 @@ function ProjectUnitsTab({ projectId }: { projectId: number }) {
       const newUnits: any[] = [];
       worksheet.eachRow((row, rowNumber) => {
         if (rowNumber === 1) return; // Bỏ qua header
-        const unitName = row.getCell(1).text?.trim();
-        const unitNotes = row.getCell(2).text?.trim();
         
-        if (unitName) {
-          newUnits.push({
-            projectId,
-            name: unitName,
-            notes: unitNotes || '',
-            status: 'NOT_STARTED',
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          });
+        const unitName = row.getCell(2).text?.trim(); // Cột 2: Tên CN
+        if (!unitName) return;
+
+        const code = row.getCell(1).text?.trim(); // Mã CN
+        const address = row.getCell(3).text?.trim();
+        const contactName = row.getCell(4).text?.trim();
+        const contactPhone = row.getCell(5).text?.trim();
+        const deviceType = row.getCell(6).text?.trim();
+        const deviceBrand = row.getCell(7).text?.trim();
+        const deviceSerial = row.getCell(8).text?.trim();
+        
+        const rawDeadline = row.getCell(9).value;
+        const deadline = rawDeadline instanceof Date ? rawDeadline : (rawDeadline ? new Date(row.getCell(9).text) : undefined);
+        
+        const rawActualTime = row.getCell(11).value;
+        const actualTime = rawActualTime instanceof Date ? rawActualTime : (rawActualTime ? new Date(row.getCell(11).text) : undefined);
+        
+        // Tiến độ: 0 -> NOT_STARTED, 50 -> IN_PROGRESS, 75 -> DOCS_PENDING, 100 -> COMPLETED
+        const progressRaw = row.getCell(12).text?.trim();
+        let status = 'NOT_STARTED';
+        if (progressRaw === '100') status = 'COMPLETED';
+        else if (progressRaw === '75') status = 'DOCS_PENDING';
+        else if (progressRaw === '50') status = 'IN_PROGRESS';
+        else if (progressRaw && progressRaw !== '0') {
+          // If they typed text instead of numbers
+          const pLower = progressRaw.toLowerCase();
+          if (pLower.includes('hoàn thành')) status = 'COMPLETED';
+          else if (pLower.includes('đang thực hiện')) status = 'IN_PROGRESS';
+          else if (pLower.includes('hồ sơ')) status = 'DOCS_PENDING';
         }
+
+        const notes = row.getCell(13).text?.trim();
+        
+        newUnits.push({
+          projectId,
+          code,
+          name: unitName,
+          address,
+          contactName,
+          contactPhone,
+          deviceType,
+          deviceBrand,
+          deviceSerial,
+          deadline: deadline && !isNaN(deadline.getTime()) ? deadline : undefined,
+          actualTime: actualTime && !isNaN(actualTime.getTime()) ? actualTime : undefined,
+          status,
+          notes: notes || '',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
       });
       
       if (newUnits.length > 0) {
@@ -1038,8 +1118,10 @@ function ProjectUnitsTab({ projectId }: { projectId: number }) {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-white">
             <tr>
+              <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Mã CN</th>
               <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Tên chi nhánh</th>
-              <th className="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase">Deadline</th>
+              <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Cán bộ IT</th>
+              <th className="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase">Thời gian</th>
               <th className="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase">Trạng thái</th>
               <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Người phụ trách</th>
               <th className="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase">Thao tác</th>
@@ -1047,20 +1129,33 @@ function ProjectUnitsTab({ projectId }: { projectId: number }) {
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {units?.length === 0 ? (
-              <tr><td colSpan={5} className="px-6 py-8 text-center text-gray-500">Chưa có chi nhánh nào.</td></tr>
+              <tr><td colSpan={7} className="px-6 py-8 text-center text-gray-500">Chưa có chi nhánh nào.</td></tr>
             ) : (
               units?.map(u => {
                 const p = allPersonnel?.find(x => x.id === u.personnelId);
                 const isOverdue = u.deadline && new Date(u.deadline) < new Date() && u.status !== 'COMPLETED';
                 return (
                   <tr key={u.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-sm font-bold text-gray-900">{u.name}</td>
-                    <td className="px-4 py-3 text-sm text-center">
-                      {u.deadline ? (
-                        <span className={isOverdue ? 'text-red-600 font-bold' : 'text-gray-600'}>
-                          {new Date(u.deadline).toLocaleDateString('vi-VN')}
-                        </span>
-                      ) : '-'}
+                    <td className="px-4 py-3 text-sm font-bold text-gray-600">{u.code || '-'}</td>
+                    <td className="px-4 py-3 text-sm font-bold text-gray-900">
+                      <div>{u.name}</div>
+                      {u.deviceType && <div className="text-xs text-gray-500 font-normal mt-1">{u.deviceType} {u.deviceBrand ? `(${u.deviceBrand})` : ''}</div>}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-600">
+                      <div>{u.contactName || '-'}</div>
+                      <div className="text-xs">{u.contactPhone}</div>
+                    </td>
+                    <td className="px-4 py-3 text-xs text-center">
+                      {u.deadline && (
+                        <div className={`font-bold ${isOverdue ? 'text-red-600' : 'text-gray-600'}`} title="Dự kiến">
+                          DK: {new Date(u.deadline).toLocaleDateString('vi-VN')}
+                        </div>
+                      )}
+                      {u.actualTime && (
+                        <div className="text-green-600 mt-1" title="Thực tế">
+                          TT: {new Date(u.actualTime).toLocaleDateString('vi-VN')}
+                        </div>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-sm text-center">
                       <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
@@ -1087,23 +1182,51 @@ function ProjectUnitsTab({ projectId }: { projectId: number }) {
 
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center p-6 border-b">
               <h3 className="text-xl font-bold">{editingId ? 'Sửa Chi nhánh' : 'Thêm Chi nhánh'}</h3>
               <button onClick={() => setShowModal(false)} className="text-gray-400"><X size={24} /></button>
             </div>
             <form onSubmit={save} className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tên Chi nhánh/Hạng mục *</label>
-                <input required value={name} onChange={e => setName(e.target.value)} className="w-full border p-2 rounded-md" />
+              <div className="grid grid-cols-3 gap-4">
+                <div className="col-span-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Mã CN</label>
+                  <input value={code} onChange={e => setCode(e.target.value)} className="w-full border p-2 rounded-md" />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tên Chi nhánh/Hạng mục *</label>
+                  <input required value={name} onChange={e => setName(e.target.value)} className="w-full border p-2 rounded-md" />
+                </div>
               </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Địa chỉ mới</label>
+                <input value={address} onChange={e => setAddress(e.target.value)} className="w-full border p-2 rounded-md" />
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Deadline</label>
-                  <input type="date" value={deadline} onChange={e => setDeadline(e.target.value)} className="w-full border p-2 rounded-md" />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Cán bộ IT đầu mối</label>
+                  <input value={contactName} onChange={e => setContactName(e.target.value)} className="w-full border p-2 rounded-md" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Điện thoại liên hệ</label>
+                  <input value={contactPhone} onChange={e => setContactPhone(e.target.value)} className="w-full border p-2 rounded-md" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Chủng loại thiết bị</label>
+                  <input value={deviceType} onChange={e => setDeviceType(e.target.value)} className="w-full border p-2 rounded-md" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Hãng sản xuất</label>
+                  <input value={deviceBrand} onChange={e => setDeviceBrand(e.target.value)} className="w-full border p-2 rounded-md" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Serial thiết bị</label>
+                  <input value={deviceSerial} onChange={e => setDeviceSerial(e.target.value)} className="w-full border p-2 rounded-md" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Trạng thái (Tiến độ)</label>
                   <select value={status} onChange={e => setStatus(e.target.value as any)} className="w-full border p-2 rounded-md">
                     <option value="NOT_STARTED">Chưa triển khai</option>
                     <option value="IN_PROGRESS">Đang thực hiện</option>
@@ -1111,16 +1234,26 @@ function ProjectUnitsTab({ projectId }: { projectId: number }) {
                     <option value="COMPLETED">Đã hoàn thành</option>
                   </select>
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Thời gian dự kiến</label>
+                  <input type="date" value={deadline} onChange={e => setDeadline(e.target.value)} className="w-full border p-2 rounded-md" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Thời gian thực tế</label>
+                  <input type="date" value={actualTime} onChange={e => setActualTime(e.target.value)} className="w-full border p-2 rounded-md" />
+                </div>
               </div>
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Người phụ trách</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nhân sự thực hiện (HT)</label>
                 <select value={personnelId} onChange={e => setPersonnelId(e.target.value)} className="w-full border p-2 rounded-md">
-                  <option value="">-- Không gán --</option>
+                  <option value="">-- Không gán (Để trống) --</option>
                   {allPersonnel?.map(p => <option key={p.id} value={p.id}>{p.fullName}</option>)}
                 </select>
               </div>
+              
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Ghi chú</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Ghi chú thêm</label>
                 <textarea rows={2} value={notes} onChange={e => setNotes(e.target.value)} className="w-full border p-2 rounded-md"></textarea>
               </div>
               <div className="pt-4 flex justify-end space-x-3 border-t">
