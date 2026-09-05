@@ -1231,19 +1231,17 @@ function ProjectUnitsTab({ projectId }: { projectId: number }) {
               <th className="px-3 py-3 text-center w-10 border-r">
                 <input type="checkbox" checked={allSelected} onChange={toggleSelectAll} className="w-4 h-4" />
               </th>
-              <th onClick={() => handleSort('code')} className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase cursor-pointer hover:bg-gray-200 border-r min-w-[100px]">Mã CN {sortField === 'code' ? (sortAsc ? '↑' : '↓') : ''}</th>
-              <th onClick={() => handleSort('name')} className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase cursor-pointer hover:bg-gray-200 border-r min-w-[200px]">Tên CN {sortField === 'name' ? (sortAsc ? '↑' : '↓') : ''}</th>
-              <th onClick={() => handleSort('address')} className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase cursor-pointer hover:bg-gray-200 border-r min-w-[250px]">Địa chỉ {sortField === 'address' ? (sortAsc ? '↑' : '↓') : ''}</th>
-              <th onClick={() => handleSort('contactName')} className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase cursor-pointer hover:bg-gray-200 border-r min-w-[150px]">Cán bộ IT {sortField === 'contactName' ? (sortAsc ? '↑' : '↓') : ''}</th>
-              <th onClick={() => handleSort('contactPhone')} className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase cursor-pointer hover:bg-gray-200 border-r min-w-[120px]">SĐT liên hệ {sortField === 'contactPhone' ? (sortAsc ? '↑' : '↓') : ''}</th>
-              <th onClick={() => handleSort('deviceType')} className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase cursor-pointer hover:bg-gray-200 border-r min-w-[150px]">Loại thiết bị {sortField === 'deviceType' ? (sortAsc ? '↑' : '↓') : ''}</th>
-              <th onClick={() => handleSort('deviceBrand')} className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase cursor-pointer hover:bg-gray-200 border-r min-w-[100px]">Hãng {sortField === 'deviceBrand' ? (sortAsc ? '↑' : '↓') : ''}</th>
-              <th onClick={() => handleSort('deviceSerial')} className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase cursor-pointer hover:bg-gray-200 border-r min-w-[150px]">Serial {sortField === 'deviceSerial' ? (sortAsc ? '↑' : '↓') : ''}</th>
-              <th onClick={() => handleSort('deadline')} className="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase cursor-pointer hover:bg-gray-200 border-r min-w-[120px]">TG dự kiến {sortField === 'deadline' ? (sortAsc ? '↑' : '↓') : ''}</th>
-              <th onClick={() => handleSort('personnelId')} className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase cursor-pointer hover:bg-gray-200 border-r min-w-[150px]">Nhân sự HT {sortField === 'personnelId' ? (sortAsc ? '↑' : '↓') : ''}</th>
-              <th onClick={() => handleSort('actualTime')} className="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase cursor-pointer hover:bg-gray-200 border-r min-w-[120px]">TG thực tế {sortField === 'actualTime' ? (sortAsc ? '↑' : '↓') : ''}</th>
-              <th onClick={() => handleSort('status')} className="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase cursor-pointer hover:bg-gray-200 border-r min-w-[130px]">Tiến độ {sortField === 'status' ? (sortAsc ? '↑' : '↓') : ''}</th>
-              <th className="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase bg-white sticky right-0 shadow-[-4px_0_10px_rgba(0,0,0,0.05)]">Thao tác</th>
+              <th onClick={() => handleSort('name')} className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase cursor-pointer hover:bg-gray-200 border-r min-w-[200px] max-w-[400px] resize-x overflow-hidden">Mã & Tên CN {sortField === 'name' ? (sortAsc ? '↑' : '↓') : ''}</th>
+              <th onClick={() => handleSort('address')} className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase cursor-pointer hover:bg-gray-200 border-r min-w-[200px] max-w-[400px] resize-x overflow-hidden">Địa chỉ {sortField === 'address' ? (sortAsc ? '↑' : '↓') : ''}</th>
+              <th onClick={() => handleSort('contactName')} className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase cursor-pointer hover:bg-gray-200 border-r min-w-[150px] max-w-[300px] resize-x overflow-hidden">Cán bộ IT {sortField === 'contactName' ? (sortAsc ? '↑' : '↓') : ''}</th>
+              <th onClick={() => handleSort('contactPhone')} className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase cursor-pointer hover:bg-gray-200 border-r min-w-[120px] max-w-[200px] resize-x overflow-hidden">SĐT liên hệ {sortField === 'contactPhone' ? (sortAsc ? '↑' : '↓') : ''}</th>
+              <th onClick={() => handleSort('deviceBrand')} className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase cursor-pointer hover:bg-gray-200 border-r min-w-[100px] max-w-[200px] resize-x overflow-hidden">Hãng {sortField === 'deviceBrand' ? (sortAsc ? '↑' : '↓') : ''}</th>
+              <th onClick={() => handleSort('deviceSerial')} className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase cursor-pointer hover:bg-gray-200 border-r min-w-[120px] max-w-[300px] resize-x overflow-hidden">Serial {sortField === 'deviceSerial' ? (sortAsc ? '↑' : '↓') : ''}</th>
+              <th onClick={() => handleSort('deadline')} className="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase cursor-pointer hover:bg-gray-200 border-r min-w-[120px] max-w-[200px] resize-x overflow-hidden">TG dự kiến {sortField === 'deadline' ? (sortAsc ? '↑' : '↓') : ''}</th>
+              <th onClick={() => handleSort('personnelId')} className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase cursor-pointer hover:bg-gray-200 border-r min-w-[150px] max-w-[300px] resize-x overflow-hidden">Nhân sự HT {sortField === 'personnelId' ? (sortAsc ? '↑' : '↓') : ''}</th>
+              <th onClick={() => handleSort('actualTime')} className="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase cursor-pointer hover:bg-gray-200 border-r min-w-[120px] max-w-[200px] resize-x overflow-hidden">TG thực tế {sortField === 'actualTime' ? (sortAsc ? '↑' : '↓') : ''}</th>
+              <th onClick={() => handleSort('status')} className="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase cursor-pointer hover:bg-gray-200 border-r min-w-[130px] max-w-[200px] resize-x overflow-hidden">Tiến độ {sortField === 'status' ? (sortAsc ? '↑' : '↓') : ''}</th>
+              <th className="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase bg-white sticky right-0 shadow-[-4px_0_10px_rgba(0,0,0,0.05)] w-[100px]">Thao tác</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
@@ -1259,25 +1257,26 @@ function ProjectUnitsTab({ projectId }: { projectId: number }) {
                     <td className="px-3 py-3 text-center border-r align-top">
                       <input type="checkbox" checked={isSelected} onChange={() => toggleSelect(u.id!)} className="w-4 h-4" />
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-900 border-r align-top max-w-[150px] break-words whitespace-normal">{u.code || '-'}</td>
-                    <td className="px-4 py-3 text-sm font-bold text-gray-900 border-r align-top min-w-[200px] break-words whitespace-normal">{u.name}</td>
-                    <td className="px-4 py-3 text-sm text-gray-700 border-r align-top min-w-[250px] break-words whitespace-normal">{u.address || '-'}</td>
-                    <td className="px-4 py-3 text-sm text-gray-700 border-r align-top max-w-[150px] break-words whitespace-normal">{u.contactName || '-'}</td>
-                    <td className="px-4 py-3 text-sm text-gray-700 border-r align-top max-w-[120px] break-words whitespace-normal">{u.contactPhone || '-'}</td>
-                    <td className="px-4 py-3 text-sm text-gray-700 border-r align-top max-w-[150px] break-words whitespace-normal">{u.deviceType || '-'}</td>
-                    <td className="px-4 py-3 text-sm text-gray-700 border-r align-top max-w-[150px] break-words whitespace-normal">{u.deviceBrand || '-'}</td>
-                    <td className="px-4 py-3 text-sm text-gray-700 border-r align-top max-w-[150px] break-words whitespace-normal">{u.deviceSerial || '-'}</td>
+                    <td className="px-4 py-3 border-r align-top break-words whitespace-normal">
+                      <div className="text-xs text-gray-500 font-medium mb-0.5">{u.code || '-'}</div>
+                      <div className="text-sm font-bold text-gray-900 leading-tight">{u.name}</div>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-700 border-r align-top break-words whitespace-normal">{u.address || '-'}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700 border-r align-top break-words whitespace-normal">{u.contactName || '-'}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700 border-r align-top break-words whitespace-normal">{u.contactPhone || '-'}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700 border-r align-top break-words whitespace-normal">{u.deviceBrand || '-'}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700 border-r align-top break-words whitespace-normal">{u.deviceSerial || '-'}</td>
                     
-                    <td className="px-4 py-3 text-sm text-center border-r align-top min-w-[120px]">
+                    <td className="px-4 py-3 text-sm text-center border-r align-top">
                       <span className={isOverdue ? 'text-red-600 font-bold' : 'text-gray-700'}>
                         {u.deadline ? new Date(u.deadline).toLocaleDateString('vi-VN') : '-'}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-700 border-r align-top max-w-[150px] break-words whitespace-normal">{p?.fullName || '-'}</td>
-                    <td className="px-4 py-3 text-sm text-center border-r text-green-700 font-medium align-top min-w-[120px]">
+                    <td className="px-4 py-3 text-sm text-gray-700 border-r align-top break-words whitespace-normal">{p?.fullName || '-'}</td>
+                    <td className="px-4 py-3 text-sm text-center border-r text-green-700 font-medium align-top">
                       {u.actualTime ? new Date(u.actualTime).toLocaleDateString('vi-VN') : '-'}
                     </td>
-                    <td className="px-4 py-3 text-sm text-center border-r align-top min-w-[130px]">
+                    <td className="px-4 py-3 text-sm text-center border-r align-top">
                       <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
                         u.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
                         u.status === 'DOCS_PENDING' ? 'bg-yellow-100 text-yellow-800' :
@@ -1288,7 +1287,7 @@ function ProjectUnitsTab({ projectId }: { projectId: number }) {
                       </span>
                     </td>
                     
-                    <td className="px-4 py-3 text-center text-sm font-medium flex items-center justify-center space-x-2 bg-white sticky right-0 shadow-[-4px_0_10px_rgba(0,0,0,0.05)]">
+                    <td className="px-4 py-3 text-center text-sm font-medium flex items-center justify-center space-x-2 bg-white sticky right-0 shadow-[-4px_0_10px_rgba(0,0,0,0.05)] h-full">
                       <button onClick={() => openEdit(u)} className="text-blue-600 hover:text-blue-900 p-1.5 bg-blue-50 rounded-md"><Pencil size={16} /></button>
                       <button onClick={() => { if (confirm('Xóa chi nhánh này?')) db.projectUnits.delete(u.id!); }} className="text-red-600 hover:text-red-900 p-1.5 bg-red-50 rounded-md"><Trash2 size={16} /></button>
                     </td>
