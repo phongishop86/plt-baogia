@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, type Project, type Personnel, type ProjectContract } from '../db/db';
-import { Plus, X, Pencil, Trash2, Briefcase, Users, FileText, ChevronLeft, Calendar, Printer, LayoutDashboard, MapPin, Wallet } from 'lucide-react';
+import { Plus, X, Pencil, Trash2, Briefcase, Users, FileText, ChevronLeft, Calendar, Printer, LayoutDashboard, MapPin, Wallet, Upload, Download } from 'lucide-react';
 import { formatCurrency } from '../lib/VNDToWords';
 import PizZip from 'pizzip';
 import Docxtemplater from 'docxtemplater';
@@ -959,13 +959,80 @@ function ProjectUnitsTab({ projectId }: { projectId: number }) {
     setShowModal(false);
   };
 
+  const handleDownloadTemplate = async () => {
+    const ExcelJS = (await import('exceljs')).default;
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Danh sách');
+    
+    worksheet.columns = [
+      { header: 'Tên chi nhánh (*)', key: 'name', width: 40 },
+      { header: 'Ghi chú', key: 'notes', width: 30 }
+    ];
+    
+    worksheet.addRow({ name: 'Chi nhánh 1', notes: 'Ghi chú 1' });
+    worksheet.addRow({ name: 'Chi nhánh 2', notes: '' });
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    saveAs(new Blob([buffer]), 'Mau_Import_Chi_Nhanh.xlsx');
+  };
+
+  const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const ExcelJS = (await import('exceljs')).default;
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(await file.arrayBuffer());
+      const worksheet = workbook.worksheets[0];
+      
+      const newUnits: any[] = [];
+      worksheet.eachRow((row, rowNumber) => {
+        if (rowNumber === 1) return; // Bỏ qua header
+        const unitName = row.getCell(1).text?.trim();
+        const unitNotes = row.getCell(2).text?.trim();
+        
+        if (unitName) {
+          newUnits.push({
+            projectId,
+            name: unitName,
+            notes: unitNotes || '',
+            status: 'NOT_STARTED',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          });
+        }
+      });
+      
+      if (newUnits.length > 0) {
+        await db.projectUnits.bulkAdd(newUnits);
+        alert(`Đã import thành công ${newUnits.length} chi nhánh!`);
+      } else {
+        alert("Không tìm thấy dữ liệu hợp lệ trong file Excel. Vui lòng kiểm tra lại file mẫu.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Lỗi đọc file Excel. Vui lòng đảm bảo file không bị lỗi và đúng định dạng .xlsx");
+    }
+    if (e.target) e.target.value = '';
+  };
+
   return (
     <div className="bg-white shadow-sm border border-gray-200 rounded-lg overflow-hidden">
       <div className="p-4 border-b flex justify-between items-center bg-gray-50">
         <h3 className="font-bold text-gray-800">Quản lý Chi nhánh / Điểm triển khai</h3>
-        <button onClick={openAdd} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-md text-sm font-medium flex items-center">
-          <Plus size={16} className="mr-1" /> Thêm điểm
-        </button>
+        <div className="flex items-center space-x-3">
+          <button onClick={handleDownloadTemplate} className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-3 py-1.5 rounded-md text-sm font-medium flex items-center transition-colors">
+            <Download size={16} className="mr-1" /> Tải file mẫu
+          </button>
+          <label className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-md text-sm font-medium flex items-center cursor-pointer transition-colors">
+            <Upload size={16} className="mr-1" /> Import Excel
+            <input type="file" accept=".xlsx" className="hidden" onChange={handleImportExcel} />
+          </label>
+          <button onClick={openAdd} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-md text-sm font-medium flex items-center transition-colors">
+            <Plus size={16} className="mr-1" /> Thêm điểm
+          </button>
+        </div>
       </div>
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
