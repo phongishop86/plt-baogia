@@ -1256,28 +1256,28 @@ function ProjectUnitsTab({ projectId }: { projectId: number }) {
                 const isSelected = selectedIds.includes(u.id!);
                 return (
                   <tr key={u.id} className={`hover:bg-blue-50 ${isSelected ? 'bg-blue-50' : ''}`}>
-                    <td className="px-3 py-3 text-center border-r">
+                    <td className="px-3 py-3 text-center border-r align-top">
                       <input type="checkbox" checked={isSelected} onChange={() => toggleSelect(u.id!)} className="w-4 h-4" />
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-900 border-r truncate max-w-[150px]" title={u.code}>{u.code || '-'}</td>
-                    <td className="px-4 py-3 text-sm font-bold text-gray-900 border-r truncate max-w-[200px]" title={u.name}>{u.name}</td>
-                    <td className="px-4 py-3 text-sm text-gray-700 border-r truncate max-w-[250px]" title={u.address}>{u.address || '-'}</td>
-                    <td className="px-4 py-3 text-sm text-gray-700 border-r truncate max-w-[150px]" title={u.contactName}>{u.contactName || '-'}</td>
-                    <td className="px-4 py-3 text-sm text-gray-700 border-r truncate max-w-[150px]" title={u.contactPhone}>{u.contactPhone || '-'}</td>
-                    <td className="px-4 py-3 text-sm text-gray-700 border-r truncate max-w-[150px]" title={u.deviceType}>{u.deviceType || '-'}</td>
-                    <td className="px-4 py-3 text-sm text-gray-700 border-r truncate max-w-[150px]" title={u.deviceBrand}>{u.deviceBrand || '-'}</td>
-                    <td className="px-4 py-3 text-sm text-gray-700 border-r truncate max-w-[150px]" title={u.deviceSerial}>{u.deviceSerial || '-'}</td>
+                    <td className="px-4 py-3 text-sm text-gray-900 border-r align-top max-w-[150px] break-words whitespace-normal">{u.code || '-'}</td>
+                    <td className="px-4 py-3 text-sm font-bold text-gray-900 border-r align-top min-w-[200px] break-words whitespace-normal">{u.name}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700 border-r align-top min-w-[250px] break-words whitespace-normal">{u.address || '-'}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700 border-r align-top max-w-[150px] break-words whitespace-normal">{u.contactName || '-'}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700 border-r align-top max-w-[120px] break-words whitespace-normal">{u.contactPhone || '-'}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700 border-r align-top max-w-[150px] break-words whitespace-normal">{u.deviceType || '-'}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700 border-r align-top max-w-[150px] break-words whitespace-normal">{u.deviceBrand || '-'}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700 border-r align-top max-w-[150px] break-words whitespace-normal">{u.deviceSerial || '-'}</td>
                     
-                    <td className="px-4 py-3 text-sm text-center border-r">
+                    <td className="px-4 py-3 text-sm text-center border-r align-top min-w-[120px]">
                       <span className={isOverdue ? 'text-red-600 font-bold' : 'text-gray-700'}>
                         {u.deadline ? new Date(u.deadline).toLocaleDateString('vi-VN') : '-'}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-700 border-r truncate max-w-[150px]" title={p?.fullName}>{p?.fullName || '-'}</td>
-                    <td className="px-4 py-3 text-sm text-center border-r text-green-700 font-medium">
+                    <td className="px-4 py-3 text-sm text-gray-700 border-r align-top max-w-[150px] break-words whitespace-normal">{p?.fullName || '-'}</td>
+                    <td className="px-4 py-3 text-sm text-center border-r text-green-700 font-medium align-top min-w-[120px]">
                       {u.actualTime ? new Date(u.actualTime).toLocaleDateString('vi-VN') : '-'}
                     </td>
-                    <td className="px-4 py-3 text-sm text-center border-r">
+                    <td className="px-4 py-3 text-sm text-center border-r align-top min-w-[130px]">
                       <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
                         u.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
                         u.status === 'DOCS_PENDING' ? 'bg-yellow-100 text-yellow-800' :
