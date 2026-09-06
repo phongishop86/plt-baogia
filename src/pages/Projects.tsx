@@ -769,6 +769,7 @@ function ProjectTemplatesTab({ projectId }: { projectId: number }) {
   const TEMPLATE_TYPES = [
     { id: 'DELIVERY', name: 'Biên bản Bàn giao', desc: 'Mẫu xuất biên bản bàn giao thiết bị' },
     { id: 'PAYMENT_REQUEST', name: 'Đề nghị Thanh toán', desc: 'Mẫu xuất đề nghị thanh toán' },
+    { id: 'MAINTENANCE_RECORD', name: 'Biên bản Bảo trì', desc: 'Mẫu xuất biên bản bảo trì định kỳ' },
     { id: 'OTHER', name: 'Biểu mẫu khác', desc: 'Các biểu mẫu khác của đối tác' }
   ];
 

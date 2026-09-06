@@ -1,9 +1,10 @@
 import React, { useState, useRef } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, type ProjectUnit } from '../db/db';
-import { Plus, Search, Trash2, X, Download, Upload, Pencil, MapPin } from 'lucide-react';
+import { Plus, Search, Trash2, X, Download, Upload, Pencil, MapPin, Printer } from 'lucide-react';
 import { saveAs } from 'file-saver';
-
+import PizZip from 'pizzip';
+import Docxtemplater from 'docxtemplater';
 export default function ProjectUnitsTab({ projectId }: { projectId: number }) {
   const project = useLiveQuery(() => db.projects.get(projectId));
   const units = useLiveQuery(() => db.projectUnits.where('projectId').equals(projectId).toArray());
@@ -370,6 +371,76 @@ export default function ProjectUnitsTab({ projectId }: { projectId: number }) {
       }
   };
 
+  const handleDeleteCustomColumn = async (colName: string) => {
+    if (!confirm(`Bạn có chắc muốn xóa trường "${colName}"? Mọi dữ liệu của trường này ở các chi nhánh sẽ bị mất.`)) return;
+    const newCols = project?.unitCustomColumns?.filter(c => c !== colName) || [];
+    await db.projects.update(projectId, { unitCustomColumns: newCols });
+    
+    if (units) {
+      for (const u of units) {
+        if (u.customFields && u.customFields[colName] !== undefined) {
+          const newData = { ...u.customFields };
+          delete newData[colName];
+          await db.projectUnits.update(u.id!, { customFields: newData });
+        }
+      }
+    }
+  };
+
+  const [printingId, setPrintingId] = useState<number | null>(null);
+
+  const handlePrintMaintenance = async (unit: ProjectUnit) => {
+    try {
+      setPrintingId(unit.id!);
+      const template = await db.projectTemplates.where({ projectId, type: 'MAINTENANCE_RECORD' }).first();
+      if (!template) {
+        alert("Chưa có mẫu Biên bản Bảo trì! Vui lòng vào tab Biểu mẫu Dự án để tải mẫu lên.");
+        return;
+      }
+
+      const p = allPersonnel?.find(x => x.id === unit.personnelId);
+
+      const zip = new PizZip(template.fileData);
+      const doc = new Docxtemplater(zip, { paragraphLoop: true, linebreaks: true });
+
+      const d = new Date();
+      // Calculate device count simply by splitting deviceSerial if there are multiple, or just 1
+      const deviceSerials = unit.deviceSerial ? unit.deviceSerial.split(',').map(s => s.trim()).filter(Boolean) : [];
+      const deviceCount = deviceSerials.length > 0 ? deviceSerials.length : (unit.deviceType ? 1 : 0);
+
+      // Create a flat dictionary for custom data
+      const customFields: Record<string, string> = {};
+      if (unit.customFields) {
+        for (const [k, v] of Object.entries(unit.customFields)) {
+          customFields[`custom_${k}`] = v || '';
+        }
+      }
+
+      doc.render({
+        projectName: project?.name || '',
+        ...unit,
+        personnelName: p?.fullName || '',
+        printDay: d.getDate().toString().padStart(2, '0'),
+        printMonth: (d.getMonth() + 1).toString().padStart(2, '0'),
+        printYear: d.getFullYear(),
+        deviceCount,
+        ...customFields
+      });
+
+      const out = doc.getZip().generate({
+        type: 'blob',
+        mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      });
+      
+      saveAs(out, `BB_Bao_Tri_${unit.name.replace(/\s+/g, '_')}.docx`);
+    } catch (error) {
+      console.error(error);
+      alert("Có lỗi khi xuất file Word. Vui lòng kiểm tra lại template.");
+    } finally {
+      setPrintingId(null);
+    }
+  };
+
   const allSelected = sortedUnits.length > 0 && selectedIds.length === sortedUnits.length;
 
   return (
@@ -436,7 +507,14 @@ export default function ProjectUnitsTab({ projectId }: { projectId: number }) {
               <th onClick={() => handleSort('status')} className="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase cursor-pointer hover:bg-gray-200 border-r min-w-[120px] max-w-[200px] resize-x overflow-hidden">Tiến độ {sortField === 'status' ? (sortAsc ? '↑' : '↓') : ''}</th>
               
               {project?.unitCustomColumns?.map(col => (
-                  <th key={col} className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase resize-x overflow-hidden border-r max-w-[300px] min-w-[150px]">{col}</th>
+                  <th key={col} className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase resize-x overflow-hidden border-r max-w-[300px] min-w-[150px] group">
+                    <div className="flex justify-between items-center">
+                      <span>{col}</span>
+                      <button onClick={() => handleDeleteCustomColumn(col)} className="text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity" title="Xóa trường này">
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </th>
               ))}
               
               <th className="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase bg-white sticky right-0 shadow-[-4px_0_10px_rgba(0,0,0,0.05)] w-[90px]">Thao tác</th>
@@ -490,8 +568,11 @@ export default function ProjectUnitsTab({ projectId }: { projectId: number }) {
                     ))}
 
                     <td className="px-4 py-3 text-center text-sm font-medium flex items-center justify-center space-x-2 bg-white sticky right-0 shadow-[-4px_0_10px_rgba(0,0,0,0.05)] h-full">
-                      <button onClick={() => openEdit(u)} className="text-blue-600 hover:text-blue-900 p-1.5 bg-blue-50 rounded-md"><Pencil size={16} /></button>
-                      <button onClick={() => { if (confirm('Xóa chi nhánh này?')) db.projectUnits.delete(u.id!); }} className="text-red-600 hover:text-red-900 p-1.5 bg-red-50 rounded-md"><Trash2 size={16} /></button>
+                      <button onClick={() => handlePrintMaintenance(u)} disabled={printingId === u.id} className="text-emerald-600 hover:text-emerald-900 p-1.5 bg-emerald-50 rounded-md disabled:opacity-50" title="In Biên bản bảo trì">
+                        <Printer size={16} />
+                      </button>
+                      <button onClick={() => openEdit(u)} className="text-blue-600 hover:text-blue-900 p-1.5 bg-blue-50 rounded-md" title="Sửa"><Pencil size={16} /></button>
+                      <button onClick={() => { if (confirm('Xóa chi nhánh này?')) db.projectUnits.delete(u.id!); }} className="text-red-600 hover:text-red-900 p-1.5 bg-red-50 rounded-md" title="Xóa"><Trash2 size={16} /></button>
                     </td>
                   </tr>
                 );

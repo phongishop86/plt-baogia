@@ -23,14 +23,15 @@ export default function Fund() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!amount || isNaN(Number(amount))) {
+    const rawAmount = amount.replace(/\./g, '');
+    if (!rawAmount || isNaN(Number(rawAmount))) {
       alert("Số tiền không hợp lệ!");
       return;
     }
 
     await db.transactions.add({
       date: new Date(date),
-      amount: Number(amount),
+      amount: Number(rawAmount),
       type,
       description,
       createdAt: new Date()
@@ -220,12 +221,15 @@ export default function Fund() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Số tiền (VNĐ)</label>
                 <input 
-                  type="number" 
+                  type="text" 
                   value={amount} 
-                  onChange={(e) => setAmount(e.target.value)} 
+                  onChange={(e) => {
+                    const rawValue = e.target.value.replace(/\D/g, '');
+                    const formatted = rawValue ? new Intl.NumberFormat('vi-VN').format(Number(rawValue)) : '';
+                    setAmount(formatted);
+                  }} 
                   required
-                  min="0"
-                  placeholder="VD: 5000000"
+                  placeholder="VD: 5.000.000"
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
                 />
               </div>
