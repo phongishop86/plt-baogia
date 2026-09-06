@@ -81,6 +81,7 @@ export interface Project {
   budget?: number;
   contractValue?: number; // Giá trị hợp đồng (với đối tác)
   notes?: string;
+  unitCustomColumns?: string[]; // Mảng các tên cột động
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -103,7 +104,7 @@ export interface Personnel {
 
 export interface ProjectContract {
   id?: number;
-  projectId: number;
+  projectId?: number;
   personnelId: number;
   startDate: Date;
   endDate: Date;
@@ -136,6 +137,7 @@ export interface ProjectUnit {
   status: 'NOT_STARTED' | 'IN_PROGRESS' | 'DOCS_PENDING' | 'COMPLETED'; // Tiến độ
   personnelId?: number; // Nhân sự HT (2)
   notes?: string;
+  customFields?: Record<string, string>; // Các trường dữ liệu động tùy biến
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -157,6 +159,15 @@ export interface DocTemplate {
   updatedAt: Date;
 }
 
+export interface ProjectTemplate {
+  id?: number;
+  projectId: number;
+  type: string;
+  fileName: string;
+  fileData: ArrayBuffer;
+  updatedAt: Date;
+}
+
 export class PLTDatabase extends Dexie {
   customers!: Table<Customer, number>;
   products!: Table<Product, number>;
@@ -169,6 +180,7 @@ export class PLTDatabase extends Dexie {
   projectUnits!: Table<ProjectUnit, number>;
   projectExpenses!: Table<ProjectExpense, number>;
   templates!: Table<DocTemplate, string>;
+  projectTemplates!: Table<ProjectTemplate, number>;
 
   constructor() {
     super('PLTERPDatabase');
@@ -223,6 +235,20 @@ export class PLTDatabase extends Dexie {
       projectUnits: '++id, projectId, status, personnelId',
       projectExpenses: '++id, projectId, category, date',
       templates: 'id'
+    });
+    this.version(7).stores({
+      customers: '++id, taxCode, name',
+      products: '++id, code, name',
+      documents: '++id, type, docNumber, customerId, date',
+      transactions: '++id, date, type',
+      users: '++id, username, role',
+      projects: '++id, code, name, status',
+      personnel: '++id, cccd, fullName',
+      projectContracts: '++id, projectId, personnelId',
+      projectUnits: '++id, projectId, status, personnelId',
+      projectExpenses: '++id, projectId, category, date',
+      templates: 'id',
+      projectTemplates: '++id, projectId, type'
     });
   }
 }

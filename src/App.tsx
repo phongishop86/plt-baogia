@@ -15,7 +15,7 @@ import Login from './pages/Login';
 import UsersManagement from './pages/UsersManagement';
 import Sourcing from './pages/Sourcing';
 import Projects from './pages/Projects';
-import TemplateManagement from './pages/TemplateManagement';
+import PersonnelContracts from './pages/PersonnelContracts';
 import { type User } from './db/db';
 
 function App() {
@@ -232,9 +232,9 @@ function App() {
           {isKetoan && (
             <NavItem 
               icon={<FileText size={20} className="text-gray-500" />} 
-              label="Quản lý Biểu mẫu" 
-              active={activeTab === 'templates'} 
-              onClick={() => handleTabClick('templates')} 
+              label="Hợp đồng khung / Sự vụ" 
+              active={activeTab === 'personnel-contracts'} 
+              onClick={() => handleTabClick('personnel-contracts')} 
             />
           )}
           {isAdmin && (
@@ -304,7 +304,7 @@ function App() {
               activeTab === 'fund' ? 'Quản lý Quỹ & Tạm ứng' :
               activeTab === 'settings' ? 'Cài đặt Hệ thống' :
               activeTab === 'users' ? 'Quản lý Tài khoản (Users)' :
-              activeTab === 'templates' ? 'Quản lý Biểu mẫu (Word)' :
+              activeTab === 'personnel-contracts' ? 'Hợp đồng khung / Sự vụ' :
               'Tổng quan (Dashboard)'
             }</h2>
           </div>
@@ -366,7 +366,7 @@ function App() {
           {activeTab === 'sourcing' && <Sourcing />}
           {activeTab === 'settings' && isAdmin && <Settings />}
           {activeTab === 'users' && isAdmin && <UsersManagement />}
-          {activeTab === 'templates' && isKetoan && <TemplateManagement />}
+          {activeTab === 'personnel-contracts' && isKetoan && <PersonnelContracts />}
         </div>
       </main>
 
