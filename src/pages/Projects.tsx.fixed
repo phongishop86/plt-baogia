@@ -1,11 +1,8 @@
+import ProjectUnitsTab from './ProjectUnitsTab';
 import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, type Project, type Personnel } from '../db/db';
-import { Plus, X, Pencil, Trash2, Briefcase, Users, FileText, ChevronLeft, LayoutDashboard, MapPin, Wallet, Upload, Download, Info } from 'lucide-react';
-
-
-
-import ProjectUnitsTab from './ProjectUnitsTab';
+import { Plus, X, Pencil, Trash2, Briefcase, Users, FileText, ChevronLeft, Info, LayoutDashboard, MapPin, Wallet, Upload, Download } from 'lucide-react';
 
 export default function Projects() {
   const [activeTab, setActiveTab] = useState<'PROJECTS' | 'PERSONNEL' | 'DETAIL'>('PROJECTS');
@@ -35,7 +32,7 @@ export default function Projects() {
             }`}
           >
             <Users size={18} />
-            <span>Hồ sơ Nhân sự</span>
+            <span>H� sơ Nhân sự</span>
           </button>
         </div>
       )}
@@ -63,7 +60,7 @@ export default function Projects() {
 }
 
 // ==========================================
-// THÀNH PHẦN 1: QUẢN LÝ DỰ ÁN
+// THìNH PHẦN 1: QUẢN LÝ DỰ ÁN
 // ==========================================
 function ProjectList({ onOpenDetail }: { onOpenDetail: (id: number) => void }) {
   const projects = useLiveQuery(() => db.projects.toArray());
@@ -109,7 +106,7 @@ function ProjectList({ onOpenDetail }: { onOpenDetail: (id: number) => void }) {
   const saveProject = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !code) {
-      alert("Vui lòng điền tên và mã dự án");
+      alert("Vui lòng �iền tên và mã dự án");
       return;
     }
     
@@ -117,7 +114,7 @@ function ProjectList({ onOpenDetail }: { onOpenDetail: (id: number) => void }) {
       name,
       code,
       status,
-      progress: editingId ? (projects?.find(p => p.id === editingId)?.progress || 0) : 0, // Sẽ tự tính từ Unit, khi tạo mới là 0
+      progress: editingId ? (projects?.find(p => p.id === editingId)?.progress || 0) : 0, // Sẽ tự tính từ Unit, khi tạo m�:i là 0
       budget: budget ? parseFloat(String(budget).replace(/\D/g, '')) : 0,
       contractValue: contractValue ? parseFloat(String(contractValue).replace(/\D/g, '')) : 0,
       startDate: startDate ? new Date(startDate) : undefined,
@@ -154,7 +151,7 @@ function ProjectList({ onOpenDetail }: { onOpenDetail: (id: number) => void }) {
               <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Mã DA</th>
               <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Tên dự án</th>
               <th className="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">Trạng thái</th>
-              <th className="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">Tiến độ</th>
+              <th className="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">Tiến ��"</th>
               <th className="px-6 py-3 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">Doanh thu / Chi phí</th>
               <th className="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">Sửa</th>
             </tr>
@@ -163,7 +160,7 @@ function ProjectList({ onOpenDetail }: { onOpenDetail: (id: number) => void }) {
             {projects?.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
-                  Chưa có dự án nào. Bấm "Thêm dự án" để tạo mới.
+                  Chưa có dự án nào. Bấm "Thêm dự án" �Ồ tạo m�:i.
                 </td>
               </tr>
             ) : (
@@ -182,7 +179,7 @@ function ProjectList({ onOpenDetail }: { onOpenDetail: (id: number) => void }) {
                   computedProgress = project.progress || 0;
                 }
 
-                // Kiểm tra quá hạn
+                // KiỒm tra quá hạn
                 const isOverdue = project.endDate && new Date(project.endDate) < new Date() && computedProgress < 100;
 
                 return (
@@ -205,7 +202,7 @@ function ProjectList({ onOpenDetail }: { onOpenDetail: (id: number) => void }) {
                         project.status === 'PLANNING' ? 'bg-gray-100 text-gray-800' :
                         'bg-red-100 text-red-800'
                       }`}>
-                        {project.status === 'COMPLETED' ? 'Hoàn thành' : project.status === 'IN_PROGRESS' ? 'Đang thực hiện' : project.status === 'PLANNING' ? 'Kế hoạch' : 'Tạm dừng/Hủy'}
+                        {project.status === 'COMPLETED' ? 'Hoàn thành' : project.status === 'IN_PROGRESS' ? 'Đang thực hi�!n' : project.status === 'PLANNING' ? 'Kế hoạch' : 'Tạm dừng/Hủy'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
@@ -217,8 +214,8 @@ function ProjectList({ onOpenDetail }: { onOpenDetail: (id: number) => void }) {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
-                      <div className="font-bold text-green-600" title="Giá trị hợp đồng (Doanh thu)">{project.contractValue ? new Intl.NumberFormat('vi-VN').format(project.contractValue) : '0'} ₫</div>
-                      <div className="text-xs text-red-500" title="Ngân sách dự kiến (Chi phí)">{project.budget ? new Intl.NumberFormat('vi-VN').format(project.budget) : '0'} ₫</div>
+                      <div className="font-bold text-green-600" title="Giá tr�9 hợp ��ng (Doanh thu)">{project.contractValue ? new Intl.NumberFormat('vi-VN').format(project.contractValue) : '0'} ��</div>
+                      <div className="text-xs text-red-500" title="Ngân sách dự kiến (Chi phí)">{project.budget ? new Intl.NumberFormat('vi-VN').format(project.budget) : '0'} ��</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium" onClick={(e) => e.stopPropagation()}>
                       <button onClick={() => openEditModal(project)} className="text-blue-600 hover:text-blue-900 p-1.5 bg-blue-50 rounded-md">
@@ -238,7 +235,7 @@ function ProjectList({ onOpenDetail }: { onOpenDetail: (id: number) => void }) {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center p-6 border-b">
-              <h3 className="text-xl font-bold text-gray-900">{editingId ? 'Sửa Dự án' : 'Thêm Dự án mới'}</h3>
+              <h3 className="text-xl font-bold text-gray-900">{editingId ? 'Sửa Dự án' : 'Thêm Dự án m�:i'}</h3>
               <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600"><X size={24} /></button>
             </div>
             <form onSubmit={saveProject} className="p-6 space-y-4">
@@ -251,7 +248,7 @@ function ProjectList({ onOpenDetail }: { onOpenDetail: (id: number) => void }) {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
                   <select value={status} onChange={e => setStatus(e.target.value as any)} className="w-full border p-2 rounded-md">
                     <option value="PLANNING">Đang lên kế hoạch</option>
-                    <option value="IN_PROGRESS">Đang thực hiện</option>
+                    <option value="IN_PROGRESS">Đang thực hi�!n</option>
                     <option value="COMPLETED">Đã hoàn thành</option>
                     <option value="ON_HOLD">Tạm dừng</option>
                     <option value="CANCELLED">Đã hủy</option>
@@ -262,7 +259,7 @@ function ProjectList({ onOpenDetail }: { onOpenDetail: (id: number) => void }) {
                   <input required value={name} onChange={e => setName(e.target.value)} className="w-full border p-2 rounded-md focus:ring-blue-500 focus:border-blue-500" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Ngày bắt đầu</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Ngày bắt �ầu</label>
                   <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full border p-2 rounded-md" />
                 </div>
                 <div>
@@ -270,7 +267,7 @@ function ProjectList({ onOpenDetail }: { onOpenDetail: (id: number) => void }) {
                   <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="w-full border p-2 rounded-md" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Giá trị hợp đồng (Doanh thu)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Giá tr�9 hợp ��ng (Doanh thu)</label>
                   <input value={contractValue} onChange={e => {
                     const val = e.target.value.replace(/\D/g, '');
                     setContractValue(val ? new Intl.NumberFormat('vi-VN').format(parseInt(val)) : '');
@@ -291,7 +288,7 @@ function ProjectList({ onOpenDetail }: { onOpenDetail: (id: number) => void }) {
               <div className="pt-4 flex justify-end space-x-3 border-t">
                 {editingId && (
                   <button type="button" onClick={() => {
-                    if(confirm('Xóa dự án này và toàn bộ hợp đồng liên quan?')) {
+                    if(confirm('Xóa dự án này và toàn b�" hợp ��ng liên quan?')) {
                       db.projects.delete(editingId);
                       setShowModal(false);
                     }
@@ -311,7 +308,7 @@ function ProjectList({ onOpenDetail }: { onOpenDetail: (id: number) => void }) {
 }
 
 // ==========================================
-// THÀNH PHẦN 2: HỒ SƠ NHÂN SỰ
+// THìNH PHẦN 2: H� SƠ NH�N SỰ
 // ==========================================
 function PersonnelList() {
   const personnel = useLiveQuery(() => db.personnel.toArray());
@@ -358,7 +355,7 @@ function PersonnelList() {
 
   const savePersonnel = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!fullName || !cccd) return alert("Vui lòng điền Họ tên và CCCD");
+    if (!fullName || !cccd) return alert("Vui lòng �iền Họ tên và CCCD");
     
     const pData = { fullName, cccd, type, phone, bankAccount, bankName, address, cccdDate, specialization, updatedAt: new Date() };
 
@@ -373,7 +370,7 @@ function PersonnelList() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-bold text-gray-800">Hồ sơ Nhân sự</h2>
+        <h2 className="text-xl font-bold text-gray-800">H� sơ Nhân sự</h2>
         <button onClick={openAddModal} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium flex items-center space-x-2">
           <Plus size={18} />
           <span>Thêm nhân sự</span>
@@ -388,13 +385,13 @@ function PersonnelList() {
               <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">CCCD</th>
               <th className="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase">Loại hình</th>
               <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">SĐT</th>
-              <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">Số Tài Khoản</th>
+              <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">S� Tài Khoản</th>
               <th className="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase">Thao tác</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {personnel?.length === 0 ? (
-              <tr><td colSpan={6} className="px-6 py-8 text-center text-gray-500">Chưa có hồ sơ nhân sự nào.</td></tr>
+              <tr><td colSpan={6} className="px-6 py-8 text-center text-gray-500">Chưa có h� sơ nhân sự nào.</td></tr>
             ) : (
               personnel?.map(p => (
                 <tr key={p.id} className="hover:bg-gray-50">
@@ -426,7 +423,7 @@ function PersonnelList() {
                   <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                     <button onClick={() => openEditModal(p)} className="text-blue-600 hover:text-blue-900 p-1.5 bg-blue-50 rounded-md mr-2"><Pencil size={16} /></button>
                     <button onClick={() => {
-                      if (confirm('Xóa hồ sơ nhân sự này?')) db.personnel.delete(p.id!);
+                      if (confirm('Xóa h� sơ nhân sự này?')) db.personnel.delete(p.id!);
                     }} className="text-red-600 hover:text-red-900 p-1.5 bg-red-50 rounded-md"><Trash2 size={16} /></button>
                   </td>
                 </tr>
@@ -459,7 +456,7 @@ function PersonnelList() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Địa chỉ</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Đ�9a ch�0</label>
                 <input value={address} onChange={e => setAddress(e.target.value)} className="w-full border p-2 rounded-md" />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -478,12 +475,12 @@ function PersonnelList() {
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Số điện thoại</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">S� �i�!n thoại</label>
                   <input value={phone} onChange={e => setPhone(e.target.value)} className="w-full border p-2 rounded-md" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Số tài khoản</label>
-                  <input value={bankAccount} onChange={e => setBankAccount(e.target.value)} placeholder="Nhập số tài khoản" className="w-full border p-2 rounded-md" />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">S� tài khoản</label>
+                  <input value={bankAccount} onChange={e => setBankAccount(e.target.value)} placeholder="Nhập s� tài khoản" className="w-full border p-2 rounded-md" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Tên Ngân hàng</label>
@@ -503,17 +500,18 @@ function PersonnelList() {
 }
 
 // ==========================================
-// THÀNH PHẦN 3: CHI TIẾT DỰ ÁN (HỢP ĐỒNG)
+// THìNH PHẦN 3: CHI TIẾT DỰ ÁN (HỢP Đ�NG)
 // ==========================================
 function ProjectDetail({ projectId, onBack }: { projectId: number, onBack: () => void }) {
   const project = useLiveQuery(() => db.projects.get(projectId));
-
+  const contracts = useLiveQuery(() => db.projectContracts.where('projectId').equals(projectId).toArray());
   const units = useLiveQuery(() => db.projectUnits.where('projectId').equals(projectId).toArray());
   const expenses = useLiveQuery(() => db.projectExpenses.where('projectId').equals(projectId).toArray());
-
   
   const [detailTab, setDetailTab] = useState<'DASHBOARD' | 'UNITS' | 'TEMPLATES' | 'EXPENSES'>('DASHBOARD');
+
   if (!project) return <div>Đang tải...</div>;
+
   let computedProgress = 0;
   if (units && units.length > 0) {
     const score = units.reduce((acc, u) => {
@@ -528,9 +526,9 @@ function ProjectDetail({ projectId, onBack }: { projectId: number, onBack: () =>
   }
   const isOverdue = project.endDate && new Date(project.endDate) < new Date() && computedProgress < 100;
 
-
-
-  const totalExpense = expenses?.reduce((sum, e) => sum + e.amount, 0) || 0;
+  const totalContractExpense = contracts?.reduce((sum, c) => sum + c.amount, 0) || 0;
+  const totalOtherExpense = expenses?.reduce((sum, e) => sum + e.amount, 0) || 0;
+  const totalExpense = totalContractExpense + totalOtherExpense;
 
   return (
     <div className="space-y-6">
@@ -543,20 +541,20 @@ function ProjectDetail({ projectId, onBack }: { projectId: number, onBack: () =>
           <div className="flex items-center space-x-3 text-sm mt-1">
             <span className="text-gray-500 font-medium">Mã DA: {project.code}</span>
             <span className="text-gray-300">|</span>
-            <span className={`font-bold ${isOverdue ? 'text-red-600' : 'text-blue-600'}`}>Tiến độ: {computedProgress}% {isOverdue && '(Quá hạn)'}</span>
+            <span className={`font-bold ${isOverdue ? 'text-red-600' : 'text-blue-600'}`}>Tiến ��": {computedProgress}% {isOverdue && '(Quá hạn)'}</span>
           </div>
         </div>
       </div>
 
       <div className="flex border-b border-gray-200">
         <button onClick={() => setDetailTab('DASHBOARD')} className={`py-3 px-6 font-medium text-sm border-b-2 transition-colors flex items-center space-x-2 ${detailTab === 'DASHBOARD' ? 'border-blue-600 text-blue-600 bg-blue-50/50' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>
-          <LayoutDashboard size={18} /><span>Tổng quan</span>
+          <LayoutDashboard size={18} /><span>T�"ng quan</span>
         </button>
         <button onClick={() => setDetailTab('UNITS')} className={`py-3 px-6 font-medium text-sm border-b-2 transition-colors flex items-center space-x-2 ${detailTab === 'UNITS' ? 'border-blue-600 text-blue-600 bg-blue-50/50' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>
           <MapPin size={18} /><span>Chi nhánh ({units?.length || 0})</span>
         </button>
         <button onClick={() => setDetailTab('TEMPLATES')} className={`py-3 px-6 font-medium text-sm border-b-2 transition-colors flex items-center space-x-2 ${detailTab === 'TEMPLATES' ? 'border-blue-600 text-blue-600 bg-blue-50/50' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>
-          <FileText size={18} /><span>Biểu mẫu Dự án</span>
+          <FileText size={18} /><span>BiỒu mẫu Dự án</span>
         </button>
         <button onClick={() => setDetailTab('EXPENSES')} className={`py-3 px-6 font-medium text-sm border-b-2 transition-colors flex items-center space-x-2 ${detailTab === 'EXPENSES' ? 'border-blue-600 text-blue-600 bg-blue-50/50' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>
           <Wallet size={18} /><span>Chi phí khác</span>
@@ -567,41 +565,41 @@ function ProjectDetail({ projectId, onBack }: { projectId: number, onBack: () =>
         <div className="space-y-6">
           <div className="grid grid-cols-4 gap-6">
             <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-              <p className="text-gray-500 text-sm font-medium mb-1">Doanh thu (Giá trị HĐ)</p>
-              <p className="text-2xl font-bold text-green-600">{new Intl.NumberFormat('vi-VN').format(project.contractValue || 0)} ₫</p>
+              <p className="text-gray-500 text-sm font-medium mb-1">Doanh thu (Giá tr�9 HĐ)</p>
+              <p className="text-2xl font-bold text-green-600">{new Intl.NumberFormat('vi-VN').format(project.contractValue || 0)} ��</p>
             </div>
             <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
               <p className="text-gray-500 text-sm font-medium mb-1">Ngân sách dự kiến (Chi phí)</p>
-              <p className="text-2xl font-bold text-gray-700">{new Intl.NumberFormat('vi-VN').format(project.budget || 0)} ₫</p>
+              <p className="text-2xl font-bold text-gray-700">{new Intl.NumberFormat('vi-VN').format(project.budget || 0)} ��</p>
             </div>
             <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-              <p className="text-gray-500 text-sm font-medium mb-1">Tổng chi phí thực tế</p>
-              <p className="text-2xl font-bold text-red-600">{new Intl.NumberFormat('vi-VN').format(totalExpense)} ₫</p>
+              <p className="text-gray-500 text-sm font-medium mb-1">T�"ng chi phí thực tế</p>
+              <p className="text-2xl font-bold text-red-600">{new Intl.NumberFormat('vi-VN').format(totalExpense)} ��</p>
             </div>
             <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
               <p className="text-gray-500 text-sm font-medium mb-1">Lợi nhuận tạm tính</p>
               <p className={`text-2xl font-bold ${((project.contractValue || 0) - totalExpense) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {new Intl.NumberFormat('vi-VN').format((project.contractValue || 0) - totalExpense)} ₫
+                {new Intl.NumberFormat('vi-VN').format((project.contractValue || 0) - totalExpense)} ��
               </p>
             </div>
           </div>
           
           <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-            <h3 className="font-bold text-gray-800 mb-4">Tiến độ tổng thể: {computedProgress}%</h3>
+            <h3 className="font-bold text-gray-800 mb-4">Tiến ��" t�"ng thỒ: {computedProgress}%</h3>
             <div className="w-full bg-gray-200 rounded-full h-4">
               <div className={`h-4 rounded-full ${isOverdue ? 'bg-red-500' : 'bg-blue-600'}`} style={{ width: `${computedProgress}%` }}></div>
             </div>
             <div className="grid grid-cols-4 gap-4 mt-6">
               <div className="bg-gray-50 p-4 rounded-lg text-center">
-                <p className="text-sm text-gray-500">Chưa triển khai</p>
+                <p className="text-sm text-gray-500">Chưa triỒn khai</p>
                 <p className="text-xl font-bold text-gray-700">{units?.filter(u => u.status === 'NOT_STARTED').length || 0}</p>
               </div>
               <div className="bg-blue-50 p-4 rounded-lg text-center">
-                <p className="text-sm text-gray-500">Đang thực hiện</p>
+                <p className="text-sm text-gray-500">Đang thực hi�!n</p>
                 <p className="text-xl font-bold text-blue-700">{units?.filter(u => u.status === 'IN_PROGRESS').length || 0}</p>
               </div>
               <div className="bg-yellow-50 p-4 rounded-lg text-center">
-                <p className="text-sm text-gray-500">Đang hoàn thiện HS</p>
+                <p className="text-sm text-gray-500">Đang hoàn thi�!n HS</p>
                 <p className="text-xl font-bold text-yellow-700">{units?.filter(u => u.status === 'DOCS_PENDING').length || 0}</p>
               </div>
               <div className="bg-green-50 p-4 rounded-lg text-center">
@@ -652,7 +650,7 @@ function ProjectExpensesTab({ projectId }: { projectId: number }) {
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
     const val = parseFloat(String(amount).replace(/\D/g, ''));
-    if (!val || !description) return alert('Vui lòng nhập số tiền và nội dung');
+    if (!val || !description) return alert('Vui lòng nhập s� tiền và n�"i dung');
 
     const data = {
       projectId,
@@ -685,25 +683,25 @@ function ProjectExpensesTab({ projectId }: { projectId: number }) {
             <tr>
               <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Ngày</th>
               <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Phân loại</th>
-              <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Nội dung</th>
-              <th className="px-4 py-3 text-right text-xs font-bold text-gray-700 uppercase">Số tiền</th>
+              <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">N�"i dung</th>
+              <th className="px-4 py-3 text-right text-xs font-bold text-gray-700 uppercase">S� tiền</th>
               <th className="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase">Thao tác</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {expenses?.length === 0 ? (
-              <tr><td colSpan={5} className="px-6 py-8 text-center text-gray-500">Chưa có chi phí nào được ghi nhận.</td></tr>
+              <tr><td colSpan={5} className="px-6 py-8 text-center text-gray-500">Chưa có chi phí nào �ược ghi nhận.</td></tr>
             ) : (
               expenses?.sort((a, b) => b.date.getTime() - a.date.getTime()).map(e => (
                 <tr key={e.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3 text-sm text-gray-600">{new Date(e.date).toLocaleDateString('vi-VN')}</td>
                   <td className="px-4 py-3 text-sm">
                     <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs font-medium">
-                      {e.category === 'OPERATION' ? 'Chi phí HĐ' : e.category === 'ENTERTAINMENT' ? 'Tiếp khách' : e.category === 'EQUIPMENT' ? 'Thiết bị/Vật tư' : 'Khác'}
+                      {e.category === 'OPERATION' ? 'Chi phí HĐ' : e.category === 'ENTERTAINMENT' ? 'Tiếp khách' : e.category === 'EQUIPMENT' ? 'Thiết b�9/Vật tư' : 'Khác'}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-sm font-medium text-gray-900">{e.description}</td>
-                  <td className="px-4 py-3 text-right text-sm font-bold text-red-600">{new Intl.NumberFormat('vi-VN').format(e.amount)} ₫</td>
+                  <td className="px-4 py-3 text-right text-sm font-bold text-red-600">{new Intl.NumberFormat('vi-VN').format(e.amount)} ��</td>
                   <td className="px-4 py-3 text-center text-sm font-medium flex items-center justify-center space-x-2">
                     <button onClick={() => openEdit(e)} className="text-blue-600 hover:text-blue-900 p-1.5 bg-blue-50 rounded-md"><Pencil size={16} /></button>
                     <button onClick={() => { if (confirm('Xóa khoản chi này?')) db.projectExpenses.delete(e.id!); }} className="text-red-600 hover:text-red-900 p-1.5 bg-red-50 rounded-md"><Trash2 size={16} /></button>
@@ -726,9 +724,9 @@ function ProjectExpensesTab({ projectId }: { projectId: number }) {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Loại chi phí</label>
                 <select value={category} onChange={e => setCategory(e.target.value as any)} className="w-full border p-2 rounded-md">
-                  <option value="OPERATION">Chi phí Hoạt động</option>
+                  <option value="OPERATION">Chi phí Hoạt ��"ng</option>
                   <option value="ENTERTAINMENT">Chi phí Tiếp khách</option>
-                  <option value="EQUIPMENT">Trang thiết bị / Vật tư</option>
+                  <option value="EQUIPMENT">Trang thiết b�9 / Vật tư</option>
                   <option value="OTHER">Chi phí Khác</option>
                 </select>
               </div>
@@ -738,7 +736,7 @@ function ProjectExpensesTab({ projectId }: { projectId: number }) {
                   <input type="date" required value={date} onChange={e => setDate(e.target.value)} className="w-full border p-2 rounded-md" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Số tiền (VNĐ) *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">S� tiền (VNĐ) *</label>
                   <input required value={amount} onChange={e => {
                     const val = e.target.value.replace(/\D/g, '');
                     setAmount(val ? new Intl.NumberFormat('vi-VN').format(parseInt(val)) : '');
@@ -746,7 +744,7 @@ function ProjectExpensesTab({ projectId }: { projectId: number }) {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nội dung chi *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">N�"i dung chi *</label>
                 <textarea rows={2} required value={description} onChange={e => setDescription(e.target.value)} className="w-full border p-2 rounded-md"></textarea>
               </div>
               <div className="pt-4 flex justify-end space-x-3 border-t">
@@ -760,16 +758,14 @@ function ProjectExpensesTab({ projectId }: { projectId: number }) {
     </div>
   );
 }
-
-
 function ProjectTemplatesTab({ projectId }: { projectId: number }) {
   const templates = useLiveQuery(() => db.projectTemplates.where('projectId').equals(projectId).toArray());
   const [uploading, setUploading] = useState<string | null>(null);
 
   const TEMPLATE_TYPES = [
-    { id: 'DELIVERY', name: 'Biên bản Bàn giao', desc: 'Mẫu xuất biên bản bàn giao thiết bị' },
-    { id: 'PAYMENT_REQUEST', name: 'Đề nghị Thanh toán', desc: 'Mẫu xuất đề nghị thanh toán' },
-    { id: 'OTHER', name: 'Biểu mẫu khác', desc: 'Các biểu mẫu khác của đối tác' }
+    { id: 'DELIVERY', name: 'Biên bản Bàn giao', desc: 'Mẫu xuất biên bản bàn giao thiết b�9' },
+    { id: 'PAYMENT_REQUEST', name: 'Đề ngh�9 Thanh toán', desc: 'Mẫu xuất �ề ngh�9 thanh toán' },
+    { id: 'OTHER', name: 'BiỒu mẫu khác', desc: 'Các biỒu mẫu khác của ��i tác' }
   ];
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, typeId: string) => {
@@ -792,10 +788,10 @@ function ProjectTemplatesTab({ projectId }: { projectId: number }) {
       } else {
         await db.projectTemplates.add({ projectId, type: typeId, fileData: buffer, fileName: file.name, updatedAt: new Date() });
       }
-      alert('Cập nhật biểu mẫu thành công!');
+      alert('Cập nhật biỒu mẫu thành công!');
     } catch (error) {
       console.error(error);
-      alert('Có lỗi xảy ra khi lưu biểu mẫu.');
+      alert('Có l�i xảy ra khi lưu biỒu mẫu.');
     } finally {
       setUploading(null);
     }
@@ -821,8 +817,8 @@ function ProjectTemplatesTab({ projectId }: { projectId: number }) {
       <div className="bg-blue-50 text-blue-800 p-4 rounded-lg mb-6 flex items-start">
         <Info className="mr-3 mt-0.5 flex-shrink-0" size={20} />
         <div>
-          <p className="font-semibold mb-1">Quản lý Biểu mẫu riêng cho Dự án này:</p>
-          <p className="text-sm">Các đối tác/chủ đầu tư khác nhau thường có form biểu mẫu khác nhau. Bạn hãy tải lên các file Word biểu mẫu tương ứng với dự án này tại đây.</p>
+          <p className="font-semibold mb-1">Quản lý BiỒu mẫu riêng cho Dự án này:</p>
+          <p className="text-sm">Các ��i tác/chủ �ầu tư khác nhau thường có form biỒu mẫu khác nhau. Bạn hãy tải lên các file Word biỒu mẫu tương ứng v�:i dự án này tại �ây.</p>
         </div>
       </div>
 
@@ -843,7 +839,7 @@ function ProjectTemplatesTab({ projectId }: { projectId: number }) {
               ) : (
                 <div className="mt-2 flex items-center text-sm text-orange-500 font-medium">
                   <span className="w-2 h-2 rounded-full bg-orange-400 mr-2"></span>
-                  Chưa có biểu mẫu (Sử dụng biểu mẫu mặc định)
+                  Chưa có biỒu mẫu (Sử dụng biỒu mẫu mặc ��9nh)
                 </div>
               )}
             </div>
@@ -853,7 +849,7 @@ function ProjectTemplatesTab({ projectId }: { projectId: number }) {
                 <button 
                   onClick={() => handleDownload(type.id)}
                   className="flex-1 md:flex-none flex items-center justify-center px-4 py-2 border border-gray-300 text-gray-700 bg-white rounded-md hover:bg-gray-100"
-                  title="Tải xuống biểu mẫu hiện tại"
+                  title="Tải xu�ng biỒu mẫu hi�!n tại"
                 >
                   <Download size={18} className="mr-2" /> Tải về
                 </button>
@@ -881,3 +877,4 @@ function ProjectTemplatesTab({ projectId }: { projectId: number }) {
     </div>
   );
 }
+
