@@ -287,6 +287,21 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
 
   const selectedCustomer = customers?.find(c => c.id === selectedCustomerId);
 
+  const getBankAccounts = () => {
+    const custName = selectedCustomer?.name?.toUpperCase() || '';
+    const isVCB = custName.includes('NGOẠI THƯƠNG') || custName.includes('VIETCOMBANK') || custName.includes('VCB');
+    const isVietin = custName.includes('CÔNG THƯƠNG') || custName.includes('VIETINBANK') || custName.includes('CTG');
+
+    const vcb = { stt: 'STK', num: '1071395333', name: 'Ngân hàng TMCP Ngoại Thương Việt Nam (Vietcombank) - CN Long An', short: 'Vietcombank Long An' };
+    const vietin = { stt: 'STK', num: '115003041055', name: 'Ngân hàng TMCP Công Thương Việt Nam - CN Long An', short: 'VietinBank Long An' };
+
+    if (isVCB) return [{ ...vcb, stt: 'STK' }];
+    if (isVietin) return [{ ...vietin, stt: 'STK' }];
+    return [
+      { ...vietin, stt: 'STK 1' },
+      { ...vcb, stt: 'STK 2' }
+    ];
+  };
   const handleSendEmail = () => {
     if (!selectedCustomerId) {
       alert('Vui lòng chọn khách hàng!');
@@ -327,8 +342,9 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
             <p><span className="font-semibold">MST:</span> 0319347662</p>
             <p><span className="font-semibold">SĐT:</span> 0932685794</p>
             <p><span className="font-semibold">Email:</span> phatloctech.ltd@gmail.com</p>
-            <p><span className="font-semibold">STK 1:</span> 115003041055 - VietinBank Long An</p>
-            <p><span className="font-semibold">STK 2:</span> 1071395333 - Vietcombank Long An</p>
+            {getBankAccounts().map(b => (
+              <p key={b.num}><span className="font-semibold">{b.stt}:</span> {b.num} - {b.short}</p>
+            ))}
           </div>
         </div>
         
@@ -787,8 +803,11 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
 
             <p className="mt-2">
               <strong>Đơn vị thụ hưởng: CÔNG TY TNHH PHÁT LỘC TECH</strong><br/>
-              <strong>Số tài khoản 1: 115003041055 tại Ngân hàng TMCP Công Thương Việt Nam - CN Long An</strong><br/>
-              <strong>Số tài khoản 2: 1071395333 tại Ngân hàng TMCP Ngoại Thương Việt Nam (Vietcombank) - CN Long An</strong>
+              {getBankAccounts().map(b => (
+                <span key={b.num}>
+                  <strong>Số tài khoản{b.stt === 'STK' ? '' : ' ' + b.stt.replace('STK ', '')}: {b.num} tại {b.name}</strong><br/>
+                </span>
+              ))}
             </p>
             
             <p className="mt-2">
