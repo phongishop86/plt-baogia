@@ -669,7 +669,7 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
 
       {/* ==== BIÊN BẢN BÀN GIAO ==== */}
       {(printMode === 'DELIVERY' || printMode === 'ALL') && (
-        <div className={`hidden print:block text-[13px] leading-snug font-[Times_New_Roman] ${printMode === 'ALL' ? 'break-before-page mt-8' : ''}`}>
+        <div className={`hidden print:block text-[13px] leading-snug font-[Times_New_Roman] ${printMode === 'ALL' ? 'mt-8' : ''}`} style={printMode === 'ALL' ? { pageBreakBefore: 'always' } : {}}>
           <div className="text-center font-bold mb-2">
             <h2 className="text-base uppercase">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</h2>
             <h3 className="text-sm">Độc lập – Tự do – Hạnh phúc</h3>
@@ -757,7 +757,7 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
 
       {/* ==== ĐỀ NGHỊ THANH TOÁN ==== */}
       {(printMode === 'PAYMENT' || printMode === 'ALL') && (
-        <div className={`hidden print:block text-[13px] leading-snug font-[Times_New_Roman] ${printMode === 'ALL' ? 'break-before-page mt-8' : ''}`}>
+        <div className={`hidden print:block text-[13px] leading-snug font-[Times_New_Roman] ${printMode === 'ALL' ? 'mt-8' : ''}`} style={printMode === 'ALL' ? { pageBreakBefore: 'always' } : {}}>
           <div className="flex justify-between items-start mb-4 font-bold">
             <div className="text-center w-1/2">
               <h2 className="text-base uppercase">CÔNG TY TNHH PHÁT LỘC TECH</h2>

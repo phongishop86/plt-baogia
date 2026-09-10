@@ -35,6 +35,7 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
     product: any;
     history: any[];
   }>({ isOpen: false, product: null, history: [] });
+  const [historySortAsc, setHistorySortAsc] = useState(false);
 
   const openHistoryModal = async (product: any) => {
     if (!documents) return;
@@ -751,8 +752,10 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-white sticky top-0 shadow-sm">
                     <tr>
-                      <th className="p-0 border-r border-gray-200">
-                        <div className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase overflow-hidden min-w-[100px]" style={{ resize: 'horizontal' }}>Ngày</div>
+                      <th className="p-0 border-r border-gray-200 cursor-pointer hover:bg-gray-50" onClick={() => setHistorySortAsc(!historySortAsc)}>
+                        <div className="px-6 py-3 text-left text-xs font-bold text-blue-600 uppercase overflow-hidden min-w-[100px] flex items-center" style={{ resize: 'horizontal' }}>
+                          Timeline {historySortAsc ? '↑' : '↓'}
+                        </div>
                       </th>
                       <th className="p-0 border-r border-gray-200">
                         <div className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase overflow-hidden min-w-[120px]" style={{ resize: 'horizontal' }}>Số HĐ</div>
@@ -772,7 +775,7 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-100">
-                    {historyModal.history.map((h, idx) => (
+                    {[...historyModal.history].sort((a, b) => historySortAsc ? new Date(a.date).getTime() - new Date(b.date).getTime() : new Date(b.date).getTime() - new Date(a.date).getTime()).map((h, idx) => (
                       <tr key={idx} className="hover:bg-blue-50 transition-colors">
                         <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-900 border-r border-gray-100">{new Date(h.date).toLocaleDateString('vi-VN')}</td>
                         <td className="px-6 py-3 whitespace-nowrap text-sm font-bold text-gray-900 border-r border-gray-100">{h.docNumber}</td>
