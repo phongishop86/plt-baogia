@@ -327,7 +327,8 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
             <p><span className="font-semibold">MST:</span> 0319347662</p>
             <p><span className="font-semibold">SĐT:</span> 0932685794</p>
             <p><span className="font-semibold">Email:</span> phatloctech.ltd@gmail.com</p>
-            <p><span className="font-semibold">STK:</span> 115003041055 - VietinBank Long An</p>
+            <p><span className="font-semibold">STK 1:</span> 115003041055 - VietinBank Long An</p>
+            <p><span className="font-semibold">STK 2:</span> 1071395333 - Vietcombank Long An</p>
           </div>
         </div>
         
@@ -786,7 +787,8 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
 
             <p className="mt-2">
               <strong>Đơn vị thụ hưởng: CÔNG TY TNHH PHÁT LỘC TECH</strong><br/>
-              <strong>Số tài khoản: 115003041055 tại Ngân hàng TMCP Công Thương Việt Nam - Chi nhánh Long An</strong>
+              <strong>Số tài khoản 1: 115003041055 tại Ngân hàng TMCP Công Thương Việt Nam - CN Long An</strong><br/>
+              <strong>Số tài khoản 2: 1071395333 tại Ngân hàng TMCP Ngoại Thương Việt Nam (Vietcombank) - CN Long An</strong>
             </p>
             
             <p className="mt-2">

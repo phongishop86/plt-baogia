@@ -423,7 +423,7 @@ export default function ProjectUnitsTab({ projectId }: { projectId: number }) {
         printDay: d.getDate().toString().padStart(2, '0'),
         printMonth: (d.getMonth() + 1).toString().padStart(2, '0'),
         printYear: d.getFullYear(),
-        deviceCount,
+        deviceCount, devices: deviceSerials.map((s, idx) => ({ index: idx + 1, serial: s, type: unit.deviceType, brand: unit.deviceBrand })),
         ...customFields
       });
 
