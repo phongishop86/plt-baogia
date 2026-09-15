@@ -318,7 +318,7 @@ export default function Documents({ setEditingQuotationId, currentUser, mode = '
               {filteredDocs.map((doc) => (
                 <tr 
                   key={doc.id} 
-                  className="hover:bg-gray-50 cursor-pointer"
+                  className={`hover:bg-gray-50 cursor-pointer ${doc.status === 'CANCELLED' ? 'print:hidden' : ''}`}
                   onClick={() => {
                     if (doc.type === 'QUOTATION' && setEditingQuotationId) {
                       setEditingQuotationId(doc.id!);
