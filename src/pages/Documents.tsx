@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, type User } from '../db/db';
-import { Filter, Search, TrendingUp, TrendingDown, ChevronUp, ChevronDown } from 'lucide-react';
+import { Filter, Search, TrendingUp, TrendingDown, ChevronUp, ChevronDown, Printer } from 'lucide-react';
 
 interface DocumentsProps {
   setEditingQuotationId?: (id: number) => void;
@@ -161,7 +161,7 @@ export default function Documents({ setEditingQuotationId, currentUser, mode = '
       
       {/* Filters and Stats */}
       <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 print:hidden">
           <div className="flex flex-1 items-center space-x-2 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
             <Search size={18} className="text-gray-400" />
             <input 
@@ -194,6 +194,13 @@ export default function Documents({ setEditingQuotationId, currentUser, mode = '
                   <option value="PAID">Đã thanh toán</option>
                   <option value="UNPAID">Chưa thanh toán (Công nợ)</option>
                 </select>
+                <button
+                  onClick={() => window.print()}
+                  className="bg-emerald-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-emerald-700 flex items-center print:hidden"
+                  title="In danh sách chứng từ hiện tại để đối chiếu"
+                >
+                  <Printer size={16} className="mr-1" /> In Bảng Kê
+                </button>
               </>
             ) : (
               <>
@@ -246,8 +253,13 @@ export default function Documents({ setEditingQuotationId, currentUser, mode = '
         )}
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden relative">
-        <div className="overflow-x-auto">
+      <div className="hidden print:block mb-6 text-center font-[Times_New_Roman]">
+        <h1 className="text-2xl font-bold uppercase tracking-wider">BẢNG KÊ CHỨNG TỪ</h1>
+        <p className="mt-1 italic">{(filterType === 'ALL' ? 'Tất cả hóa đơn' : filterType === 'INPUT_INVOICE' ? 'Mua vào (Chi phí)' : 'Bán ra (Doanh thu)')} - {(filterPayment === 'ALL' ? 'Tất cả trạng thái' : filterPayment === 'PAID' ? 'Đã thanh toán' : 'Chưa thanh toán')}</p>
+      </div>
+
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 print:border-none print:shadow-none overflow-hidden relative">
+        <div className="overflow-x-auto print:overflow-visible">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
@@ -299,7 +311,7 @@ export default function Documents({ setEditingQuotationId, currentUser, mode = '
                     </div>
                   </div>
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[120px]">Hành động</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[120px] print:hidden">Hành động</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -375,7 +387,7 @@ export default function Documents({ setEditingQuotationId, currentUser, mode = '
                       </div>
                     )}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right space-x-3" onClick={(e) => e.stopPropagation()}>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right space-x-3 print:hidden" onClick={(e) => e.stopPropagation()}>
                     {doc.type === 'QUOTATION' && setEditingQuotationId && (
                       <>
                         {doc.status !== 'COMPLETED' && (
