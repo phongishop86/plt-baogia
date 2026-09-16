@@ -31,6 +31,7 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
   const [printMode, setPrintMode] = useState<'QUOTATION' | 'DELIVERY' | 'PAYMENT' | 'ALL'>('QUOTATION');
   const [isPrintMenuOpen, setIsPrintMenuOpen] = useState(false);
+  const [isEmailMenuOpen, setIsEmailMenuOpen] = useState(false);
   const [newCustomer, setNewCustomer] = useState({ name: '', taxCode: '', address: '', phone: '', email: '' });
 
   const handleCreateCustomer = async (e: React.FormEvent) => {
@@ -302,7 +303,7 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
       { ...vcb, stt: 'STK 2' }
     ];
   };
-  const handleSendEmail = () => {
+  const handleSendEmail = (type: 'QUOTATION' | 'FULL') => {
     if (!selectedCustomerId) {
       alert('Vui lòng chọn khách hàng!');
       return;
@@ -310,19 +311,31 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
     const customer = customers?.find(c => c.id === selectedCustomerId);
     const customerEmail = customer?.email || '';
     
-    const subject = encodeURIComponent(`Báo giá ${docNumber} - Công ty TNHH Phát Lộc Tech`);
-    const body = encodeURIComponent(
-      `Kính gửi ${customer?.name || 'Quý khách hàng'},\n\n` +
-      `Công ty TNHH Phát Lộc Tech xin trân trọng gửi đến Quý đơn vị bảng báo giá ${docNumber} mới nhất.\n` +
-      `Tổng giá trị báo giá: ${formatCurrency(calculateSubTotal() + calculateTax())}.\n\n` +
-      `Vui lòng xem file PDF Báo giá đính kèm ở email này để biết chi tiết các hạng mục.\n\n` +
-      `Nếu Quý khách có bất kỳ thắc mắc nào, xin vui lòng phản hồi lại email này hoặc liên hệ hotline: 0932685794.\n\n` +
-      `Trân trọng cảm ơn,\nPhát Lộc Tech`
-    );
+    let subject = '';
+    let body = '';
 
-    window.location.href = `mailto:${customerEmail}?subject=${subject}&body=${body}`;
+    if (type === 'QUOTATION') {
+      subject = `Báo giá ${docNumber} - Công ty TNHH Phát Lộc Tech`;
+      body = `Kính gửi ${customer?.name || 'Quý khách hàng'},\n\n` +
+        `Công ty TNHH Phát Lộc Tech xin trân trọng gửi đến Quý đơn vị bảng báo giá ${docNumber} mới nhất.\n` +
+        `Tổng giá trị báo giá: ${formatCurrency(calculateSubTotal() + calculateTax())}.\n\n` +
+        `Vui lòng xem file PDF Báo giá đính kèm ở email này để biết chi tiết các hạng mục.\n\n` +
+        `Nếu Quý khách có bất kỳ thắc mắc nào, xin vui lòng phản hồi lại email này hoặc liên hệ hotline: 0932685794.\n\n` +
+        `Trân trọng cảm ơn,\nPhát Lộc Tech`;
+    } else {
+      subject = `Hồ sơ thanh toán & Bàn giao ${docNumber} - Công ty TNHH Phát Lộc Tech`;
+      body = `Kính gửi ${customer?.name || 'Quý khách hàng'},\n\n` +
+        `Công ty TNHH Phát Lộc Tech xin gửi đến Quý đơn vị bộ Hồ sơ thanh toán (Bao gồm: Báo giá, Biên bản bàn giao, Đề nghị thanh toán, và Hóa đơn) liên quan đến chứng từ ${docNumber}.\n` +
+        `Tổng giá trị thanh toán: ${formatCurrency(calculateSubTotal() + calculateTax())}.\n\n` +
+        `Quý khách vui lòng kiểm tra các file đính kèm và tiến hành các thủ tục thanh toán theo thông tin tài khoản đã ghi trên Đề nghị thanh toán.\n\n` +
+        `Nếu Quý khách cần thêm thông tin, xin vui lòng phản hồi lại email này hoặc liên hệ hotline: 0932685794.\n\n` +
+        `Trân trọng cảm ơn sự hợp tác của Quý khách,\nPhát Lộc Tech`;
+    }
+
+    window.location.href = `mailto:${customerEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     
-    alert('Đã mở ứng dụng gửi Mail.\n\nLƯU Ý: Bạn nhớ ĐÍNH KÈM FILE PDF BÁO GIÁ vào email trước khi bấm Gửi nhé!');
+    setIsEmailMenuOpen(false);
+    alert('Đã mở ứng dụng gửi Mail.\n\nLƯU Ý: Bạn nhớ ĐÍNH KÈM CÁC FILE BÁO CÁO (PDF, Hóa đơn...) vào email trước khi bấm Gửi nhé!');
   };
 
   return (
@@ -630,12 +643,30 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
             Hủy Sửa
           </button>
         )}
-        <button 
-          onClick={handleSendEmail}
-          className="flex items-center space-x-2 bg-blue-50 hover:bg-blue-100 text-blue-700 px-6 py-2 rounded-md font-medium transition-colors border border-blue-200"
-        >
-          <span>📧 Gửi Email</span>
-        </button>
+        <div className="relative">
+          <button 
+            onClick={() => setIsEmailMenuOpen(!isEmailMenuOpen)}
+            className="flex items-center space-x-2 bg-blue-50 hover:bg-blue-100 text-blue-700 px-6 py-2 rounded-md font-medium transition-colors border border-blue-200"
+          >
+            <span>📧 Gửi Email ▾</span>
+          </button>
+          {isEmailMenuOpen && (
+            <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-50 w-48 overflow-hidden">
+              <button 
+                onClick={() => handleSendEmail('QUOTATION')}
+                className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm font-medium border-b border-gray-100"
+              >
+                Gửi Báo giá
+              </button>
+              <button 
+                onClick={() => handleSendEmail('FULL')}
+                className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm font-medium"
+              >
+                Gửi Full Hồ sơ
+              </button>
+            </div>
+          )}
+        </div>
         
         <div className="relative">
           <button 
