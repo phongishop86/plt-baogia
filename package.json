@@ -19,7 +19,6 @@
     "exceljs": "^4.4.0",
     "fast-xml-parser": "^5.11.0",
     "file-saver": "^2.0.5",
-    "html2pdf.js": "^0.14.0",
     "lucide-react": "^1.33.0",
     "pizzip": "^3.2.0",
     "react": "^19.2.8",

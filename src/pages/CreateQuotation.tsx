@@ -2,8 +2,6 @@ import { useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, type Product } from '../db/db';
 import { Trash2, Printer } from 'lucide-react';
-import html2pdf from 'html2pdf.js';
-import { saveAs } from 'file-saver';
 
 interface SelectedProduct extends Partial<Product> {
   tempId: string; // Cho các dòng nhập thủ công
@@ -312,68 +310,23 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
     const customer = customers?.find(c => c.id === selectedCustomerId);
     const customerEmail = customer?.email || '';
     
-    // Đổi sang mode in trọn bộ 3 mẫu
-    setPrintMode('ALL');
-    alert('Hệ thống đang tạo file PDF trọn bộ 3 mẫu (Báo giá, Bàn giao, Thanh toán)... Vui lòng đợi giây lát.');
+    const subject = encodeURIComponent(`Báo giá ${docNumber} - Công ty TNHH Phát Lộc Tech`);
+    const body = encodeURIComponent(
+      `Kính gửi ${customer?.name || 'Quý khách hàng'},\n\n` +
+      `Công ty TNHH Phát Lộc Tech xin trân trọng gửi đến Quý đơn vị bảng báo giá ${docNumber} mới nhất.\n` +
+      `Tổng giá trị báo giá: ${formatCurrency(calculateSubTotal() + calculateTax())}.\n\n` +
+      `Vui lòng xem file PDF Báo giá đính kèm ở email này để biết chi tiết các hạng mục.\n\n` +
+      `Nếu Quý khách có bất kỳ thắc mắc nào, xin vui lòng phản hồi lại email này hoặc liên hệ hotline: 0932685794.\n\n` +
+      `Trân trọng cảm ơn,\nPhát Lộc Tech`
+    );
 
-    setTimeout(async () => {
-      try {
-        const element = document.getElementById('quotation-print-area');
-        if (!element) return;
-
-        // Tạo container ẩn để render lại CSS cho bản in
-        const tempContainer = document.createElement('div');
-        let htmlContent = element.outerHTML;
-
-        // Mô phỏng CSS print bằng cách replace các class print: của Tailwind
-        htmlContent = htmlContent.replace(/hidden print:(block|table-cell|table-row|flex)/g, '$1');
-        htmlContent = htmlContent.replace(/print:hidden/g, 'hidden');
-        htmlContent = htmlContent.replace(/print:([a-zA-Z0-9-\[\]%]+)/g, '$1');
-
-        tempContainer.innerHTML = htmlContent;
-        tempContainer.style.width = '800px'; 
-        tempContainer.style.position = 'absolute';
-        tempContainer.style.left = '-9999px';
-        tempContainer.style.top = '0';
-        tempContainer.style.backgroundColor = 'white';
-        
-        document.body.appendChild(tempContainer);
-
-        const opt = {
-          margin: 10,
-          filename: `Bao_gia_${docNumber}.pdf`,
-          image: { type: 'jpeg' as const, quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true, logging: false },
-          jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const }
-        };
-        
-        const pdfBlob = await html2pdf().set(opt).from(tempContainer).outputPdf('blob');
-        document.body.removeChild(tempContainer);
-
-        const file = new File([pdfBlob], `Bao_gia_${docNumber}.pdf`, { type: 'application/pdf' });
-        const subject = `Báo giá ${docNumber} - Công ty TNHH Phát Lộc Tech`;
-        const body = `Kính gửi ${customer?.name || 'Quý khách hàng'},\n\nCông ty TNHH Phát Lộc Tech xin trân trọng gửi đến Quý đơn vị bảng báo giá ${docNumber} mới nhất.\nTổng giá trị báo giá: ${formatCurrency(calculateSubTotal() + calculateTax())}.\n\nVui lòng xem file PDF Báo giá đính kèm ở email này để biết chi tiết các hạng mục.\n\nNếu Quý khách có bất kỳ thắc mắc nào, xin vui lòng phản hồi lại email này hoặc liên hệ hotline: 0932685794.\n\nTrân trọng cảm ơn,\nPhát Lộc Tech`;
-
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          await navigator.share({
-            files: [file],
-            title: subject,
-            text: body
-          });
-        } else {
-          saveAs(pdfBlob, `Bao_gia_${docNumber}.pdf`);
-          window.location.href = `mailto:${customerEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-          alert('File PDF đã được TỰ ĐỘNG TẢI XUỐNG.\n\nVui lòng kéo thả file vừa tải vào cửa sổ gửi Email để đính kèm nhé!');
-        }
-      } catch (err) {
-        console.error('Error generating PDF:', err);
-        alert('Có lỗi xảy ra khi tạo PDF. Vui lòng sử dụng chức năng In để lưu thủ công.');
-      }
-    }, 1000);
+    window.location.href = `mailto:${customerEmail}?subject=${subject}&body=${body}`;
+    
+    alert('Đã mở ứng dụng gửi Mail.\n\nLƯU Ý: Bạn nhớ ĐÍNH KÈM FILE PDF BÁO GIÁ vào email trước khi bấm Gửi nhé!');
   };
 
   return (
-    <div id="quotation-print-area" className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-6 print:shadow-none print:border-none print:p-0">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-6 print:shadow-none print:border-none print:p-0">
       
       {/* ==== BÁO GIÁ VÀ GIAO DIỆN CHÍNH ==== */}
       <div className={printMode === 'DELIVERY' || printMode === 'PAYMENT' ? 'print:hidden space-y-6' : 'space-y-6'}>
