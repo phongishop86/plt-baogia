@@ -74,7 +74,7 @@ export default function XMLImport() {
             existing = await db.products.where('code').equals(prod.code).first();
           }
           if (!existing && prod.name) {
-            existing = await db.products.where('name').equals(prod.name).first();
+            existing = await db.products.filter(p => p.name.trim().toLowerCase() === prod.name.trim().toLowerCase()).first();
           }
           
           let newStock = 0;
@@ -92,7 +92,7 @@ export default function XMLImport() {
             // Các loại phi hàng hoá sẽ không cộng dồn/trừ tồn kho
             newStock = (invoiceType === 'INPUT' && resolvedType === 'PRODUCT') ? qty : (resolvedType === 'PRODUCT' ? -qty : 0);
             
-            await db.products.add({
+            const newId = await db.products.add({
               code: prod.code || '',
               name: prod.name || '',
               unit: prod.unit || '',
@@ -102,6 +102,7 @@ export default function XMLImport() {
               type: resolvedType,
               expenseDate: resolvedType === 'EXPENSE' ? invoiceInfo.date : undefined
             });
+            prod.productId = newId;
           } else {
             const currentStock = existing.stock || 0;
             const isNonProduct = existing.type === 'SERVICE' || existing.type === 'EXPENSE';
@@ -109,8 +110,10 @@ export default function XMLImport() {
             
             await db.products.update(existing.id!, { 
               stock: newStock, unitPrice: prod.unitPrice }); // Update price as well
+            prod.productId = existing.id;
           }
         }
+        
         
         // 3. Save Document (if not skipped)
         if (!skipDocCreation) {
@@ -123,6 +126,7 @@ export default function XMLImport() {
             taxAmount: invoiceInfo.taxAmount,
             total: invoiceInfo.total,
             items: products.map((p: any) => ({
+              productId: p.productId,
               productName: p.name || '',
               unit: p.unit || '',
               quantity: p.quantity || 1, 
