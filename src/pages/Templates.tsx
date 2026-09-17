@@ -8,6 +8,7 @@ const TEMPLATE_TYPES = [
   { id: 'QUOTATION', name: 'Báo giá (Word)' },
   { id: 'CONTRACT_PERSONNEL', name: 'Hợp đồng nhân sự / Giao khoán' },
   { id: 'PAYMENT_REQUEST', name: 'Đề nghị thanh toán' },
+  { id: 'DELAYED_PAYMENT_REQUEST', name: 'Đề nghị thanh toán chậm' },
   { id: 'HANDOVER', name: 'Biên bản bàn giao' },
   { id: 'MAINTENANCE_RECORD', name: 'Biên bản bảo trì' },
   { id: 'GENERAL_DOCUMENT', name: 'Văn bản chung khác' }

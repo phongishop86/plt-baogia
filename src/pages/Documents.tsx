@@ -2,6 +2,10 @@ import { useState, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, type User } from '../db/db';
 import { Filter, Search, TrendingUp, TrendingDown, ChevronUp, ChevronDown, Printer } from 'lucide-react';
+import PizZip from 'pizzip';
+import Docxtemplater from 'docxtemplater';
+import { saveAs } from 'file-saver';
+import { formatCurrency } from '../utils/formatCurrency';
 
 interface DocumentsProps {
   setEditingQuotationId?: (id: number) => void;
@@ -54,6 +58,55 @@ export default function Documents({ setEditingQuotationId, currentUser, mode = '
         setPreviewDoc({ ...previewDoc, delayedPaymentDays: delayedPaymentModal.days });
       }
       setDelayedPaymentModal({isOpen: false, docId: -1, days: 0});
+    }
+  }
+  const exportDelayedPayment = async () => {
+    try {
+      const template = await db.templates.get('DELAYED_PAYMENT_REQUEST');
+      if (!template) {
+        alert("Chưa có biểu mẫu 'Đề nghị thanh toán chậm'! Vui lòng tải biểu mẫu lên ở phần Quản lý biểu mẫu.");
+        return;
+      }
+      
+      const customer = await db.customers.get(previewDoc.customerId);
+      if (!customer) return;
+
+      const zip = new PizZip(template.fileData);
+      const doc = new Docxtemplater(zip, { paragraphLoop: true, linebreaks: true });
+
+      const today = new Date();
+      doc.render({
+        docNumber: previewDoc.docNumber,
+        customerName: customer.name,
+        customerAddress: customer.address || '',
+        customerTaxCode: customer.taxCode || '',
+        delayedPaymentDays: delayedPaymentModal.days,
+        subTotal: new Intl.NumberFormat('vi-VN').format(previewDoc.subTotal),
+        taxAmount: new Intl.NumberFormat('vi-VN').format(previewDoc.taxAmount),
+        total: new Intl.NumberFormat('vi-VN').format(previewDoc.total),
+        totalWord: formatCurrency(previewDoc.total).charAt(0).toUpperCase() + formatCurrency(previewDoc.total).slice(1),
+        day: today.getDate().toString().padStart(2, '0'),
+        month: (today.getMonth() + 1).toString().padStart(2, '0'),
+        year: today.getFullYear(),
+        items: previewDoc.items.map((item: any, idx: number) => ({
+          stt: idx + 1,
+          productName: item.productName,
+          unit: item.unit,
+          quantity: item.quantity,
+          unitPrice: new Intl.NumberFormat('vi-VN').format(item.unitPrice),
+          amount: new Intl.NumberFormat('vi-VN').format(item.amount)
+        }))
+      });
+
+      const out = doc.getZip().generate({
+        type: 'blob',
+        mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      });
+
+      saveAs(out, `DeNghiThanhToanCham_${previewDoc.docNumber}.docx`);
+    } catch (err: any) {
+      console.error('Export error:', err);
+      alert('Lỗi xuất file Word: ' + err.message);
     }
   }
 
@@ -612,19 +665,29 @@ export default function Documents({ setEditingQuotationId, currentUser, mode = '
                   </p>
                 </div>
                 
-                <div className="flex justify-end space-x-3 pt-4 border-t border-gray-100">
+                <div className="flex justify-between items-center pt-4 border-t border-gray-100">
                   <button
-                    onClick={() => setDelayedPaymentModal({isOpen: false, docId: -1, days: 0})}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                    onClick={exportDelayedPayment}
+                    className="flex items-center space-x-1 px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100"
+                    title="Xuất file Word Đề nghị thanh toán chậm"
                   >
-                    Hủy
+                    <Printer size={16} />
+                    <span>In</span>
                   </button>
-                  <button
-                    onClick={saveDelayedPayment}
-                    className="px-4 py-2 text-sm font-medium text-white bg-amber-600 rounded-md hover:bg-amber-700"
-                  >
-                    Lưu xác nhận
-                  </button>
+                  <div className="space-x-3">
+                    <button
+                      onClick={() => setDelayedPaymentModal({isOpen: false, docId: -1, days: 0})}
+                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                    >
+                      Hủy
+                    </button>
+                    <button
+                      onClick={saveDelayedPayment}
+                      className="px-4 py-2 text-sm font-medium text-white bg-amber-600 rounded-md hover:bg-amber-700"
+                    >
+                      Lưu lại
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
