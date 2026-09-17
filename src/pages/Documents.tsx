@@ -80,6 +80,8 @@ export default function Documents({ setEditingQuotationId, currentUser, mode = '
         customerName: customer.name,
         customerAddress: customer.address || '',
         customerTaxCode: customer.taxCode || '',
+        customerPhone: customer.phone || '',
+        customerEmail: customer.email || '',
         delayedPaymentDays: delayedPaymentModal.days,
         subTotal: new Intl.NumberFormat('vi-VN').format(previewDoc.subTotal),
         taxAmount: new Intl.NumberFormat('vi-VN').format(previewDoc.taxAmount),
