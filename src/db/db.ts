@@ -40,6 +40,7 @@ export interface Document {
   status?: 'DRAFT' | 'PENDING' | 'SENT' | 'COMPLETED' | 'CANCELLED'; // Trạng thái chứng từ (Đặc biệt cho Báo giá)
   notes?: string;
   paymentDate?: Date; // Ngày thanh toán (nếu có)
+  delayedPaymentDays?: number; // Số ngày thanh toán chậm tối đa (thoả thuận)
   createdAt?: Date;
 }
 

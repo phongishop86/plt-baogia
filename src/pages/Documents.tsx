@@ -12,6 +12,7 @@ interface DocumentsProps {
 
 export default function Documents({ setEditingQuotationId, currentUser, mode = 'DOCUMENTS', onNavigate }: DocumentsProps) {
   const [previewDoc, setPreviewDoc] = useState<any>(null);
+  const [delayedPaymentModal, setDelayedPaymentModal] = useState<{isOpen: boolean, docId: number, days: number}>({isOpen: false, docId: -1, days: 0});
   
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
@@ -42,6 +43,20 @@ export default function Documents({ setEditingQuotationId, currentUser, mode = '
   const exportDocx = () => {
     alert('Tính năng xuất Word đang được hoàn thiện. Tạm thời bạn có thể dùng tính năng Xem chi tiết (Preview).');
   }
+  
+  const saveDelayedPayment = async () => {
+    if (delayedPaymentModal.docId !== -1) {
+      await db.documents.update(delayedPaymentModal.docId, {
+        delayedPaymentDays: delayedPaymentModal.days
+      });
+      // Cập nhật previewDoc nếu đang mở
+      if (previewDoc && previewDoc.id === delayedPaymentModal.docId) {
+        setPreviewDoc({ ...previewDoc, delayedPaymentDays: delayedPaymentModal.days });
+      }
+      setDelayedPaymentModal({isOpen: false, docId: -1, days: 0});
+    }
+  }
+
 
   const handleDelete = async (doc: any) => {
     if (!confirm(`Bạn có chắc muốn xóa chứng từ số ${doc.docNumber}?\n(Hệ thống sẽ tự động tính toán lại tồn kho)`)) {
@@ -442,6 +457,14 @@ export default function Documents({ setEditingQuotationId, currentUser, mode = '
               <div className="p-6 border-b flex justify-between items-center bg-gray-50">
                 <h2 className="text-xl font-bold text-gray-800">Chi tiết Hóa đơn: {previewDoc.docNumber}</h2>
                 <div className="space-x-3">
+                  {previewDoc.type === 'QUOTATION' && (
+                    <button 
+                      onClick={() => setDelayedPaymentModal({isOpen: true, docId: previewDoc.id, days: previewDoc.delayedPaymentDays || 0})}
+                      className="bg-amber-100 text-amber-700 px-4 py-2 rounded text-sm font-medium hover:bg-amber-200 border border-amber-300"
+                    >
+                      Yêu cầu thanh toán chậm
+                    </button>
+                  )}
                   <button 
                     onClick={() => exportDocx()}
                     className="bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-blue-700"
@@ -508,6 +531,9 @@ export default function Documents({ setEditingQuotationId, currentUser, mode = '
                     <p className="flex justify-between text-gray-600"><span>Cộng tiền hàng:</span> <span className="font-medium">{formatNumber(previewDoc.subTotal)}</span></p>
                     <p className="flex justify-between text-gray-600"><span>Tiền thuế:</span> <span className="font-medium">{formatNumber(previewDoc.taxAmount)}</span></p>
                     <p className="flex justify-between text-lg font-bold text-blue-800 mt-2 border-t pt-2"><span>Tổng cộng:</span> <span>{formatNumber(previewDoc.total)}</span></p>
+                    {previewDoc.delayedPaymentDays ? (
+                      <p className="flex justify-between text-amber-600 mt-2 font-medium"><span>Thanh toán chậm:</span> <span>{previewDoc.delayedPaymentDays} ngày</span></p>
+                    ) : null}
                   </div>
                 </div>
                 
@@ -558,6 +584,48 @@ export default function Documents({ setEditingQuotationId, currentUser, mode = '
                   </div>
                 )}
 
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Delayed Payment Modal */}
+        {delayedPaymentModal.isOpen && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
+            <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">Yêu cầu thanh toán chậm</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Số ngày thanh toán chậm tối đa
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={delayedPaymentModal.days}
+                    onChange={(e) => setDelayedPaymentModal({...delayedPaymentModal, days: parseInt(e.target.value) || 0})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="VD: 15, 30, 45..."
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Thời hạn này sẽ được lưu để đối soát công nợ trong tương lai.
+                  </p>
+                </div>
+                
+                <div className="flex justify-end space-x-3 pt-4 border-t border-gray-100">
+                  <button
+                    onClick={() => setDelayedPaymentModal({isOpen: false, docId: -1, days: 0})}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    onClick={saveDelayedPayment}
+                    className="px-4 py-2 text-sm font-medium text-white bg-amber-600 rounded-md hover:bg-amber-700"
+                  >
+                    Lưu xác nhận
+                  </button>
+                </div>
               </div>
             </div>
           </div>
