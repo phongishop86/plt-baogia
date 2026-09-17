@@ -68,8 +68,12 @@ export default function Documents({ setEditingQuotationId, currentUser, mode = '
         return;
       }
       
-      const customer = await db.customers.get(previewDoc.customerId);
-      if (!customer) return;
+      const customerIdNum = Number(previewDoc.customerId);
+      const customer = await db.customers.get(customerIdNum);
+      if (!customer) {
+        alert("Không tìm thấy thông tin Khách hàng liên kết với chứng từ này (ID: " + previewDoc.customerId + "). Vui lòng kiểm tra lại dữ liệu.");
+        return;
+      }
 
       const zip = new PizZip(template.fileData);
       const doc = new Docxtemplater(zip, { paragraphLoop: true, linebreaks: true });
@@ -83,23 +87,23 @@ export default function Documents({ setEditingQuotationId, currentUser, mode = '
         customerPhone: customer.phone || '',
         customerEmail: customer.email || '',
         delayedPaymentDays: delayedPaymentModal.days,
-        subTotal: new Intl.NumberFormat('vi-VN').format(previewDoc.subTotal),
-        taxAmount: new Intl.NumberFormat('vi-VN').format(previewDoc.taxAmount),
-        total: new Intl.NumberFormat('vi-VN').format(previewDoc.total),
-        totalWord: formatCurrency(previewDoc.total).charAt(0).toUpperCase() + formatCurrency(previewDoc.total).slice(1),
-        paymentValue: new Intl.NumberFormat('vi-VN').format(previewDoc.total),
-        paymentValueWord: formatCurrency(previewDoc.total).charAt(0).toUpperCase() + formatCurrency(previewDoc.total).slice(1),
+        subTotal: new Intl.NumberFormat('vi-VN').format(previewDoc.subTotal || 0),
+        taxAmount: new Intl.NumberFormat('vi-VN').format(previewDoc.taxAmount || 0),
+        total: new Intl.NumberFormat('vi-VN').format(previewDoc.total || 0),
+        totalWord: formatCurrency(previewDoc.total || 0).charAt(0).toUpperCase() + formatCurrency(previewDoc.total || 0).slice(1),
+        paymentValue: new Intl.NumberFormat('vi-VN').format(previewDoc.total || 0),
+        paymentValueWord: formatCurrency(previewDoc.total || 0).charAt(0).toUpperCase() + formatCurrency(previewDoc.total || 0).slice(1),
         notes: previewDoc.notes || '',
         day: today.getDate().toString().padStart(2, '0'),
         month: (today.getMonth() + 1).toString().padStart(2, '0'),
         year: today.getFullYear(),
-        items: previewDoc.items.map((item: any, idx: number) => ({
+        items: (previewDoc.items || []).map((item: any, idx: number) => ({
           stt: idx + 1,
-          productName: item.productName,
-          unit: item.unit,
-          quantity: item.quantity,
-          unitPrice: new Intl.NumberFormat('vi-VN').format(item.unitPrice),
-          amount: new Intl.NumberFormat('vi-VN').format(item.amount)
+          productName: item.productName || '',
+          unit: item.unit || '',
+          quantity: item.quantity || 0,
+          unitPrice: new Intl.NumberFormat('vi-VN').format(item.unitPrice || 0),
+          amount: new Intl.NumberFormat('vi-VN').format(item.amount || 0)
         }))
       });
 
