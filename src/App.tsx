@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FileText, Users, Box, LayoutDashboard, Upload, FilePlus, Settings as SettingsIcon, Wallet, Menu, X, LogOut, UserCircle, CloudUpload, AlertCircle, Search, ArrowLeft, Briefcase } from 'lucide-react';
+import { FileText, Users, Box, LayoutDashboard, Upload, FilePlus, Settings as SettingsIcon, Wallet, Menu, X, LogOut, UserCircle, CloudUpload, AlertCircle, Search, ArrowLeft, Briefcase, LayoutTemplate } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { findBackupFile, uploadBackup, DRIVE_SCOPE } from './utils/googleDrive';
 import { db } from './db/db';
@@ -16,6 +16,7 @@ import UsersManagement from './pages/UsersManagement';
 import Sourcing from './pages/Sourcing';
 import Projects from './pages/Projects';
 import PersonnelContracts from './pages/PersonnelContracts';
+import Templates from './pages/Templates';
 import { type User } from './db/db';
 
 function App() {
@@ -239,6 +240,14 @@ function App() {
           )}
           {isAdmin && (
             <NavItem 
+              icon={<LayoutTemplate size={20} className="text-gray-500" />} 
+              label="Quản lý biểu mẫu" 
+              active={activeTab === 'templates'} 
+              onClick={() => handleTabClick('templates')} 
+            />
+          )}
+          {isAdmin && (
+            <NavItem 
               icon={<SettingsIcon size={20} className="text-gray-500" />} 
               label="Cài đặt (Đồng bộ)" 
               active={activeTab === 'settings'} 
@@ -303,6 +312,7 @@ function App() {
               activeTab === 'documents' ? 'Quản lý Hồ sơ Chứng từ' :
               activeTab === 'fund' ? 'Quản lý Quỹ & Tạm ứng' :
               activeTab === 'settings' ? 'Cài đặt Hệ thống' :
+              activeTab === 'templates' ? 'Quản lý Biểu mẫu (Templates)' :
               activeTab === 'users' ? 'Quản lý Tài khoản (Users)' :
               activeTab === 'personnel-contracts' ? 'Hợp đồng khung / Sự vụ' :
               'Tổng quan (Dashboard)'
@@ -365,6 +375,7 @@ function App() {
           )}
           {activeTab === 'sourcing' && <Sourcing />}
           {activeTab === 'settings' && isAdmin && <Settings />}
+          {activeTab === 'templates' && isAdmin && <Templates />}
           {activeTab === 'users' && isAdmin && <UsersManagement />}
           {activeTab === 'personnel-contracts' && isKetoan && <PersonnelContracts />}
         </div>
