@@ -30,7 +30,7 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
 
   // Modal tạo khách hàng mới
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
-  const [printMode, setPrintMode] = useState<'QUOTATION' | 'DELIVERY' | 'PAYMENT' | 'DELAYED_PAYMENT' | 'ALL'>('QUOTATION');
+  const [printMode, setPrintMode] = useState<'QUOTATION' | 'DELIVERY' | 'PAYMENT' | 'DELAYED_PAYMENT' | 'ALL_3' | 'ALL_4'>('QUOTATION');
   const [isPrintMenuOpen, setIsPrintMenuOpen] = useState(false);
   const [isEmailMenuOpen, setIsEmailMenuOpen] = useState(false);
   const [newCustomer, setNewCustomer] = useState({ name: '', taxCode: '', address: '', phone: '', email: '' });
@@ -221,7 +221,7 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
     }
   };
 
-  const executePrint = (mode: 'QUOTATION' | 'DELIVERY' | 'PAYMENT' | 'DELAYED_PAYMENT' | 'ALL') => {
+  const executePrint = (mode: 'QUOTATION' | 'DELIVERY' | 'PAYMENT' | 'DELAYED_PAYMENT' | 'ALL_3' | 'ALL_4') => {
     if (!selectedCustomerId) {
       alert('Vui lòng chọn khách hàng để in!');
       return;
@@ -343,7 +343,7 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-6 print:shadow-none print:border-none print:p-0">
       
       {/* ==== BÁO GIÁ VÀ GIAO DIỆN CHÍNH ==== */}
-      <div className={printMode === 'DELIVERY' || printMode === 'PAYMENT' ? 'print:hidden space-y-6' : 'space-y-6'}>
+      <div className={printMode === 'DELIVERY' || printMode === 'PAYMENT' || printMode === 'DELAYED_PAYMENT' ? 'print:hidden space-y-6' : 'space-y-6'}>
         {/* HEADER CHO IN ẤN (Chỉ hiển thị khi in) */}
         <div className="hidden print:block mb-6 text-sm font-[Times_New_Roman]">
           <div className="flex items-center space-x-6 pb-4 border-b border-gray-300 mb-4">
@@ -694,7 +694,8 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
                 <button onClick={() => { setIsPrintMenuOpen(false); executePrint('DELIVERY'); }} className="w-full text-left px-4 py-3 hover:bg-gray-100 text-sm border-t font-medium text-gray-800">In Biên Bản Bàn Giao</button>
                 <button onClick={() => { setIsPrintMenuOpen(false); executePrint('PAYMENT'); }} className="w-full text-left px-4 py-3 hover:bg-gray-100 text-sm border-t font-medium text-gray-800">In Đề Nghị Thanh Toán</button>
                 <button onClick={() => { setIsPrintMenuOpen(false); executePrint('DELAYED_PAYMENT'); }} className="w-full text-left px-4 py-3 hover:bg-gray-100 text-sm border-t font-medium text-gray-800">In Đề Nghị Trả Chậm</button>
-                <button onClick={() => { setIsPrintMenuOpen(false); executePrint('ALL'); }} className="w-full text-left px-4 py-3 hover:bg-blue-50 text-sm border-t font-bold text-blue-700">In Trọn Bộ (4 Trang)</button>
+                <button onClick={() => { setIsPrintMenuOpen(false); executePrint('ALL_3'); }} className="w-full text-left px-4 py-3 hover:bg-blue-50 text-sm border-t font-bold text-blue-700">In Trọn Bộ (3 Trang)</button>
+                <button onClick={() => { setIsPrintMenuOpen(false); executePrint('ALL_4'); }} className="w-full text-left px-4 py-3 hover:bg-blue-50 text-sm border-t font-bold text-blue-700">In Trọn Bộ (4 Trang)</button>
               </div>
             </div>
           )}
@@ -711,8 +712,8 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
       </div> {/* END OF QUOTATION MAIN WRAPPER */}
 
       {/* ==== BIÊN BẢN BÀN GIAO ==== */}
-      {(printMode === 'DELIVERY' || printMode === 'ALL') && (
-        <div className={`hidden print:block text-[13px] leading-snug font-[Times_New_Roman] ${printMode === 'ALL' ? 'mt-8' : ''}`} style={printMode === 'ALL' ? { pageBreakBefore: 'always' } : {}}>
+      {(printMode === 'DELIVERY' || printMode === 'ALL_3' || printMode === 'ALL_4') && (
+        <div className={`hidden print:block text-[13px] leading-snug font-[Times_New_Roman] ${printMode.startsWith('ALL') ? 'mt-8' : ''}`} style={printMode.startsWith('ALL') ? { pageBreakBefore: 'always' } : {}}>
           <div className="text-center font-bold mb-2">
             <h2 className="text-base uppercase">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</h2>
             <h3 className="text-sm">Độc lập – Tự do – Hạnh phúc</h3>
@@ -799,8 +800,8 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
       )}
 
       {/* ==== ĐỀ NGHỊ THANH TOÁN ==== */}
-      {(printMode === 'PAYMENT' || printMode === 'ALL') && (
-        <div className={`hidden print:block text-[13px] leading-snug font-[Times_New_Roman] ${printMode === 'ALL' ? 'mt-8' : ''}`} style={printMode === 'ALL' ? { pageBreakBefore: 'always' } : {}}>
+      {(printMode === 'PAYMENT' || printMode === 'ALL_3' || printMode === 'ALL_4') && (
+        <div className={`hidden print:block text-[13px] leading-snug font-[Times_New_Roman] ${printMode.startsWith('ALL') ? 'mt-8' : ''}`} style={printMode.startsWith('ALL') ? { pageBreakBefore: 'always' } : {}}>
           <div className="flex justify-between items-start mb-4 font-bold">
             <div className="text-center w-1/2">
               <h2 className="text-base uppercase">CÔNG TY TNHH PHÁT LỘC TECH</h2>
@@ -874,8 +875,8 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
       )}
 
       {/* ==== VĂN BẢN TRẢ CHẬM ==== */}
-      {(printMode === 'DELAYED_PAYMENT' || printMode === 'ALL') && (
-        <div className={`hidden print:block text-[13px] leading-snug font-[Times_New_Roman] ${printMode === 'ALL' ? 'mt-8' : ''}`} style={printMode === 'ALL' ? { pageBreakBefore: 'always' } : {}}>
+      {(printMode === 'DELAYED_PAYMENT' || printMode === 'ALL_4') && (
+        <div className={`hidden print:block text-[13px] leading-snug font-[Times_New_Roman] ${printMode.startsWith('ALL') ? 'mt-8' : ''}`} style={printMode.startsWith('ALL') ? { pageBreakBefore: 'always' } : {}}>
           <div className="flex justify-between items-start mb-4 font-bold">
             <div className="text-center w-1/2">
               <h2 className="text-base uppercase">CÔNG TY TNHH PHÁT LỘC TECH</h2>
