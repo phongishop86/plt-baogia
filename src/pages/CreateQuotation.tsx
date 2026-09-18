@@ -21,6 +21,7 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
   const products = useLiveQuery(() => db.products.toArray());
 
   const [selectedCustomerId, setSelectedCustomerId] = useState<number | ''>('');
+  const [delayedPaymentTerms, setDelayedPaymentTerms] = useState("15 ngày kể từ ngày ký văn bản, 30 ngày kể từ ngày xuất hoá đơn");
   const [selectedItems, setSelectedItems] = useState<SelectedProduct[]>([]);
   const [docNumber, setDocNumber] = useState(`BG-${Date.now().toString().slice(-6)}`);
   const [searchQuery, setSearchQuery] = useState('');
@@ -29,7 +30,7 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
 
   // Modal tạo khách hàng mới
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
-  const [printMode, setPrintMode] = useState<'QUOTATION' | 'DELIVERY' | 'PAYMENT' | 'ALL'>('QUOTATION');
+  const [printMode, setPrintMode] = useState<'QUOTATION' | 'DELIVERY' | 'PAYMENT' | 'DELAYED_PAYMENT' | 'ALL'>('QUOTATION');
   const [isPrintMenuOpen, setIsPrintMenuOpen] = useState(false);
   const [isEmailMenuOpen, setIsEmailMenuOpen] = useState(false);
   const [newCustomer, setNewCustomer] = useState({ name: '', taxCode: '', address: '', phone: '', email: '' });
@@ -220,7 +221,7 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
     }
   };
 
-  const executePrint = (mode: 'QUOTATION' | 'DELIVERY' | 'PAYMENT' | 'ALL') => {
+  const executePrint = (mode: 'QUOTATION' | 'DELIVERY' | 'PAYMENT' | 'DELAYED_PAYMENT' | 'ALL') => {
     if (!selectedCustomerId) {
       alert('Vui lòng chọn khách hàng để in!');
       return;
@@ -387,7 +388,7 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
         </button>
       </div>
 
-      <div className="grid grid-cols-2 gap-6 print:hidden">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 print:hidden">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Số Báo Giá</label>
           <input 
@@ -417,6 +418,16 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
               <option key={c.id} value={c.id}>{c.name} ({c.taxCode})</option>
             ))}
           </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Điều khoản trả chậm (In VB)</label>
+          <input 
+            type="text" 
+            value={delayedPaymentTerms}
+            onChange={(e) => setDelayedPaymentTerms(e.target.value)}
+            className="w-full border-gray-300 rounded-md shadow-sm border p-2"
+            placeholder="Ví dụ: 15 ngày kể từ ngày ký..."
+          />
         </div>
       </div>
 
@@ -682,7 +693,8 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
                 <button onClick={() => { setIsPrintMenuOpen(false); executePrint('QUOTATION'); }} className="w-full text-left px-4 py-3 hover:bg-gray-100 text-sm font-medium text-gray-800">In Báo Giá</button>
                 <button onClick={() => { setIsPrintMenuOpen(false); executePrint('DELIVERY'); }} className="w-full text-left px-4 py-3 hover:bg-gray-100 text-sm border-t font-medium text-gray-800">In Biên Bản Bàn Giao</button>
                 <button onClick={() => { setIsPrintMenuOpen(false); executePrint('PAYMENT'); }} className="w-full text-left px-4 py-3 hover:bg-gray-100 text-sm border-t font-medium text-gray-800">In Đề Nghị Thanh Toán</button>
-                <button onClick={() => { setIsPrintMenuOpen(false); executePrint('ALL'); }} className="w-full text-left px-4 py-3 hover:bg-blue-50 text-sm border-t font-bold text-blue-700">In Trọn Bộ (3 Trang)</button>
+                <button onClick={() => { setIsPrintMenuOpen(false); executePrint('DELAYED_PAYMENT'); }} className="w-full text-left px-4 py-3 hover:bg-gray-100 text-sm border-t font-medium text-gray-800">In Đề Nghị Trả Chậm</button>
+                <button onClick={() => { setIsPrintMenuOpen(false); executePrint('ALL'); }} className="w-full text-left px-4 py-3 hover:bg-blue-50 text-sm border-t font-bold text-blue-700">In Trọn Bộ (4 Trang)</button>
               </div>
             </div>
           )}
@@ -855,6 +867,80 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
             <div className="w-1/3 text-center pb-4">
               <p className="font-bold uppercase">ĐẠI DIỆN DOANH NGHIỆP</p>
               <p className="font-bold uppercase mb-6">GIÁM ĐỐC</p>
+              <p className="italic font-normal">(Ký, ghi rõ họ tên và đóng dấu)</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==== VĂN BẢN TRẢ CHẬM ==== */}
+      {(printMode === 'DELAYED_PAYMENT' || printMode === 'ALL') && (
+        <div className={`hidden print:block text-[13px] leading-snug font-[Times_New_Roman] ${printMode === 'ALL' ? 'mt-8' : ''}`} style={printMode === 'ALL' ? { pageBreakBefore: 'always' } : {}}>
+          <div className="flex justify-between items-start mb-4 font-bold">
+            <div className="text-center w-1/2">
+              <h2 className="text-base uppercase">CÔNG TY TNHH PHÁT LỘC TECH</h2>
+              <p className="font-normal">Số: ......../PLT-CV</p>
+            </div>
+            <div className="text-center w-1/2">
+              <h2 className="text-base uppercase">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</h2>
+              <h3 className="text-sm">Độc lập – Tự do – Hạnh phúc</h3>
+              <p className="font-normal">-----oOo-----</p>
+              <p className="font-normal italic mt-1">TP Hồ Chí Minh, ngày .... tháng .... năm 202...</p>
+            </div>
+          </div>
+
+          <div className="text-center mb-6 mt-12">
+            <h1 className="text-xl font-bold uppercase">CÔNG VĂN ĐỀ NGHỊ THANH TOÁN TRẢ CHẬM</h1>
+          </div>
+
+          <div className="mb-2 leading-normal">
+            <p><span className="font-bold inline-block w-20">Kính gửi:</span> <span className="font-bold uppercase">{selectedCustomer?.name}</span></p>
+            <p><span className="font-bold inline-block w-20">Địa chỉ:</span> {selectedCustomer?.address}</p>
+            <p><span className="font-bold inline-block w-20">MST:</span> {selectedCustomer?.taxCode}</p>
+          </div>
+
+          <div className="text-justify space-y-2 mb-4 leading-normal mt-6">
+            <p className="indent-8">
+              Căn cứ báo giá số <strong>{docNumber}</strong> giữa Công ty Phát Lộc Tech và <strong>{selectedCustomer?.name}</strong> về việc cung cấp trang thiết bị/ dịch vụ tin học;
+            </p>
+            <p className="indent-8">
+              Căn cứ Biên bản bàn giao, nghiệm thu hoàn thành Số: <strong>{docNumber}/BB-BGNTTBDV</strong>;
+            </p>
+            
+            <p className="mt-4">
+              <strong>Giá trị thanh toán: {formatCurrency(calculateSubTotal() + calculateTax())}</strong><br/>
+              <strong>Bằng chữ: </strong> <span className="italic font-medium">{numberToVietnameseWords(calculateSubTotal() + calculateTax())}</span>
+            </p>
+            
+            <p className="indent-8 mt-4">
+              Bằng văn bản này, Công ty Phát Lộc Tech đề nghị Quý cơ quan thanh toán cho chúng tôi số tiền trên với thời hạn là: <strong>{delayedPaymentTerms}</strong>.
+            </p>
+            
+            <p className="mt-2">
+              <strong>Đơn vị thụ hưởng: CÔNG TY TNHH PHÁT LỘC TECH</strong><br/>
+              {getBankAccounts().map(b => (
+                <span key={b.num}>
+                  <strong>Số tài khoản{b.stt === 'STK' ? '' : ' ' + b.stt.replace('STK ', '')}: {b.num} tại {b.name}</strong><br/>
+                </span>
+              ))}
+            </p>
+            
+            <p className="mt-6">
+              Rất mong nhận được sự đồng thuận và hợp tác từ Quý công ty.<br/>
+              Trân trọng cảm ơn!
+            </p>
+          </div>
+
+          <div className="flex justify-between mt-12 px-8">
+            <div className="w-1/3">
+              <p className="font-bold italic">Nơi nhận:</p>
+              <p className="italic">Như trên;</p>
+              <p className="italic">Lưu: VT.</p>
+            </div>
+            <div className="w-1/3 text-center pb-4">
+              <p className="font-bold uppercase">ĐẠI DIỆN DOANH NGHIỆP</p>
+              <p className="font-bold uppercase mb-6">GIÁM ĐỐC</p>
+              <br/><br/><br/>
               <p className="italic font-normal">(Ký, ghi rõ họ tên và đóng dấu)</p>
             </div>
           </div>
