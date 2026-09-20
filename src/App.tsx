@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FileText, Users, Box, LayoutDashboard, Upload, FilePlus, Settings as SettingsIcon, Wallet, Menu, X, LogOut, UserCircle, CloudUpload, AlertCircle, Search, ArrowLeft, Briefcase, LayoutTemplate } from 'lucide-react';
+import { FileText, Users, Box, LayoutDashboard, Upload, FilePlus, Settings as SettingsIcon, Wallet, Menu, X, LogOut, UserCircle, CloudUpload, AlertCircle, Search, ArrowLeft, Briefcase, LayoutTemplate, Calculator } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { findBackupFile, uploadBackup, DRIVE_SCOPE } from './utils/googleDrive';
 import { db } from './db/db';
@@ -17,6 +17,7 @@ import Sourcing from './pages/Sourcing';
 import Projects from './pages/Projects';
 import PersonnelContracts from './pages/PersonnelContracts';
 import Templates from './pages/Templates';
+import PriceCalculator from './pages/PriceCalculator';
 import { type User } from './db/db';
 
 function App() {
@@ -227,6 +228,12 @@ function App() {
             active={activeTab === 'sourcing'} 
             onClick={() => handleTabClick('sourcing')} 
           />
+          <NavItem 
+            icon={<Calculator size={20} className="text-emerald-500" />} 
+            label="Công cụ tính giá" 
+            active={activeTab === 'pricing'} 
+            onClick={() => handleTabClick('pricing')} 
+          />
           
           {isAdmin && <div className="my-4 border-t border-gray-200 mx-2"></div>}
           
@@ -311,6 +318,7 @@ function App() {
               activeTab === 'products' ? 'Quản lý Tồn kho' :
               activeTab === 'documents' ? 'Quản lý Hồ sơ Chứng từ' :
               activeTab === 'fund' ? 'Quản lý Quỹ & Tạm ứng' :
+              activeTab === 'pricing' ? 'Công cụ tính giá' :
               activeTab === 'settings' ? 'Cài đặt Hệ thống' :
               activeTab === 'templates' ? 'Quản lý Biểu mẫu (Templates)' :
               activeTab === 'users' ? 'Quản lý Tài khoản (Users)' :
@@ -374,6 +382,7 @@ function App() {
             />
           )}
           {activeTab === 'sourcing' && <Sourcing />}
+          {activeTab === 'pricing' && <PriceCalculator />}
           {activeTab === 'settings' && isAdmin && <Settings />}
           {activeTab === 'templates' && isAdmin && <Templates />}
           {activeTab === 'users' && isAdmin && <UsersManagement />}
