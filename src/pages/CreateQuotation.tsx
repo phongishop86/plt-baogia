@@ -244,6 +244,7 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
 
       const formatCurrency = (val: number) => new Intl.NumberFormat('vi-VN').format(Math.round(val));
 
+      const today = new Date();
       const data = {
         docNumber,
         customerName: selectedCustomer.name,
@@ -265,11 +266,16 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
         paymentValueWord: numberToVietnameseWords(calculateSubTotal() + calculateTax()),
         soTienBangChu: numberToVietnameseWords(calculateSubTotal() + calculateTax()),
         notes: '',
+        day: today.getDate().toString().padStart(2, '0'),
+        month: (today.getMonth() + 1).toString().padStart(2, '0'),
+        year: today.getFullYear(),
         items: selectedItems.map((item, index) => ({
-          ...item,
           stt: index + 1,
-          unitPriceFormatted: formatCurrency(item.unitPrice || 0),
-          amountFormatted: formatCurrency((item.unitPrice || 0) * item.quantity)
+          productName: item.name || '',
+          unit: item.unit || '',
+          quantity: item.quantity || 0,
+          unitPrice: formatCurrency(item.unitPrice || 0),
+          amount: formatCurrency((item.unitPrice || 0) * item.quantity)
         }))
       };
 
