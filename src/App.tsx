@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FileText, Users, Box, LayoutDashboard, Upload, FilePlus, Settings as SettingsIcon, Wallet, Menu, X, LogOut, UserCircle, CloudUpload, AlertCircle, Search, ArrowLeft, Briefcase, LayoutTemplate, Calculator } from 'lucide-react';
+import { FileText, Users, Box, LayoutDashboard, Upload, FilePlus, Settings as SettingsIcon, Wallet, Menu, X, LogOut, UserCircle, CloudUpload, AlertCircle, Search, ArrowLeft, Briefcase, LayoutTemplate, Calculator, Folder } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { findBackupFile, uploadBackup, DRIVE_SCOPE } from './utils/googleDrive';
 import { db } from './db/db';
@@ -18,6 +18,7 @@ import Projects from './pages/Projects';
 import PersonnelContracts from './pages/PersonnelContracts';
 import Templates from './pages/Templates';
 import PriceCalculator from './pages/PriceCalculator';
+import LegalDocs from './pages/LegalDocs';
 import { type User } from './db/db';
 
 function App() {
@@ -253,6 +254,12 @@ function App() {
               onClick={() => handleTabClick('templates')} 
             />
           )}
+          <NavItem 
+            icon={<Folder size={20} className="text-indigo-500" />} 
+            label="Hồ sơ pháp lý" 
+            active={activeTab === 'legal-docs'} 
+            onClick={() => handleTabClick('legal-docs')} 
+          />
           {isAdmin && (
             <NavItem 
               icon={<SettingsIcon size={20} className="text-gray-500" />} 
@@ -321,6 +328,7 @@ function App() {
               activeTab === 'pricing' ? 'Công cụ tính giá' :
               activeTab === 'settings' ? 'Cài đặt Hệ thống' :
               activeTab === 'templates' ? 'Quản lý Biểu mẫu (Templates)' :
+              activeTab === 'legal-docs' ? 'Hồ sơ pháp lý' :
               activeTab === 'users' ? 'Quản lý Tài khoản (Users)' :
               activeTab === 'personnel-contracts' ? 'Hợp đồng khung / Sự vụ' :
               'Tổng quan (Dashboard)'
@@ -385,6 +393,7 @@ function App() {
           {activeTab === 'pricing' && <PriceCalculator />}
           {activeTab === 'settings' && isAdmin && <Settings />}
           {activeTab === 'templates' && isAdmin && <Templates />}
+          {activeTab === 'legal-docs' && <LegalDocs currentUser={currentUser} />}
           {activeTab === 'users' && isAdmin && <UsersManagement />}
           {activeTab === 'personnel-contracts' && isKetoan && <PersonnelContracts />}
         </div>

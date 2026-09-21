@@ -169,6 +169,16 @@ export interface ProjectTemplate {
   updatedAt: Date;
 }
 
+export interface LegalDoc {
+  id?: number;
+  title: string;
+  category: string;
+  fileName: string;
+  fileType: string;
+  fileData: ArrayBuffer;
+  updatedAt: Date;
+}
+
 export class PLTDatabase extends Dexie {
   customers!: Table<Customer, number>;
   products!: Table<Product, number>;
@@ -182,6 +192,7 @@ export class PLTDatabase extends Dexie {
   projectExpenses!: Table<ProjectExpense, number>;
   templates!: Table<DocTemplate, string>;
   projectTemplates!: Table<ProjectTemplate, number>;
+  legalDocs!: Table<LegalDoc, number>;
 
   constructor() {
     super('PLTERPDatabase');
@@ -250,6 +261,21 @@ export class PLTDatabase extends Dexie {
       projectExpenses: '++id, projectId, category, date',
       templates: 'id',
       projectTemplates: '++id, projectId, type'
+    });
+    this.version(8).stores({
+      customers: '++id, taxCode, name',
+      products: '++id, code, name',
+      documents: '++id, type, docNumber, customerId, date',
+      transactions: '++id, date, type',
+      users: '++id, username, role',
+      projects: '++id, code, name, status',
+      personnel: '++id, cccd, fullName',
+      projectContracts: '++id, projectId, personnelId',
+      projectUnits: '++id, projectId, status, personnelId',
+      projectExpenses: '++id, projectId, category, date',
+      templates: 'id',
+      projectTemplates: '++id, projectId, type',
+      legalDocs: '++id, title, category'
     });
   }
 }
