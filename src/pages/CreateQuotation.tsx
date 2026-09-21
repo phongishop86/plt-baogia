@@ -877,72 +877,98 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
       {/* ==== VĂN BẢN TRẢ CHẬM ==== */}
       {(printMode === 'DELAYED_PAYMENT' || printMode === 'ALL_4') && (
         <div className={`hidden print:block text-[13px] leading-snug font-[Times_New_Roman] ${printMode.startsWith('ALL') ? 'mt-8' : ''}`} style={printMode.startsWith('ALL') ? { pageBreakBefore: 'always' } : {}}>
-          <div className="flex justify-between items-start mb-4 font-bold">
-            <div className="text-center w-1/2">
-              <h2 className="text-base uppercase">CÔNG TY TNHH PHÁT LỘC TECH</h2>
-              <p className="font-normal">Số: ......../PLT-CV</p>
+          
+          <div className="text-center mb-6">
+            <h1 className="text-[17px] font-bold uppercase tracking-wide">BIÊN BẢN XÁC NHẬN VÀ THỎA THUẬN THANH TOÁN</h1>
+          </div>
+
+          <div className="italic text-center mb-6">
+            Hôm nay, ngày ...... tháng ...... năm 202..., tại trụ sở {selectedCustomer?.name || '.......................................'}, {selectedCustomer?.address || '.......................................'}, chúng tôi gồm:
+          </div>
+
+          <div className="mb-4 leading-relaxed">
+            <p className="font-bold uppercase mb-1">BÊN BÁN (BÊN A)</p>
+            <p><span className="inline-block w-[80px]">Tên đơn vị:</span> <strong>CÔNG TY TNHH PHÁT LỘC TECH</strong></p>
+            <p><span className="inline-block w-[80px]">Mã số thuế:</span> 0319347662</p>
+            <p><span className="inline-block w-[80px]">Địa chỉ:</span> Số 491/1 Trường Chinh, Phường Tân Bình, Thành phố Hồ Chí Minh</p>
+            <div className="flex">
+              <p className="w-1/2"><span className="inline-block w-[80px]">Đại diện:</span> Ông Nguyễn Thanh Phong</p>
+              <p className="w-1/2"><span className="inline-block w-[70px]">Chức vụ:</span> Giám đốc</p>
             </div>
-            <div className="text-center w-1/2">
-              <h2 className="text-base uppercase">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</h2>
-              <h3 className="text-sm">Độc lập – Tự do – Hạnh phúc</h3>
-              <p className="font-normal">-----oOo-----</p>
-              <p className="font-normal italic mt-1">TP Hồ Chí Minh, ngày .... tháng .... năm 202...</p>
+          </div>
+
+          <div className="mb-4 leading-relaxed">
+            <p className="font-bold uppercase mb-1">BÊN MUA (BÊN B)</p>
+            <p><span className="inline-block w-[80px]">Tên đơn vị:</span> <strong>{selectedCustomer?.name || '.......................................'}</strong></p>
+            <p><span className="inline-block w-[80px]">Mã số thuế:</span> {selectedCustomer?.taxCode || '.......................................'}</p>
+            <p><span className="inline-block w-[80px]">Địa chỉ:</span> {selectedCustomer?.address || '.......................................'}</p>
+            <div className="flex">
+              <p className="w-1/2"><span className="inline-block w-[80px]">Đại diện:</span> .......................................</p>
+              <p className="w-1/2"><span className="inline-block w-[70px]">Chức vụ:</span> .......................................</p>
             </div>
           </div>
 
-          <div className="text-center mb-6 mt-12">
-            <h1 className="text-xl font-bold uppercase">CÔNG VĂN ĐỀ NGHỊ THANH TOÁN TRẢ CHẬM</h1>
+          <div className="mb-4">
+            Hai bên cùng thống nhất lập biên bản này với các nội dung sau:
           </div>
 
-          <div className="mb-2 leading-normal">
-            <p><span className="font-bold inline-block w-20">Kính gửi:</span> <span className="font-bold uppercase">{selectedCustomer?.name}</span></p>
-            <p><span className="font-bold inline-block w-20">Địa chỉ:</span> {selectedCustomer?.address}</p>
-            <p><span className="font-bold inline-block w-20">MST:</span> {selectedCustomer?.taxCode}</p>
-          </div>
-
-          <div className="text-justify space-y-2 mb-4 leading-normal mt-6">
-            <p className="indent-8">
-              Căn cứ báo giá số <strong>{docNumber}</strong> giữa Công ty Phát Lộc Tech và <strong>{selectedCustomer?.name}</strong> về việc cung cấp trang thiết bị/ dịch vụ tin học;
-            </p>
-            <p className="indent-8">
-              Căn cứ Biên bản bàn giao, nghiệm thu hoàn thành Số: <strong>{docNumber}/BB-BGNTTBDV</strong>;
-            </p>
-            
-            <p className="mt-4">
-              <strong>Giá trị thanh toán: {formatCurrency(calculateSubTotal() + calculateTax())}</strong><br/>
-              <strong>Bằng chữ: </strong> <span className="italic font-medium">{numberToVietnameseWords(calculateSubTotal() + calculateTax())}</span>
-            </p>
-            
-            <p className="indent-8 mt-4">
-              Bằng văn bản này, Công ty Phát Lộc Tech đề nghị Quý cơ quan thanh toán cho chúng tôi số tiền trên với thời hạn là: <strong>{delayedPaymentTerms}</strong>.
-            </p>
-            
-            <p className="mt-2">
-              <strong>Đơn vị thụ hưởng: CÔNG TY TNHH PHÁT LỘC TECH</strong><br/>
-              {getBankAccounts().map(b => (
-                <span key={b.num}>
-                  <strong>Số tài khoản{b.stt === 'STK' ? '' : ' ' + b.stt.replace('STK ', '')}: {b.num} tại {b.name}</strong><br/>
-                </span>
-              ))}
-            </p>
-            
-            <p className="mt-6">
-              Rất mong nhận được sự đồng thuận và hợp tác từ Quý công ty.<br/>
-              Trân trọng cảm ơn!
-            </p>
-          </div>
-
-          <div className="flex justify-between mt-12 px-8">
-            <div className="w-1/3">
-              <p className="font-bold italic">Nơi nhận:</p>
-              <p className="italic">Như trên;</p>
-              <p className="italic">Lưu: VT.</p>
+          <div className="text-justify space-y-3 mb-6 leading-relaxed">
+            <div>
+              <p className="font-bold uppercase mb-1">ĐIỀU 1. XÁC NHẬN GIAO DỊCH</p>
+              <p>Bên A đã hoàn thành việc cung cấp hàng hóa/dịch vụ cho Bên B theo:</p>
+              <ul className="list-disc pl-8 my-1 space-y-1">
+                <li>Hóa đơn số: ..............................................................</li>
+                <li>Ngày hóa đơn: ...........................................................</li>
+                <li>Nội dung hàng hóa/dịch vụ: .....................................</li>
+                <li>Giá trị thanh toán: <strong>{formatCurrency(calculateSubTotal() + calculateTax())}</strong> đồng.</li>
+              </ul>
+              <p className="indent-4">(Bằng chữ: <em>{numberToVietnameseWords(calculateSubTotal() + calculateTax())} đồng.</em>)</p>
+              <p className="mt-1">Bên B xác nhận đã nhận đầy đủ hàng hóa/dịch vụ theo thỏa thuận và không có khiếu nại về số lượng, chất lượng tại thời điểm ký biên bản này.</p>
             </div>
-            <div className="w-1/3 text-center pb-4">
-              <p className="font-bold uppercase">ĐẠI DIỆN DOANH NGHIỆP</p>
-              <p className="font-bold uppercase mb-6">GIÁM ĐỐC</p>
-              <br/><br/><br/>
-              <p className="italic font-normal">(Ký, ghi rõ họ tên và đóng dấu)</p>
+            
+            <div>
+              <p className="font-bold uppercase mb-1">ĐIỀU 2. THỎA THUẬN THANH TOÁN</p>
+              <div className="pl-4 space-y-2">
+                <p>1. Bên A đồng ý cho Bên B thanh toán chậm đối với khoản công nợ nêu tại Điều 1.</p>
+                <p>2. Thời hạn thanh toán:</p>
+                <p>Bên B cam kết thanh toán toàn bộ số tiền còn phải thanh toán cho Bên A trong vòng {delayedPaymentTerms ? <strong>{delayedPaymentTerms}</strong> : '........ ngày kể từ ngày ký biên bản này.'}</p>
+                <p>3. Hình thức thanh toán:</p>
+                <p>Chuyển khoản vào tài khoản của Bên A:</p>
+                <ul className="list-disc pl-8 space-y-1">
+                  <li>Chủ tài khoản: CÔNG TY TNHH PHÁT LỘC TECH</li>
+                  {getBankAccounts().map(b => (
+                    <div key={b.num} className="contents">
+                      <li>Số tài khoản: {b.num}</li>
+                      <li className="list-none pl-1">• Ngân hàng: {b.short}</li>
+                    </div>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            <div>
+              <p className="font-bold uppercase mb-1">ĐIỀU 3. CAM KẾT THANH TOÁN</p>
+              <div className="pl-4 space-y-1">
+                <p>1. Bên B xác nhận khoản công nợ nêu trên là khoản nợ hợp pháp, có thật, không có tranh chấp và cam kết thanh toán đầy đủ, đúng thời hạn.</p>
+                <p>2. Trường hợp Bên B không thực hiện thanh toán đúng hạn, Bên A có quyền yêu cầu thanh toán toàn bộ khoản công nợ và thực hiện các biện pháp xử lý theo quy định pháp luật.</p>
+                <p>3. Người ký biên bản này thay mặt Bên B cam kết có đầy đủ thẩm quyền để xác nhận và thực hiện nghĩa vụ thanh toán theo nội dung đã thỏa thuận.</p>
+              </div>
+            </div>
+
+            <div>
+              <p className="font-bold uppercase mb-1">ĐIỀU 4. HIỆU LỰC</p>
+              <p>Biên bản có hiệu lực kể từ ngày ký và được lập thành 02 (hai) bản có giá trị pháp lý như nhau, mỗi bên giữ 01 (một) bản.</p>
+            </div>
+          </div>
+
+          <div className="flex justify-between mt-12 px-12">
+            <div className="w-1/2 text-center pb-4">
+              <p className="font-bold uppercase">ĐẠI DIỆN BÊN A</p>
+              <p className="italic font-normal mb-24">(Ký, ghi rõ họ tên, đóng dấu)</p>
+            </div>
+            <div className="w-1/2 text-center pb-4">
+              <p className="font-bold uppercase">ĐẠI DIỆN BÊN B</p>
+              <p className="italic font-normal mb-24">(Ký, ghi rõ họ tên, đóng dấu)</p>
             </div>
           </div>
         </div>
