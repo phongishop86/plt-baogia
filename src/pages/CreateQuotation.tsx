@@ -224,6 +224,68 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
     }
   };
 
+  const executeExportSingleWord = async (templateId: string, filenamePrefix: string) => {
+    if (!selectedCustomer) {
+      alert('Vui lòng chọn khách hàng để xuất file!');
+      return;
+    }
+
+    try {
+      const tpl = await db.templates.get(templateId);
+      if (!tpl) {
+        alert(`Vui lòng tải lên biểu mẫu này trong Kho biểu mẫu trước khi xuất!`);
+        return;
+      }
+
+      const formatCurrency = (val: number) => new Intl.NumberFormat('vi-VN').format(Math.round(val));
+
+      const today = new Date();
+      const data = {
+        docNumber,
+        customerName: selectedCustomer.name,
+        donViMua: selectedCustomer.name,
+        customerAddress: selectedCustomer.address || '',
+        diaChi: selectedCustomer.address || '',
+        customerTaxCode: selectedCustomer.taxCode || '',
+        maSoThue: selectedCustomer.taxCode || '',
+        customerPhone: selectedCustomer.phone || '',
+        customerEmail: selectedCustomer.email || '',
+        delayedPaymentDays: delayedPaymentTerms,
+        soNgayThanhToanCham: delayedPaymentTerms,
+        subTotal: formatCurrency(calculateSubTotal()),
+        taxAmount: formatCurrency(calculateTax()),
+        total: formatCurrency(calculateSubTotal() + calculateTax()),
+        soTien: formatCurrency(calculateSubTotal() + calculateTax()),
+        totalWord: numberToVietnameseWords(calculateSubTotal() + calculateTax()),
+        paymentValue: formatCurrency(calculateSubTotal() + calculateTax()),
+        paymentValueWord: numberToVietnameseWords(calculateSubTotal() + calculateTax()),
+        soTienBangChu: numberToVietnameseWords(calculateSubTotal() + calculateTax()),
+        notes: '',
+        day: today.getDate().toString().padStart(2, '0'),
+        month: (today.getMonth() + 1).toString().padStart(2, '0'),
+        year: today.getFullYear(),
+        items: selectedItems.map((item, index) => ({
+          stt: index + 1,
+          productName: item.name || '',
+          unit: item.unit || '',
+          quantity: item.quantity || 0,
+          unitPrice: formatCurrency(item.unitPrice || 0),
+          amount: formatCurrency((item.unitPrice || 0) * item.quantity)
+        }))
+      };
+
+      const zip = new PizZip(tpl.fileData);
+      const doc = new Docxtemplater(zip, { paragraphLoop: true, linebreaks: true });
+      doc.render(data);
+      const blob = doc.getZip().generate({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+      
+      saveAs(blob, `${filenamePrefix}_${docNumber.replace(/\//g, '-')}.docx`);
+    } catch (err: any) {
+      console.error(err);
+      alert('Đã xảy ra lỗi khi xuất file Word: ' + err.message);
+    }
+  };
+
   const executeExportWord = async (mode: 'ALL_3' | 'ALL_4') => {
     if (!selectedCustomer) {
       alert('Vui lòng chọn khách hàng để xuất file!');
@@ -775,15 +837,20 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
           </button>
           {isPrintMenuOpen && (
             <div className="absolute right-0 bottom-full pb-2 z-50">
-              <div className="bg-white shadow-xl border border-gray-200 rounded-md w-48 overflow-hidden">
-                <button onClick={() => { setIsPrintMenuOpen(false); executePrint('QUOTATION'); }} className="w-full text-left px-4 py-3 hover:bg-gray-100 text-sm font-medium text-gray-800">In Báo Giá</button>
-                <button onClick={() => { setIsPrintMenuOpen(false); executePrint('DELIVERY'); }} className="w-full text-left px-4 py-3 hover:bg-gray-100 text-sm border-t font-medium text-gray-800">In Biên Bản Bàn Giao</button>
-                <button onClick={() => { setIsPrintMenuOpen(false); executePrint('PAYMENT'); }} className="w-full text-left px-4 py-3 hover:bg-gray-100 text-sm border-t font-medium text-gray-800">In Đề Nghị Thanh Toán</button>
-                <button onClick={() => { setIsPrintMenuOpen(false); executePrint('DELAYED_PAYMENT'); }} className="w-full text-left px-4 py-3 hover:bg-gray-100 text-sm border-t font-medium text-gray-800">In Đề Nghị Trả Chậm</button>
-                <button onClick={() => { setIsPrintMenuOpen(false); executePrint('ALL_3'); }} className="w-full text-left px-4 py-3 hover:bg-blue-50 text-sm border-t font-bold text-blue-700">In Trọn Bộ (3 Trang)</button>
-                <button onClick={() => { setIsPrintMenuOpen(false); executePrint('ALL_4'); }} className="w-full text-left px-4 py-3 hover:bg-blue-50 text-sm border-t font-bold text-blue-700">In Trọn Bộ (4 Trang)</button>
-                <button onClick={() => { setIsPrintMenuOpen(false); executeExportWord('ALL_3'); }} className="w-full flex items-center px-4 py-3 hover:bg-indigo-50 text-sm border-t font-bold text-indigo-700"><Download size={16} className="mr-2" />Tải Bộ 3 File (Word)</button>
-                <button onClick={() => { setIsPrintMenuOpen(false); executeExportWord('ALL_4'); }} className="w-full flex items-center px-4 py-3 hover:bg-indigo-50 text-sm border-t font-bold text-indigo-700"><Download size={16} className="mr-2" />Tải Bộ 4 File (Word)</button>
+              <div className="bg-white shadow-xl border border-gray-200 rounded-md w-60 overflow-hidden">
+                <div className="bg-gray-100 text-xs font-bold text-gray-500 uppercase px-3 py-2 border-b">In Trực Tiếp (Bản Web)</div>
+                <button onClick={() => { setIsPrintMenuOpen(false); executePrint('QUOTATION'); }} className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm font-medium text-gray-800">In Báo Giá</button>
+                <button onClick={() => { setIsPrintMenuOpen(false); executePrint('DELIVERY'); }} className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm font-medium text-gray-800">In Biên Bản Bàn Giao</button>
+                <button onClick={() => { setIsPrintMenuOpen(false); executePrint('PAYMENT'); }} className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm font-medium text-gray-800">In Đề Nghị Thanh Toán</button>
+                <button onClick={() => { setIsPrintMenuOpen(false); executePrint('ALL_3'); }} className="w-full text-left px-4 py-2 hover:bg-blue-50 text-sm border-b font-bold text-blue-700">In Trọn Bộ (3 Trang)</button>
+                
+                <div className="bg-indigo-100 text-xs font-bold text-indigo-800 uppercase px-3 py-2 border-b">Tải File Word (Từ Kho)</div>
+                <button onClick={() => { setIsPrintMenuOpen(false); executeExportSingleWord('QUOTATION', 'BaoGia'); }} className="w-full text-left px-4 py-2 hover:bg-indigo-50 text-sm font-medium text-indigo-900">Tải Báo Giá</button>
+                <button onClick={() => { setIsPrintMenuOpen(false); executeExportSingleWord('HANDOVER', 'BienBanBanGiao'); }} className="w-full text-left px-4 py-2 hover:bg-indigo-50 text-sm font-medium text-indigo-900">Tải Biên Bản Bàn Giao</button>
+                <button onClick={() => { setIsPrintMenuOpen(false); executeExportSingleWord('PAYMENT_REQUEST', 'DeNghiThanhToan'); }} className="w-full text-left px-4 py-2 hover:bg-indigo-50 text-sm font-medium text-indigo-900">Tải Đề Nghị Thanh Toán</button>
+                <button onClick={() => { setIsPrintMenuOpen(false); executeExportSingleWord('DELAYED_PAYMENT_REQUEST', 'DeNghiThanhToanCham'); }} className="w-full text-left px-4 py-2 hover:bg-indigo-50 text-sm font-medium text-indigo-900">Tải Đề Nghị Trả Chậm</button>
+                <button onClick={() => { setIsPrintMenuOpen(false); executeExportWord('ALL_3'); }} className="w-full flex items-center px-4 py-2 hover:bg-indigo-50 text-sm border-t font-bold text-indigo-700"><Download size={16} className="mr-2" />Tải Bộ 3 File (Zip)</button>
+                <button onClick={() => { setIsPrintMenuOpen(false); executeExportWord('ALL_4'); }} className="w-full flex items-center px-4 py-2 hover:bg-indigo-50 text-sm font-bold text-indigo-700"><Download size={16} className="mr-2" />Tải Bộ 4 File (Zip)</button>
               </div>
             </div>
           )}
