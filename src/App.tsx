@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FileText, Users, Box, LayoutDashboard, Upload, FilePlus, Settings as SettingsIcon, Wallet, Menu, X, LogOut, UserCircle, CloudUpload, AlertCircle, Search, ArrowLeft, Briefcase, LayoutTemplate, Calculator, Folder } from 'lucide-react';
+import { FileText, Users, Box, LayoutDashboard, FilePlus, Settings as SettingsIcon, Wallet, Menu, X, LogOut, UserCircle, CloudUpload, AlertCircle, Search, ArrowLeft, Briefcase, Calculator, Folder } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { findBackupFile, uploadBackup, DRIVE_SCOPE } from './utils/googleDrive';
 import { db } from './db/db';
@@ -238,22 +238,6 @@ function App() {
           
           {isAdmin && <div className="my-4 border-t border-gray-200 mx-2"></div>}
           
-          {isKetoan && (
-            <NavItem 
-              icon={<FileText size={20} className="text-gray-500" />} 
-              label="Hợp đồng khung / Sự vụ" 
-              active={activeTab === 'personnel-contracts'} 
-              onClick={() => handleTabClick('personnel-contracts')} 
-            />
-          )}
-          {isAdmin && (
-            <NavItem 
-              icon={<LayoutTemplate size={20} className="text-gray-500" />} 
-              label="Quản lý biểu mẫu" 
-              active={activeTab === 'templates'} 
-              onClick={() => handleTabClick('templates')} 
-            />
-          )}
           <NavItem 
             icon={<Folder size={20} className="text-indigo-500" />} 
             label="Hồ sơ pháp lý" 
@@ -263,25 +247,9 @@ function App() {
           {isAdmin && (
             <NavItem 
               icon={<SettingsIcon size={20} className="text-gray-500" />} 
-              label="Cài đặt (Đồng bộ)" 
+              label="Quản trị" 
               active={activeTab === 'settings'} 
               onClick={() => handleTabClick('settings')} 
-            />
-          )}
-          {isAdmin && (
-            <NavItem 
-              icon={<UserCircle size={20} className="text-gray-500" />} 
-              label="Quản lý Tài khoản" 
-              active={activeTab === 'users'} 
-              onClick={() => handleTabClick('users')} 
-            />
-          )}
-          {isAdmin && (
-            <NavItem 
-              icon={<Upload size={20} />} 
-              label="Import Hóa Đơn (XML)" 
-              active={activeTab === 'xml'} 
-              onClick={() => handleTabClick('xml')} 
             />
           )}
         </nav>
