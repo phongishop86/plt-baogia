@@ -716,88 +716,137 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
       {/* ==== BIÊN BẢN BÀN GIAO ==== */}
       {(printMode === 'DELIVERY' || printMode === 'ALL_3' || printMode === 'ALL_4') && (
         <div className={`hidden print:block text-[13px] leading-snug font-[Times_New_Roman] ${printMode.startsWith('ALL') ? 'mt-8' : ''}`} style={printMode.startsWith('ALL') ? { pageBreakBefore: 'always' } : {}}>
-          <div className="text-center font-bold mb-2">
-            <h2 className="text-base uppercase">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</h2>
-            <h3 className="text-sm">Độc lập – Tự do – Hạnh phúc</h3>
-            <p className="font-normal italic mt-1">TP Hồ Chí Minh, ngày .... tháng .... năm 202...</p>
+          <div className="flex justify-between items-start mb-6">
+            <div className="font-bold text-center w-1/2">
+              <h2 className="uppercase">CÔNG TY TNHH PHÁT LỘC TECH</h2>
+            </div>
+            <div className="font-bold text-center w-1/2">
+              <h2 className="uppercase">CỘNG HOÀ XÃ HỘI CHỦ NGHĨA VIỆT NAM</h2>
+              <h3 className="font-normal">Độc lập - Tự do - Hạnh phúc</h3>
+            </div>
           </div>
           
-          <div className="text-center mb-4">
-            <h1 className="text-xl font-bold uppercase">BIÊN BẢN BÀN GIAO - NGHIỆM THU THIẾT BỊ/ DỊCH VỤ</h1>
-            <p className="italic font-bold">Số: {docNumber}/BB-BGNTTBDV</p>
-            <p className="italic">Căn cứ báo giá số: {docNumber}</p>
+          <div className="text-center mb-6">
+            <h1 className="text-[17px] font-bold uppercase tracking-wide">BIÊN BẢN BÀN GIAO VÀ NGHIỆM THU THIẾT BỊ</h1>
+            <p className="italic font-bold text-[14px] mt-1">(Theo Báo giá số: {docNumber})</p>
           </div>
 
-          <div className="mb-2 text-justify leading-normal">
-            <p>Hôm nay, ngày .... tháng .... năm 202... tại <strong>{selectedCustomer?.name}</strong> chúng tôi gồm:</p>
-            
-            <div className="mt-1 font-bold uppercase">A. BÊN A (Bên nhận hàng): {selectedCustomer?.name}</div>
-            <p>Địa chỉ: {selectedCustomer?.address}</p>
-            <p>MST: {selectedCustomer?.taxCode}</p>
-            <div className="flex justify-between w-full mt-1">
-              <p>Người đại diện: Ông/Bà ................................................</p>
-              <p className="w-64">Chức vụ: .......................................</p>
-            </div>
-
-            <div className="mt-1 font-bold uppercase">B. BÊN B (Bên giao hàng): CÔNG TY TNHH PHÁT LỘC TECH</div>
-            <p>Địa chỉ: Số 491/1 Trường Chinh, Phường Tân Bình, Thành phố Hồ Chí Minh</p>
-            <p>Điện thoại: 0932 685 794</p>
-            <div className="flex justify-between w-full mt-1">
-              <p>Người đại diện: Ông Nguyễn Thanh Phong</p>
-              <p className="w-64">Chức vụ: Giám đốc</p>
-            </div>
+          <div className="mb-3 text-justify">
+            <p className="indent-4">Căn cứ chấp thuận của {selectedCustomer?.name} về Báo giá số {docNumber} của công ty TNHH Phát Lộc Tech,</p>
+            <p className="indent-4">Hôm nay, ngày......tháng......năm......tại {selectedCustomer?.name}</p>
+            <p className="indent-4">Chúng tôi gồm có:</p>
           </div>
 
-          <div className="font-bold mb-1">1. Đối tượng bàn giao, nghiệm thu:</div>
-          <table className="w-full border-collapse border border-black mb-2 print:table-fixed">
+          <div className="mb-3 pl-4">
+            <p className="font-bold uppercase">BÊN A: {selectedCustomer?.name}</p>
+            <p className="font-bold mt-1">Đại diện bởi:</p>
+            <div className="flex pl-4">
+              <p className="w-1/2">1. Ông/Bà: ........................................</p>
+              <p className="w-1/2">Chức vụ: ........................................</p>
+            </div>
+            <div className="flex pl-4">
+              <p className="w-1/2">2. Ông/Bà: ........................................</p>
+              <p className="w-1/2">Chức vụ: ........................................</p>
+            </div>
+            <p className="pl-4 mt-1"><span className="inline-block w-[60px]">Địa chỉ:</span> {selectedCustomer?.address}</p>
+          </div>
+
+          <div className="mb-3 pl-4">
+            <p className="font-bold uppercase">BÊN B: CÔNG TY TNHH PHÁT LỘC TECH</p>
+            <p className="font-bold mt-1">Đại diện bởi:</p>
+            <div className="flex pl-4">
+              <p className="w-1/2">Ông <strong>NGUYỄN THANH PHONG</strong></p>
+              <p className="w-1/2">Chức vụ: Giám đốc</p>
+            </div>
+            <p className="pl-4 mt-1"><span className="inline-block w-[75px]">Địa chỉ:</span> Số 491/1 Trường Chinh, Phường Tân Bình, Thành phố Hồ Chí Minh</p>
+            <p className="pl-4"><span className="inline-block w-[75px]">Điện thoại:</span> 0932 685 794</p>
+          </div>
+
+          <div className="mb-2 text-justify">
+            <p className="indent-8">Sau khi các thiết bị được kiểm tra, giám định bởi {selectedCustomer?.name}, hai bên cùng tiến hành lập Biên bản giao nhận thiết bị được nêu trong báo giá số {docNumber} ký ngày...tháng...năm....giữa {selectedCustomer?.name} và công ty TNHH Phát Lộc Tech.</p>
+            <p className="indent-8 mt-1">1. Bên B đã bàn giao cho bên A và bên A đã nhận các thiết bị theo đúng yêu cầu kỹ thuật với số lượng, chủng loại được liệt kê dưới đây:</p>
+          </div>
+
+          <table className="w-full border-collapse border border-black mb-3 print:table-fixed text-center">
             <thead>
-              <tr>
-                <th className="border border-black p-1 text-center w-12 print:w-[6%]">STT</th>
-                <th className="border border-black p-1 text-center print:w-[54%]">Tên thiết bị, dịch vụ</th>
-                <th className="border border-black p-1 text-center w-12 print:w-[10%]">ĐVT</th>
-                <th className="border border-black p-1 text-center w-16 print:w-[10%]">Số lượng</th>
-                <th className="border border-black p-1 text-center w-20 print:w-[20%]">Ghi chú</th>
+              <tr className="font-bold">
+                <th className="border border-black p-1 w-[8%]">TT</th>
+                <th className="border border-black p-1 w-[40%] text-left pl-2">Danh mục/loại thiết bị</th>
+                <th className="border border-black p-1 w-[12%]">ĐVT</th>
+                <th className="border border-black p-1 w-[12%]">Số lượng</th>
+                <th className="border border-black p-1 w-[14%]">Xuất xứ</th>
+                <th className="border border-black p-1 w-[14%]">Serial number</th>
               </tr>
             </thead>
             <tbody>
               {selectedItems.map((item, idx) => (
                 <tr key={item.tempId}>
-                  <td className="border border-black p-1 text-center align-top">{idx + 1}</td>
-                  <td className="border border-black p-1 align-top whitespace-pre-wrap">{item.name}</td>
-                  <td className="border border-black p-1 text-center align-top">{item.unit}</td>
-                  <td className="border border-black p-1 text-center align-top">{item.quantity}</td>
-                  <td className="border border-black p-1 text-center align-top">Mới 100%</td>
+                  <td className="border border-black p-1">{idx + 1}</td>
+                  <td className="border border-black p-1 text-left pl-2 whitespace-pre-wrap">{item.name}</td>
+                  <td className="border border-black p-1">{item.unit}</td>
+                  <td className="border border-black p-1">{item.quantity}</td>
+                  <td className="border border-black p-1"></td>
+                  <td className="border border-black p-1"></td>
                 </tr>
               ))}
             </tbody>
           </table>
 
-          <div className="font-bold mb-1">2. Thời gian bàn giao, nghiệm thu:</div>
-          <p className="mb-0">Các bên tiến hành nghiệm thu vào lúc:</p>
-          <p className="mb-0">– Thời gian bắt đầu: ............................................................................................................................................................</p>
-          <p className="mb-2">– Thời gian kết thúc: ............................................................................................................................................................</p>
-
-          <div className="font-bold mb-1">3. Kết quả nghiệm thu:</div>
-          <p className="mb-0">– Số lượng: ..........................................................................................................................................................................</p>
-          <p className="mb-0">– Chất lượng từng loại: ......................................................................................................................................................</p>
-          <p className="mb-2">– Các nội dung khác: ..........................................................................................................................................................</p>
-
-          <div className="font-bold mb-1">4. Kết luận:</div>
-          <p className="text-justify mb-2 leading-tight">
-            Sau khi kết thúc nghiệm thu, các bên đi đến thống nhất bàn giao và thực hiện việc ký tên xác nhận bên dưới.<br/>
-            Biên bản được lập thành 02 bản có giá trị pháp lý như nhau, mỗi bên giữ 01 bản để làm căn cứ thực hiện.
-          </p>
+          <div className="mb-6 text-justify space-y-1">
+            <p className="indent-8">2. Các thiết bị nêu trên đều mới 100%, đúng tiêu chuẩn về quy cách và sản phẩm của nhà sản xuất, đúng với số lượng và chủng loại, xuất xứ hàng hóa ghi trong hợp đồng.</p>
+            <p className="indent-8">3. Hai bên thống nhất bàn giao các thiết bị nói trên theo đúng các điều khoản đã ghi trong hợp đồng (kèm theo phụ lục đặc tính kỹ thuật của thiết bị).</p>
+            <p className="indent-8">4. Biên bản được lập thành 02 bản, có giá trị pháp lý như nhau: 01 bản cho {selectedCustomer?.name} và 01 bản cho công ty TNHH Phát Lộc Tech.</p>
+          </div>
           
-          <div className="flex justify-between text-center font-bold uppercase px-8 pb-6">
+          <div className="flex justify-around text-center mb-12">
             <div>
-              BÊN A<br/>
-              <span className="italic font-normal text-sm capitalize">(Ký và ghi rõ họ tên)</span>
+              <p className="font-bold uppercase">ĐẠI DIỆN BÊN A</p>
+              <p className="italic font-normal text-[13px]">(Ký, ghi rõ họ tên, đóng dấu)</p>
             </div>
             <div>
-              BÊN B<br/>
-              <span className="italic font-normal text-sm capitalize">(Ký và ghi rõ họ tên)</span>
+              <p className="font-bold uppercase">ĐẠI DIỆN BÊN B</p>
+              <p className="italic font-normal text-[13px]">(Ký, ghi rõ họ tên, đóng dấu)</p>
             </div>
           </div>
+
+          <div style={{ pageBreakBefore: 'always' }} />
+
+          <div className="font-bold uppercase mb-6 text-[14px]">
+            <p>PHỤ LỤC</p>
+          </div>
+
+          <div className="text-center mb-6">
+            <h2 className="text-[16px] font-bold uppercase">ĐẶC TÍNH KỸ THUẬT CỦA THIẾT BỊ</h2>
+          </div>
+
+          <table className="w-full border-collapse border border-black mb-4 print:table-fixed">
+            <thead>
+              <tr className="font-bold">
+                <th className="border border-black p-1 text-center w-[10%]">TT</th>
+                <th className="border border-black p-1 text-left pl-2 w-[55%]">Tính năng</th>
+                <th className="border border-black p-1 text-left pl-2 w-[35%]">Yêu cầu đáp ứng</th>
+              </tr>
+            </thead>
+            <tbody>
+              {selectedItems.map((item, idx) => (
+                <tr key={`phuluc-${item.tempId}`}>
+                  <td className="border border-black p-1 text-center">{idx + 1}</td>
+                  <td className="border border-black p-1 text-left pl-2 whitespace-pre-wrap">{item.name}</td>
+                  <td className="border border-black p-1 text-left pl-2">Mới 100%</td>
+                </tr>
+              ))}
+              <tr>
+                <td className="border border-black p-3"></td>
+                <td className="border border-black p-3"></td>
+                <td className="border border-black p-3"></td>
+              </tr>
+              <tr>
+                <td className="border border-black p-3"></td>
+                <td className="border border-black p-3"></td>
+                <td className="border border-black p-3"></td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       )}
 
