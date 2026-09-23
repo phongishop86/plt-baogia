@@ -938,24 +938,24 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
           </div>
 
           <div className="mb-2 leading-snug">
-            <p className="font-bold uppercase">BÊN BÁN (BÊN A)</p>
-            <p><span className="inline-block w-[80px]">Tên đơn vị:</span> <strong>CÔNG TY TNHH PHÁT LỘC TECH</strong></p>
-            <p><span className="inline-block w-[80px]">Mã số thuế:</span> 0319347662</p>
-            <p><span className="inline-block w-[80px]">Địa chỉ:</span> Số 491/1 Trường Chinh, Phường Tân Bình, Thành phố Hồ Chí Minh</p>
-            <div className="flex">
-              <p className="w-1/2"><span className="inline-block w-[80px]">Đại diện:</span> Ông Nguyễn Thanh Phong</p>
-              <p className="w-1/2"><span className="inline-block w-[70px]">Chức vụ:</span> Giám đốc</p>
-            </div>
-          </div>
-
-          <div className="mb-3 leading-snug">
-            <p className="font-bold uppercase">BÊN MUA (BÊN B)</p>
+            <p className="font-bold uppercase">BÊN MUA (BÊN A)</p>
             <p><span className="inline-block w-[80px]">Tên đơn vị:</span> <strong>{selectedCustomer?.name || '.......................................'}</strong></p>
             <p><span className="inline-block w-[80px]">Mã số thuế:</span> {selectedCustomer?.taxCode || '.......................................'}</p>
             <p><span className="inline-block w-[80px]">Địa chỉ:</span> {selectedCustomer?.address || '.......................................'}</p>
             <div className="flex">
               <p className="w-1/2"><span className="inline-block w-[80px]">Đại diện:</span> .......................................</p>
               <p className="w-1/2"><span className="inline-block w-[70px]">Chức vụ:</span> .......................................</p>
+            </div>
+          </div>
+
+          <div className="mb-3 leading-snug">
+            <p className="font-bold uppercase">BÊN BÁN (BÊN B)</p>
+            <p><span className="inline-block w-[80px]">Tên đơn vị:</span> <strong>CÔNG TY TNHH PHÁT LỘC TECH</strong></p>
+            <p><span className="inline-block w-[80px]">Mã số thuế:</span> 0319347662</p>
+            <p><span className="inline-block w-[80px]">Địa chỉ:</span> Số 491/1 Trường Chinh, Phường Tân Bình, Thành phố Hồ Chí Minh</p>
+            <div className="flex">
+              <p className="w-1/2"><span className="inline-block w-[80px]">Đại diện:</span> Ông Nguyễn Thanh Phong</p>
+              <p className="w-1/2"><span className="inline-block w-[70px]">Chức vụ:</span> Giám đốc</p>
             </div>
           </div>
 
@@ -966,7 +966,7 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
           <div className="text-justify space-y-1.5 mb-4 leading-snug">
             <div>
               <p className="font-bold uppercase">ĐIỀU 1. XÁC NHẬN GIAO DỊCH</p>
-              <p>Bên A đã hoàn thành việc cung cấp hàng hóa/dịch vụ cho Bên B theo:</p>
+              <p>Bên B đã hoàn thành việc cung cấp hàng hóa/dịch vụ cho Bên A theo:</p>
               <ul className="list-disc pl-8 space-y-0.5">
                 <li>Hóa đơn số: ..............................................................</li>
                 <li>Ngày hóa đơn: ...........................................................</li>
@@ -974,15 +974,15 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
                 <li>Giá trị thanh toán: <strong>{formatCurrency(calculateSubTotal() + calculateTax())}</strong> đồng.</li>
               </ul>
               <p className="indent-4">(Bằng chữ: <em>{numberToVietnameseWords(calculateSubTotal() + calculateTax())} đồng.</em>)</p>
-              <p>Bên B xác nhận đã nhận đầy đủ hàng hóa/dịch vụ theo thỏa thuận và không có khiếu nại về số lượng, chất lượng tại thời điểm ký biên bản này.</p>
+              <p>Bên A xác nhận đã nhận đầy đủ hàng hóa/dịch vụ theo thỏa thuận và không có khiếu nại về số lượng, chất lượng tại thời điểm ký biên bản này.</p>
             </div>
             
             <div>
               <p className="font-bold uppercase">ĐIỀU 2. THỎA THUẬN THANH TOÁN</p>
               <div className="pl-4 space-y-1">
-                <p>1. Bên A đồng ý cho Bên B thanh toán chậm đối với khoản công nợ nêu tại Điều 1.</p>
-                <p>2. Thời hạn thanh toán: Bên B cam kết thanh toán toàn bộ số tiền còn phải thanh toán cho Bên A trong vòng {delayedPaymentTerms ? <strong>{delayedPaymentTerms}</strong> : '........ ngày kể từ ngày ký biên bản này.'}</p>
-                <p>3. Hình thức thanh toán: Chuyển khoản vào tài khoản của Bên A:</p>
+                <p>1. Bên B đồng ý cho Bên A thanh toán chậm đối với khoản công nợ nêu tại Điều 1.</p>
+                <p>2. Thời hạn thanh toán: Bên A cam kết thanh toán toàn bộ số tiền còn phải thanh toán cho Bên B trong vòng {delayedPaymentTerms ? <strong>{delayedPaymentTerms}</strong> : '........ ngày kể từ ngày ký biên bản này.'}</p>
+                <p>3. Hình thức thanh toán: Chuyển khoản vào tài khoản của Bên B:</p>
                 <ul className="list-disc pl-8 space-y-0.5">
                   <li>Chủ tài khoản: CÔNG TY TNHH PHÁT LỘC TECH</li>
                   {getBankAccounts().map(b => (
@@ -998,9 +998,9 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
             <div>
               <p className="font-bold uppercase">ĐIỀU 3. CAM KẾT THANH TOÁN</p>
               <div className="pl-4 space-y-0.5">
-                <p>1. Bên B xác nhận khoản công nợ nêu trên là khoản nợ hợp pháp, có thật, không có tranh chấp và cam kết thanh toán đầy đủ, đúng thời hạn.</p>
-                <p>2. Trường hợp Bên B không thực hiện thanh toán đúng hạn, Bên A có quyền yêu cầu thanh toán toàn bộ khoản công nợ và thực hiện các biện pháp xử lý theo quy định pháp luật.</p>
-                <p>3. Người ký biên bản này thay mặt Bên B cam kết có đầy đủ thẩm quyền để xác nhận và thực hiện nghĩa vụ thanh toán theo nội dung đã thỏa thuận.</p>
+                <p>1. Bên A xác nhận khoản công nợ nêu trên là khoản nợ hợp pháp, có thật, không có tranh chấp và cam kết thanh toán đầy đủ, đúng thời hạn.</p>
+                <p>2. Trường hợp Bên A không thực hiện thanh toán đúng hạn, Bên B có quyền yêu cầu thanh toán toàn bộ khoản công nợ và thực hiện các biện pháp xử lý theo quy định pháp luật.</p>
+                <p>3. Người ký biên bản này thay mặt Bên A cam kết có đầy đủ thẩm quyền để xác nhận và thực hiện nghĩa vụ thanh toán theo nội dung đã thỏa thuận.</p>
               </div>
             </div>
 
