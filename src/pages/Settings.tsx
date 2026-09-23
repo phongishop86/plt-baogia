@@ -8,6 +8,72 @@ import UsersManagement from './UsersManagement';
 import Templates from './Templates';
 import XMLImport from './XMLImport';
 
+// --- HELPER FUNCTIONS ---
+const exportData = async () => {
+  const customers = await db.customers.toArray();
+  const products = await db.products.toArray();
+  const documents = await db.documents.toArray();
+  const transactions = await db.transactions.toArray();
+  const users = await db.users.toArray();
+  const projects = await db.projects.toArray();
+  const personnel = await db.personnel.toArray();
+  const projectContracts = await db.projectContracts.toArray();
+  const projectUnits = await db.projectUnits.toArray();
+  const projectExpenses = await db.projectExpenses.toArray();
+
+  return {
+    version: 4,
+    date: new Date().toISOString(),
+    data: {
+      customers,
+      products,
+      documents,
+      transactions,
+      users,
+      projects,
+      personnel,
+      projectContracts,
+      projectUnits,
+      projectExpenses
+    }
+  };
+};
+
+const importData = async (backupData: any) => {
+  if (!backupData || !backupData.data) throw new Error('File không đúng định dạng');
+  
+  await db.transaction('rw', 
+    [db.customers, db.products, db.documents, db.transactions, db.users,
+    db.projects, db.personnel, db.projectContracts, db.projectUnits, db.projectExpenses], 
+    async () => {
+      // Clear all
+      await db.customers.clear();
+      await db.products.clear();
+      await db.documents.clear();
+      await db.transactions.clear();
+      await db.users.clear();
+      await db.projects.clear();
+      await db.personnel.clear();
+      await db.projectContracts.clear();
+      await db.projectUnits.clear();
+      await db.projectExpenses.clear();
+
+      // Restore all
+      if (backupData.data.customers?.length) await db.customers.bulkAdd(backupData.data.customers);
+      if (backupData.data.products?.length) await db.products.bulkAdd(backupData.data.products);
+      if (backupData.data.documents?.length) await db.documents.bulkAdd(backupData.data.documents);
+      if (backupData.data.transactions?.length) await db.transactions.bulkAdd(backupData.data.transactions);
+      if (backupData.data.users?.length) await db.users.bulkAdd(backupData.data.users);
+      
+      if (backupData.data.projects?.length) await db.projects.bulkAdd(backupData.data.projects);
+      if (backupData.data.personnel?.length) await db.personnel.bulkAdd(backupData.data.personnel);
+      if (backupData.data.projectContracts?.length) await db.projectContracts.bulkAdd(backupData.data.projectContracts);
+      if (backupData.data.projectUnits?.length) await db.projectUnits.bulkAdd(backupData.data.projectUnits);
+      if (backupData.data.projectExpenses?.length) await db.projectExpenses.bulkAdd(backupData.data.projectExpenses);
+  });
+};
+// ------------------------
+
 export default function Settings() {
   const [activeTab, setActiveTab] = useState<'general' | 'users' | 'templates' | 'xml'>('general');
 
@@ -62,13 +128,22 @@ function GeneralSettings() {
       return;
     }
 
-    if (confirm('CẢNH BÁO NGUY HIỂM: \nBạn có chắc chắn muốn XÓA TOÀN BỘ dữ liệu (Khách hàng, Sản phẩm, Hóa đơn)?\nHành động này KHÔNG THỂ HOÀN TÁC!')) {
+    if (confirm('CẢNH BÁO NGUY HIỂM: \nBạn có chắc chắn muốn XÓA TOÀN BỘ dữ liệu (Khách hàng, Sản phẩm, Hóa đơn, Dự án...)?\nHành động này KHÔNG THỂ HOÀN TÁC!')) {
       const confirmText = prompt('Vui lòng gõ chữ "XOA" để xác nhận:');
       if (confirmText === 'XOA') {
-        await db.customers.clear();
-        await db.products.clear();
-        await db.documents.clear();
-        await db.transactions.clear();
+        await db.transaction('rw', 
+          [db.customers, db.products, db.documents, db.transactions, db.projects, db.personnel, db.projectContracts, db.projectUnits, db.projectExpenses], 
+          async () => {
+            await db.customers.clear();
+            await db.products.clear();
+            await db.documents.clear();
+            await db.transactions.clear();
+            await db.projects.clear();
+            await db.personnel.clear();
+            await db.projectContracts.clear();
+            await db.projectUnits.clear();
+            await db.projectExpenses.clear();
+          });
         alert('Đã xóa toàn bộ dữ liệu thành công!');
         window.location.reload();
       }
@@ -77,24 +152,7 @@ function GeneralSettings() {
 
   const handleBackup = async () => {
     try {
-      const customers = await db.customers.toArray();
-      const products = await db.products.toArray();
-      const documents = await db.documents.toArray();
-      const transactions = await db.transactions.toArray();
-      const users = await db.users.toArray();
-      
-      const backupData = {
-        version: 3,
-        date: new Date().toISOString(),
-        data: {
-          customers,
-          products,
-          documents,
-          transactions,
-          users
-        }
-      };
-
+      const backupData = await exportData();
       const blob = new Blob([JSON.stringify(backupData)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -120,23 +178,7 @@ function GeneralSettings() {
     try {
       const text = await file.text();
       const backupData = JSON.parse(text);
-
-      if (!backupData.data) throw new Error('File không đúng định dạng');
-
-      await db.transaction('rw', db.customers, db.products, db.documents, db.transactions, db.users, async () => {
-        await db.customers.clear();
-        await db.products.clear();
-        await db.documents.clear();
-        await db.transactions.clear();
-        await db.users.clear();
-
-        if (backupData.data.customers?.length) await db.customers.bulkAdd(backupData.data.customers);
-        if (backupData.data.products?.length) await db.products.bulkAdd(backupData.data.products);
-        if (backupData.data.documents?.length) await db.documents.bulkAdd(backupData.data.documents);
-        if (backupData.data.transactions?.length) await db.transactions.bulkAdd(backupData.data.transactions);
-        if (backupData.data.users?.length) await db.users.bulkAdd(backupData.data.users);
-      });
-
+      await importData(backupData);
       alert('Đã phục hồi dữ liệu thành công!');
       window.location.reload();
     } catch (err) {
@@ -158,18 +200,7 @@ function GeneralSettings() {
         if (!fileId) {
           // Lần đầu tải lên
           setSyncStatus('Chưa có bản sao lưu nào. Đang tải dữ liệu máy tính lên Drive...');
-          const customers = await db.customers.toArray();
-          const products = await db.products.toArray();
-          const documents = await db.documents.toArray();
-          const transactions = await db.transactions.toArray();
-          const users = await db.users.toArray();
-          
-          const backupData = {
-            version: 3,
-            date: new Date().toISOString(),
-            data: { customers, products, documents, transactions, users }
-          };
-
+          const backupData = await exportData();
           await uploadBackup(token, null, backupData);
           setSyncStatus('Tải lên Google Drive lần đầu thành công!');
           alert('Đã lưu dữ liệu lên Google Drive thành công!');
@@ -186,18 +217,7 @@ function GeneralSettings() {
             setSyncStatus('Đang tải dữ liệu từ Drive về máy...');
             const backupData = await downloadBackup(token, fileId);
             if (backupData && backupData.data) {
-              await db.transaction('rw', db.customers, db.products, db.documents, db.transactions, db.users, async () => {
-                await db.customers.clear();
-                await db.products.clear();
-                await db.documents.clear();
-                await db.transactions.clear();
-                await db.users.clear();
-                if (backupData.data.customers?.length) await db.customers.bulkAdd(backupData.data.customers);
-                if (backupData.data.products?.length) await db.products.bulkAdd(backupData.data.products);
-                if (backupData.data.documents?.length) await db.documents.bulkAdd(backupData.data.documents);
-                if (backupData.data.transactions?.length) await db.transactions.bulkAdd(backupData.data.transactions);
-                if (backupData.data.users?.length) await db.users.bulkAdd(backupData.data.users);
-              });
+              await importData(backupData);
               setSyncStatus('Phục hồi dữ liệu từ Drive thành công!');
               alert('Đã phục hồi dữ liệu từ Google Drive thành công!');
               window.location.reload();
@@ -205,18 +225,7 @@ function GeneralSettings() {
           } else {
             // Đẩy lên
             setSyncStatus('Đang lưu dữ liệu máy tính lên Drive...');
-            const customers = await db.customers.toArray();
-            const products = await db.products.toArray();
-            const documents = await db.documents.toArray();
-            const transactions = await db.transactions.toArray();
-            const users = await db.users.toArray();
-            
-            const backupData = {
-              version: 3,
-              date: new Date().toISOString(),
-              data: { customers, products, documents, transactions, users }
-            };
-
+            const backupData = await exportData();
             await uploadBackup(token, fileId, backupData);
             setSyncStatus('Lưu dữ liệu lên Google Drive thành công!');
             alert('Đã đồng bộ dữ liệu mới lên Google Drive thành công!');
@@ -313,7 +322,7 @@ function GeneralSettings() {
           <div>
             <h3 className="text-lg font-bold text-red-800">Xóa trắng toàn bộ dữ liệu (Hard Reset)</h3>
             <p className="text-sm text-red-600 mt-1 mb-4">
-              Tính năng này sẽ xóa toàn bộ danh sách Khách hàng, Sản phẩm, Tồn kho và Hóa đơn. 
+              Tính năng này sẽ xóa toàn bộ danh sách Khách hàng, Sản phẩm, Tồn kho, Hóa đơn và Dự án. 
               Sử dụng khi bạn muốn dọn sạch hệ thống để test hoặc cấu hình lại từ đầu.
             </p>
             
