@@ -316,7 +316,15 @@ function App() {
         </header>
         <div className="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-6 print:p-0 print:overflow-visible">
           {activeTab === 'dashboard' && isKetoan && <Dashboard />}
-          {activeTab === 'customers' && isKetoan && <Customers />}
+          {activeTab === 'customers' && isKetoan && (
+            <Customers 
+              onNavigate={(tab) => handleTabClick(tab)}
+              setEditingQuotationId={(id: number) => {
+                setEditingQuotationId(id === -1 ? null : id);
+                handleTabClick('create-quote');
+              }}
+            />
+          )}
           {activeTab === 'products' && (
             <Products 
               onNavigate={(tab) => handleTabClick(tab)} 

@@ -3,7 +3,13 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db, type Customer } from '../db/db';
 import { Plus, X, Pencil, Trash2 } from 'lucide-react';
 
-export default function Customers() {
+export default function Customers({ 
+  onNavigate, 
+  setEditingQuotationId 
+}: { 
+  onNavigate?: (tab: string) => void; 
+  setEditingQuotationId?: (id: number) => void; 
+} = {}) {
   const customers = useLiveQuery(() => db.customers.toArray());
   const [showModal, setShowModal] = useState(false);
   const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>(null);
@@ -326,7 +332,17 @@ export default function Customers() {
               ) : (
                 <div className="space-y-3">
                   {detailModal.transactions.map(d => (
-                    <div key={d.id} className="border border-gray-100 rounded-lg p-3 flex justify-between items-center hover:bg-gray-50">
+                    <div 
+                      key={d.id} 
+                      className={`border border-gray-100 rounded-lg p-3 flex justify-between items-center hover:bg-gray-50 ${d.type === 'QUOTATION' ? 'cursor-pointer hover:border-blue-300' : ''}`}
+                      onDoubleClick={() => {
+                        if (d.type === 'QUOTATION' && onNavigate && setEditingQuotationId && d.id) {
+                          setEditingQuotationId(d.id);
+                          onNavigate('create-quote');
+                        }
+                      }}
+                      title={d.type === 'QUOTATION' ? 'Click đúp để xem/chỉnh sửa báo giá' : ''}
+                    >
                       <div>
                         <p className="text-sm font-bold text-gray-900">{d.docNumber}</p>
                         <p className="text-xs text-gray-500">{new Date(d.date).toLocaleDateString('vi-VN')}</p>
