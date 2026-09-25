@@ -828,13 +828,16 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
               </tr>
             </thead>
             <tbody>
-              {selectedItems.map((item, idx) => (
-                <tr key={`phuluc-${item.tempId}`}>
-                  <td className="border border-black p-1 text-center">{idx + 1}</td>
-                  <td className="border border-black p-1 text-left pl-2 whitespace-pre-wrap">{item.name}</td>
-                  <td className="border border-black p-1 text-left pl-2">Mới 100%</td>
-                </tr>
-              ))}
+              {selectedItems.map((item, idx) => {
+                const isService = ['gói', 'tháng', 'năm', 'dịch vụ', 'lần', 'giờ', 'ngày', 'nốt', 'node', 'domain', 'hosting', 'bản quyền'].some(kw => item.unit?.toLowerCase().includes(kw));
+                return (
+                  <tr key={`phuluc-${item.tempId}`}>
+                    <td className="border border-black p-1 text-center">{idx + 1}</td>
+                    <td className="border border-black p-1 text-left pl-2 whitespace-pre-wrap">{item.name}</td>
+                    <td className="border border-black p-1 text-left pl-2">{isService ? 'Hoàn thành' : 'Mới 100%'}</td>
+                  </tr>
+                );
+              })}
               <tr>
                 <td className="border border-black p-3"></td>
                 <td className="border border-black p-3"></td>
