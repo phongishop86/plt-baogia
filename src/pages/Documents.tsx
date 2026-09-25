@@ -515,6 +515,40 @@ export default function Documents({ setEditingQuotationId, currentUser, mode = '
                 </tr>
               )}
             </tbody>
+            <tfoot className="hidden print:table-footer-group bg-gray-50 border-t-2 border-gray-400 font-bold">
+              {mode === 'DOCUMENTS' && filterType === 'ALL' ? (
+                <>
+                  <tr>
+                    <td colSpan={4} className="px-6 py-2 text-right uppercase tracking-wider text-sm">
+                      Tổng mua vào (Chi phí):
+                    </td>
+                    <td className="px-6 py-2 whitespace-nowrap text-right">
+                      {formatNumber(filteredDocs.filter(d => d.type === 'INPUT_INVOICE' && d.status !== 'CANCELLED').reduce((s, d) => s + (d.total || 0), 0))}
+                    </td>
+                    <td colSpan={2}></td>
+                  </tr>
+                  <tr>
+                    <td colSpan={4} className="px-6 py-2 text-right uppercase tracking-wider text-sm">
+                      Tổng bán ra (Doanh thu):
+                    </td>
+                    <td className="px-6 py-2 whitespace-nowrap text-right">
+                      {formatNumber(filteredDocs.filter(d => d.type === 'OUTPUT_INVOICE' && d.status !== 'CANCELLED').reduce((s, d) => s + (d.total || 0), 0))}
+                    </td>
+                    <td colSpan={2}></td>
+                  </tr>
+                </>
+              ) : (
+                <tr>
+                  <td colSpan={4} className="px-6 py-3 text-right uppercase tracking-wider text-sm">
+                    TỔNG CỘNG:
+                  </td>
+                  <td className="px-6 py-3 whitespace-nowrap text-right">
+                    {formatNumber(filteredDocs.filter(d => d.status !== 'CANCELLED').reduce((sum, doc) => sum + (doc.total || 0), 0))}
+                  </td>
+                  <td colSpan={2}></td>
+                </tr>
+              )}
+            </tfoot>
           </table>
         </div>
 
