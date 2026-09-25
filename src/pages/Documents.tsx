@@ -239,6 +239,8 @@ export default function Documents({ setEditingQuotationId, currentUser, mode = '
     return { receivables, payables };
   }, [filteredDocs]);
 
+  const isBalanceSheet = mode === 'DOCUMENTS' && filterType === 'ALL';
+
   return (
     <div className="space-y-6">
       
@@ -343,51 +345,71 @@ export default function Documents({ setEditingQuotationId, currentUser, mode = '
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 print:border-none print:shadow-none overflow-hidden relative">
         <div className="overflow-x-auto print:overflow-visible">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-gray-200 print:border print:border-black print:divide-black">
+            <thead className="bg-gray-50 print:bg-gray-100">
               <tr>
-                <th className="p-0 border-r border-gray-200">
-                  <div className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 overflow-hidden min-w-[120px]" style={{ resize: 'horizontal' }} onClick={() => handleSort('docNumber')}>
+                <th className="p-0 border-r border-gray-200 print:border-black">
+                  <div className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider print:text-black">
+                    STT
+                  </div>
+                </th>
+                <th className="p-0 border-r border-gray-200 print:border-black">
+                  <div className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 overflow-hidden min-w-[120px] print:text-black" style={{ resize: 'horizontal' }} onClick={() => handleSort('docNumber')}>
                     <div className="flex items-center space-x-1">
                       <span>Số HĐ/CT</span>
                       {sortConfig?.key === 'docNumber' ? (sortConfig.direction === 'asc' ? <ChevronUp size={14}/> : <ChevronDown size={14}/>) : null}
                     </div>
                   </div>
                 </th>
-                <th className="p-0 border-r border-gray-200">
-                  <div className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 overflow-hidden min-w-[120px]" style={{ resize: 'horizontal' }} onClick={() => handleSort('type')}>
+                <th className="p-0 border-r border-gray-200 print:border-black">
+                  <div className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 overflow-hidden min-w-[120px] print:text-black" style={{ resize: 'horizontal' }} onClick={() => handleSort('type')}>
                     <div className="flex items-center space-x-1">
                       <span>Loại</span>
                       {sortConfig?.key === 'type' ? (sortConfig.direction === 'asc' ? <ChevronUp size={14}/> : <ChevronDown size={14}/>) : null}
                     </div>
                   </div>
                 </th>
-                <th className="p-0 border-r border-gray-200">
-                  <div className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 overflow-hidden min-w-[120px]" style={{ resize: 'horizontal' }} onClick={() => handleSort('date')}>
+                <th className="p-0 border-r border-gray-200 print:border-black">
+                  <div className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 overflow-hidden min-w-[120px] print:text-black" style={{ resize: 'horizontal' }} onClick={() => handleSort('date')}>
                     <div className="flex items-center space-x-1">
                       <span>Ngày</span>
                       {sortConfig?.key === 'date' ? (sortConfig.direction === 'asc' ? <ChevronUp size={14}/> : <ChevronDown size={14}/>) : null}
                     </div>
                   </div>
                 </th>
-                <th className="p-0 border-r border-gray-200">
-                  <div className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 overflow-hidden min-w-[200px]" style={{ resize: 'horizontal' }} onClick={() => handleSort('customer')}>
+                <th className="p-0 border-r border-gray-200 print:border-black">
+                  <div className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 overflow-hidden min-w-[200px] print:text-black" style={{ resize: 'horizontal' }} onClick={() => handleSort('customer')}>
                     <div className="flex items-center space-x-1">
                       <span>Đối tác</span>
                       {sortConfig?.key === 'customer' ? (sortConfig.direction === 'asc' ? <ChevronUp size={14}/> : <ChevronDown size={14}/>) : null}
                     </div>
                   </div>
                 </th>
-                <th className="p-0 border-r border-gray-200">
-                  <div className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 overflow-hidden min-w-[140px]" style={{ resize: 'horizontal' }} onClick={() => handleSort('total')}>
-                    <div className="flex items-center justify-end space-x-1">
-                      <span>Tổng tiền</span>
-                      {sortConfig?.key === 'total' ? (sortConfig.direction === 'asc' ? <ChevronUp size={14}/> : <ChevronDown size={14}/>) : null}
+                {isBalanceSheet ? (
+                  <>
+                    <th className="p-0 border-r border-gray-200 print:border-black">
+                      <div className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider print:text-black">
+                        Mua vào (Chi phí)
+                      </div>
+                    </th>
+                    <th className="p-0 border-r border-gray-200 print:border-black">
+                      <div className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider print:text-black">
+                        Bán ra (Doanh thu)
+                      </div>
+                    </th>
+                  </>
+                ) : (
+                  <th className="p-0 border-r border-gray-200 print:border-black">
+                    <div className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 overflow-hidden min-w-[140px] print:text-black" style={{ resize: 'horizontal' }} onClick={() => handleSort('total')}>
+                      <div className="flex items-center justify-end space-x-1">
+                        <span>Tổng tiền</span>
+                        {sortConfig?.key === 'total' ? (sortConfig.direction === 'asc' ? <ChevronUp size={14}/> : <ChevronDown size={14}/>) : null}
+                      </div>
                     </div>
-                  </div>
-                </th>
-                <th className="p-0 border-r border-gray-200">
-                  <div className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 overflow-hidden min-w-[140px]" style={{ resize: 'horizontal' }} onClick={() => handleSort('status')}>
+                  </th>
+                )}
+                <th className="p-0 border-r border-gray-200 print:border-black print:hidden">
+                  <div className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 overflow-hidden min-w-[140px] print:text-black" style={{ resize: 'horizontal' }} onClick={() => handleSort('status')}>
                     <div className="flex items-center justify-center space-x-1">
                       <span>Trạng thái</span>
                       {sortConfig?.key === 'status' ? (sortConfig.direction === 'asc' ? <ChevronUp size={14}/> : <ChevronDown size={14}/>) : null}
@@ -397,11 +419,12 @@ export default function Documents({ setEditingQuotationId, currentUser, mode = '
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[120px] print:hidden">Hành động</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredDocs.map((doc) => (
+
+            <tbody className="bg-white divide-y divide-gray-200 print:divide-black">
+              {filteredDocs.map((doc, idx) => (
                 <tr 
                   key={doc.id} 
-                  className={`hover:bg-gray-50 cursor-pointer ${doc.status === 'CANCELLED' ? 'print:hidden' : ''}`}
+                  className={`hover:bg-gray-50 cursor-pointer print:hover:bg-transparent ${doc.status === 'CANCELLED' ? 'print:hidden' : ''}`}
                   onClick={() => {
                     if (doc.type === 'QUOTATION' && setEditingQuotationId) {
                       setEditingQuotationId(doc.id!);
@@ -410,16 +433,30 @@ export default function Documents({ setEditingQuotationId, currentUser, mode = '
                     }
                   }}
                 >
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 border-r border-gray-100">{doc.docNumber}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-100">
-                    <span className={`px-2 py-1 text-xs rounded-full ${doc.type === 'INPUT_INVOICE' ? 'bg-blue-100 text-blue-800' : doc.type === 'OUTPUT_INVOICE' ? 'bg-green-100 text-green-800' : 'bg-purple-100 text-purple-800'}`}>
+                  <td className="px-2 py-4 whitespace-nowrap text-sm text-center text-gray-500 print:text-black border-r border-gray-200 print:border-black">
+                    {idx + 1}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 print:text-black border-r border-gray-200 print:border-black">{doc.docNumber}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 print:text-black border-r border-gray-200 print:border-black">
+                    <span className={`px-2 py-1 text-xs rounded-full print:bg-transparent print:p-0 ${doc.type === 'INPUT_INVOICE' ? 'bg-blue-100 text-blue-800' : doc.type === 'OUTPUT_INVOICE' ? 'bg-green-100 text-green-800' : 'bg-purple-100 text-purple-800'}`}>
                       {doc.type === 'INPUT_INVOICE' ? 'Mua vào' : doc.type === 'OUTPUT_INVOICE' ? 'Bán ra' : 'Báo giá'}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 border-r border-gray-100">{new Date(doc.date).toLocaleDateString('vi-VN')}</td>
-                  <td className="px-6 py-4 text-sm text-gray-900 whitespace-normal break-words border-r border-gray-100">{doc.customer?.name}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right border-r border-gray-100">{formatNumber(doc.total)}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-center" onClick={(e) => e.stopPropagation()}>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 print:text-black border-r border-gray-200 print:border-black">{new Date(doc.date).toLocaleDateString('vi-VN')}</td>
+                  <td className="px-6 py-4 text-sm text-gray-900 print:text-black whitespace-normal break-words border-r border-gray-200 print:border-black">{doc.customer?.name}</td>
+                  {isBalanceSheet ? (
+                    <>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-700 print:text-black text-right border-r border-gray-200 print:border-black">
+                        {doc.type === 'INPUT_INVOICE' ? formatNumber(doc.total) : ''}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-700 print:text-black text-right border-r border-gray-200 print:border-black">
+                        {doc.type === 'OUTPUT_INVOICE' ? formatNumber(doc.total) : ''}
+                      </td>
+                    </>
+                  ) : (
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 print:text-black text-right border-r border-gray-200 print:border-black">{formatNumber(doc.total)}</td>
+                  )}
+                  <td className="px-6 py-4 whitespace-nowrap text-center print:hidden" onClick={(e) => e.stopPropagation()}>
                     {doc.type === 'QUOTATION' ? (
                       <select 
                         value={doc.status || 'DRAFT'}
@@ -511,41 +548,57 @@ export default function Documents({ setEditingQuotationId, currentUser, mode = '
               ))}
               {filteredDocs.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-6 py-8 text-center text-sm text-gray-500">Không tìm thấy chứng từ nào khớp với bộ lọc</td>
+                  <td colSpan={10} className="px-6 py-10 text-center text-sm text-gray-500">Không tìm thấy chứng từ nào khớp với bộ lọc</td>
                 </tr>
               )}
             </tbody>
-            <tfoot className="hidden print:table-footer-group bg-gray-50 border-t-2 border-gray-400 font-bold">
-              {mode === 'DOCUMENTS' && filterType === 'ALL' ? (
+
+            <tfoot className="hidden print:table-footer-group bg-gray-50 print:bg-gray-100 border-t-2 border-gray-400 print:border-black font-bold">
+              {isBalanceSheet ? (
                 <>
-                  <tr>
-                    <td colSpan={4} className="px-6 py-2 text-right uppercase tracking-wider text-sm">
-                      Tổng mua vào (Chi phí):
-                    </td>
-                    <td className="px-6 py-2 whitespace-nowrap text-right">
-                      {formatNumber(filteredDocs.filter(d => d.type === 'INPUT_INVOICE' && d.status !== 'CANCELLED').reduce((s, d) => s + (d.total || 0), 0))}
-                    </td>
-                    <td colSpan={2}></td>
-                  </tr>
-                  <tr>
-                    <td colSpan={4} className="px-6 py-2 text-right uppercase tracking-wider text-sm">
-                      Tổng bán ra (Doanh thu):
-                    </td>
-                    <td className="px-6 py-2 whitespace-nowrap text-right">
-                      {formatNumber(filteredDocs.filter(d => d.type === 'OUTPUT_INVOICE' && d.status !== 'CANCELLED').reduce((s, d) => s + (d.total || 0), 0))}
-                    </td>
-                    <td colSpan={2}></td>
-                  </tr>
+                  {(() => {
+                    const totalMuaVao = filteredDocs.filter(d => d.type === 'INPUT_INVOICE' && d.status !== 'CANCELLED').reduce((s, d) => s + (d.total || 0), 0);
+                    const totalBanRa = filteredDocs.filter(d => d.type === 'OUTPUT_INVOICE' && d.status !== 'CANCELLED').reduce((s, d) => s + (d.total || 0), 0);
+                    const balance = totalBanRa - totalMuaVao;
+                    return (
+                      <>
+                        <tr>
+                          <td colSpan={5} className="px-6 py-2 text-right uppercase tracking-wider text-sm border-r border-gray-200 print:border-black">
+                            TỔNG CỘNG TRONG KỲ:
+                          </td>
+                          <td className="px-6 py-2 whitespace-nowrap text-right text-blue-700 print:text-black border-r border-gray-200 print:border-black">
+                            {formatNumber(totalMuaVao)}
+                          </td>
+                          <td className="px-6 py-2 whitespace-nowrap text-right text-green-700 print:text-black border-r border-gray-200 print:border-black">
+                            {formatNumber(totalBanRa)}
+                          </td>
+                          <td className="print:hidden"></td>
+                          <td className="print:hidden"></td>
+                        </tr>
+                        <tr>
+                          <td colSpan={5} className="px-6 py-2 text-right uppercase tracking-wider text-sm border-r border-gray-200 print:border-black">
+                            SỐ DƯ CUỐI KỲ (Bán ra - Mua vào):
+                          </td>
+                          <td colSpan={2} className={`px-6 py-2 whitespace-nowrap text-center border-r border-gray-200 print:border-black ${balance >= 0 ? 'text-green-700' : 'text-red-700'} print:text-black`}>
+                            {formatNumber(balance)}
+                          </td>
+                          <td className="print:hidden"></td>
+                          <td className="print:hidden"></td>
+                        </tr>
+                      </>
+                    );
+                  })()}
                 </>
               ) : (
                 <tr>
-                  <td colSpan={4} className="px-6 py-3 text-right uppercase tracking-wider text-sm">
+                  <td colSpan={5} className="px-6 py-3 text-right uppercase tracking-wider text-sm border-r border-gray-200 print:border-black">
                     TỔNG CỘNG:
                   </td>
-                  <td className="px-6 py-3 whitespace-nowrap text-right">
+                  <td className="px-6 py-3 whitespace-nowrap text-right border-r border-gray-200 print:border-black">
                     {formatNumber(filteredDocs.filter(d => d.status !== 'CANCELLED').reduce((sum, doc) => sum + (doc.total || 0), 0))}
                   </td>
-                  <td colSpan={2}></td>
+                  <td className="print:hidden"></td>
+                  <td className="print:hidden"></td>
                 </tr>
               )}
             </tfoot>
