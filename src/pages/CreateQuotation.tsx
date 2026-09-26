@@ -801,11 +801,11 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
           <div className="flex justify-around text-center mb-12">
             <div>
               <p className="font-bold uppercase">ĐẠI DIỆN BÊN A</p>
-              <p className="italic font-normal text-[13px]">(Ký, ghi rõ họ tên, đóng dấu)</p>
+              <p className="italic font-normal text-[13px]">(Ký, ghi rõ họ tên)</p>
             </div>
             <div>
               <p className="font-bold uppercase">ĐẠI DIỆN BÊN B</p>
-              <p className="italic font-normal text-[13px]">(Ký, ghi rõ họ tên, đóng dấu)</p>
+              <p className="italic font-normal text-[13px]">(Ký, ghi rõ họ tên)</p>
             </div>
           </div>
 
