@@ -243,6 +243,16 @@ export default function Documents({ setEditingQuotationId, currentUser, mode = '
 
   return (
     <div className="space-y-6">
+      <style>
+        {`
+          @media print {
+            @page { size: landscape; margin: 10mm; }
+            table { font-size: 11px; }
+            th, td { padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
+            th > div { min-width: 0 !important; }
+          }
+        `}
+      </style>
       
       {/* Filters and Stats */}
       <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
