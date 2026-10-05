@@ -338,6 +338,24 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-6 print:shadow-none print:border-none print:p-0">
+      <style>
+        {`
+          @media print {
+            @page { size: A4 portrait; margin: 10mm 15mm; }
+            html, body { 
+              font-size: 13px !important;
+              zoom: 0.95;
+            }
+            .print\\:p-0 {
+              padding: 0 !important;
+            }
+            * {
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+          }
+        `}
+      </style>
       
       {/* ==== BÁO GIÁ VÀ GIAO DIỆN CHÍNH ==== */}
       <div className={printMode === 'DELIVERY' || printMode === 'PAYMENT' || printMode === 'DELAYED_PAYMENT' ? 'print:hidden space-y-6' : 'space-y-6'}>
@@ -860,7 +878,7 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
               <h2 className="text-base uppercase">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</h2>
               <h3 className="text-sm">Độc lập – Tự do – Hạnh phúc</h3>
               <p className="font-normal">-----oOo-----</p>
-              <p className="font-normal italic mt-1">TP Hồ Chí Minh, ngày .... tháng .... năm 202...</p>
+              <p className="font-normal italic mt-1">TP Hồ Chí Minh, ngày .... tháng .... năm ......</p>
             </div>
           </div>
 
@@ -932,7 +950,7 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
           </div>
 
           <div className="italic text-center mb-4">
-            Hôm nay, ngày ...... tháng ...... năm 202..., tại trụ sở {selectedCustomer?.name || '.......................................'}, {selectedCustomer?.address || '.......................................'}, chúng tôi gồm:
+            Hôm nay, ngày ...... tháng ...... năm ......, tại trụ sở {selectedCustomer?.name || '.......................................'}, {selectedCustomer?.address || '.......................................'}, chúng tôi gồm:
           </div>
 
           <div className="mb-2 leading-snug">
