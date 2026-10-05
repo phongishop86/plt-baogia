@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FileText, Users, Box, LayoutDashboard, FilePlus, Settings as SettingsIcon, Wallet, Menu, X, LogOut, UserCircle, CloudUpload, AlertCircle, Search, ArrowLeft, Briefcase, Calculator, Folder } from 'lucide-react';
+import { FileText, Users, Box, LayoutDashboard, FilePlus, Settings as SettingsIcon, Wallet, Menu, X, LogOut, UserCircle, CloudUpload, AlertCircle, Search, ArrowLeft, Briefcase, Calculator, Folder, ChevronDown, Wrench, CheckSquare, FileCheck } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { findBackupFile, uploadBackup, DRIVE_SCOPE } from './utils/googleDrive';
 import { db } from './db/db';
@@ -19,6 +19,8 @@ import PersonnelContracts from './pages/PersonnelContracts';
 import Templates from './pages/Templates';
 import PriceCalculator from './pages/PriceCalculator';
 import LegalDocs from './pages/LegalDocs';
+import BankReconciliation from './pages/BankReconciliation';
+import InvoiceReconciliation from './pages/InvoiceReconciliation';
 import { type User } from './db/db';
 
 function App() {
@@ -88,7 +90,8 @@ function App() {
     }
   });
 
-  const [activeTab, setActiveTab] = useState('products'); // Mặc định mở tab Sản phẩm (an toàn nhất cho VIEWER)
+  const [activeTab, setActiveTab] = useState('products');
+  const [isToolsOpen, setIsToolsOpen] = useState(false); // Mặc định mở tab Sản phẩm (an toàn nhất cho VIEWER)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [prefilledProducts, setPrefilledProducts] = useState<number[]>([]);
   const [editingQuotationId, setEditingQuotationId] = useState<number | null>(null);
@@ -223,18 +226,41 @@ function App() {
               onClick={() => handleTabClick('fund')} 
             />
           )}
-          <NavItem 
-            icon={<Search size={20} className="text-orange-500" />} 
-            label="Tìm Nguồn Hàng" 
-            active={activeTab === 'sourcing'} 
-            onClick={() => handleTabClick('sourcing')} 
-          />
-          <NavItem 
-            icon={<Calculator size={20} className="text-emerald-500" />} 
-            label="Công cụ tính giá" 
-            active={activeTab === 'pricing'} 
-            onClick={() => handleTabClick('pricing')} 
-          />
+          <NavGroup 
+            icon={<Wrench size={20} className="text-amber-600" />} 
+            label="Công cụ" 
+            isOpen={isToolsOpen} 
+            onToggle={() => setIsToolsOpen(!isToolsOpen)}
+          >
+            <NavItem 
+              icon={<Search size={20} className="text-orange-500" />} 
+              label="Tìm Nguồn Hàng" 
+              active={activeTab === 'sourcing'} 
+              onClick={() => handleTabClick('sourcing')} 
+            />
+            <NavItem 
+              icon={<Calculator size={20} className="text-emerald-500" />} 
+              label="Công cụ tính giá" 
+              active={activeTab === 'pricing'} 
+              onClick={() => handleTabClick('pricing')} 
+            />
+            {isKetoan && (
+              <>
+                <NavItem 
+                  icon={<CheckSquare size={20} className="text-blue-500" />} 
+                  label="Chấm sao kê" 
+                  active={activeTab === 'bank-reconciliation'} 
+                  onClick={() => handleTabClick('bank-reconciliation')} 
+                />
+                <NavItem 
+                  icon={<FileCheck size={20} className="text-purple-500" />} 
+                  label="Chấm hoá đơn" 
+                  active={activeTab === 'invoice-reconciliation'} 
+                  onClick={() => handleTabClick('invoice-reconciliation')} 
+                />
+              </>
+            )}
+          </NavGroup>
           
           {isAdmin && <div className="my-4 border-t border-gray-200 mx-2"></div>}
           
@@ -294,6 +320,8 @@ function App() {
               activeTab === 'documents' ? 'Quản lý Hồ sơ Chứng từ' :
               activeTab === 'fund' ? 'Quản lý Quỹ & Tạm ứng' :
               activeTab === 'pricing' ? 'Công cụ tính giá' :
+                activeTab === 'bank-reconciliation' ? 'Chấm sao kê (Đối soát ngân hàng)' :
+                activeTab === 'invoice-reconciliation' ? 'Chấm hoá đơn' :
               activeTab === 'settings' ? 'Cài đặt Hệ thống' :
               activeTab === 'templates' ? 'Quản lý Biểu mẫu (Templates)' :
               activeTab === 'legal-docs' ? 'Hồ sơ pháp lý' :
@@ -367,6 +395,8 @@ function App() {
           )}
           {activeTab === 'sourcing' && <Sourcing />}
           {activeTab === 'pricing' && <PriceCalculator />}
+        {activeTab === 'bank-reconciliation' && <BankReconciliation />}
+        {activeTab === 'invoice-reconciliation' && <InvoiceReconciliation />}
           {activeTab === 'settings' && isAdmin && <Settings />}
           {activeTab === 'templates' && isAdmin && <Templates />}
           {activeTab === 'legal-docs' && <LegalDocs currentUser={currentUser} />}
@@ -440,6 +470,28 @@ function App() {
             <ArrowLeft size={14} strokeWidth={3} />
           </div>
         </button>
+      )}
+    </div>
+  );
+}
+
+function NavGroup({ icon, label, children, isOpen, onToggle }: { icon: React.ReactNode, label: string, children: React.ReactNode, isOpen: boolean, onToggle: () => void }) {
+  return (
+    <div className="space-y-1">
+      <button
+        onClick={onToggle}
+        className="w-full flex items-center justify-between px-3 py-2.5 rounded-md transition-colors text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+      >
+        <div className="flex items-center space-x-3">
+          <div className="shrink-0">{icon}</div>
+          <span className="truncate">{label}</span>
+        </div>
+        <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+      {isOpen && (
+        <div className="pl-6 space-y-1">
+          {children}
+        </div>
       )}
     </div>
   );
