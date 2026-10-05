@@ -294,17 +294,12 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
   const getBankAccounts = () => {
     const custName = selectedCustomer?.name?.toUpperCase() || '';
     const isVCB = custName.includes('NGOẠI THƯƠNG') || custName.includes('VIETCOMBANK') || custName.includes('VCB');
-    const isVietin = custName.includes('CÔNG THƯƠNG') || custName.includes('VIETINBANK') || custName.includes('CTG');
-
+    
     const vcb = { stt: 'STK', num: '1071395333', name: 'Ngân hàng TMCP Ngoại Thương Việt Nam (Vietcombank) - CN Long An', short: 'Vietcombank Long An' };
     const vietin = { stt: 'STK', num: '115003041055', name: 'Ngân hàng TMCP Công Thương Việt Nam - CN Long An', short: 'VietinBank Long An' };
 
     if (isVCB) return [{ ...vcb, stt: 'STK' }];
-    if (isVietin) return [{ ...vietin, stt: 'STK' }];
-    return [
-      { ...vietin, stt: 'STK 1' },
-      { ...vcb, stt: 'STK 2' }
-    ];
+    return [{ ...vietin, stt: 'STK' }];
   };
   const handleSendEmail = (type: 'QUOTATION' | 'FULL') => {
     if (!selectedCustomerId) {
