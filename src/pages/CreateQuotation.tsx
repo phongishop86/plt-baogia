@@ -746,7 +746,7 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
 
           <div className="mb-3 text-justify">
             <p className="indent-4">Căn cứ chấp thuận của {selectedCustomer?.name} về Báo giá số {docNumber} của công ty TNHH Phát Lộc Tech,</p>
-            <p className="indent-4">Hôm nay, ngày......tháng......năm......tại {selectedCustomer?.name}</p>
+            <p className="indent-4">Hôm nay, ngày ......... tháng ......... năm ......... tại {selectedCustomer?.name}</p>
             <p className="indent-4">Chúng tôi gồm có:</p>
           </div>
 
@@ -776,7 +776,7 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
           </div>
 
           <div className="mb-2 text-justify">
-            <p className="indent-8">Sau khi các thiết bị được kiểm tra, giám định bởi {selectedCustomer?.name}, hai bên cùng tiến hành lập Biên bản giao nhận thiết bị được nêu trong báo giá số {docNumber} ký ngày...tháng...năm....giữa {selectedCustomer?.name} và công ty TNHH Phát Lộc Tech.</p>
+            <p className="indent-8">Sau khi các thiết bị được kiểm tra, giám định bởi {selectedCustomer?.name}, hai bên cùng tiến hành lập Biên bản giao nhận thiết bị được nêu trong báo giá số {docNumber} ký ngày ......... tháng ......... năm ......... giữa {selectedCustomer?.name} và công ty TNHH Phát Lộc Tech.</p>
             <p className="indent-8 mt-1">1. Bên B đã bàn giao cho bên A và bên A đã nhận các thiết bị theo đúng yêu cầu kỹ thuật với số lượng, chủng loại được liệt kê dưới đây:</p>
           </div>
 
@@ -878,7 +878,7 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
               <h2 className="text-base uppercase">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</h2>
               <h3 className="text-sm">Độc lập – Tự do – Hạnh phúc</h3>
               <p className="font-normal">-----oOo-----</p>
-              <p className="font-normal italic mt-1">TP Hồ Chí Minh, ngày .... tháng .... năm ......</p>
+              <p className="font-normal italic mt-1">TP Hồ Chí Minh, ngày ......... tháng ......... năm .........</p>
             </div>
           </div>
 
@@ -950,7 +950,7 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
           </div>
 
           <div className="italic text-center mb-4">
-            Hôm nay, ngày ...... tháng ...... năm ......, tại trụ sở {selectedCustomer?.name || '.......................................'}, {selectedCustomer?.address || '.......................................'}, chúng tôi gồm:
+            Hôm nay, ngày ......... tháng ......... năm ........., tại trụ sở {selectedCustomer?.name || '.......................................'}, {selectedCustomer?.address || '.......................................'}, chúng tôi gồm:
           </div>
 
           <div className="mb-2 leading-snug">
