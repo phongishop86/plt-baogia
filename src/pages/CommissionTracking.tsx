@@ -21,7 +21,8 @@ export default function CommissionTracking() {
     recipientName: '',
     bankAccount: '',
     percentage: 0,
-    notes: ''
+    notes: '',
+    paymentMethod: ''
   });
 
   const syncOrders = async () => {
@@ -44,6 +45,7 @@ export default function CommissionTracking() {
             bankAccount: '',
             percentage: 0,
             isHidden: false,
+            paymentMethod: '',
             createdAt: new Date()
           });
         }
@@ -98,7 +100,8 @@ export default function CommissionTracking() {
         recipientName: '',
         bankAccount: '',
         percentage: 0,
-        notes: ''
+        notes: '',
+        paymentMethod: ''
       });
     }
     setIsModalOpen(true);
@@ -160,6 +163,16 @@ export default function CommissionTracking() {
     if (window.confirm('Bạn có chắc muốn xoá mục này khỏi danh sách theo dõi?')) {
       // Instead of hard delete, we hide it so it doesn't get synced again
       await db.commissions.update(id, { isHidden: true });
+    }
+  };
+
+  
+  const formatPayment = (method?: string) => {
+    switch (method) {
+      case 'TIEN_MAT': return 'Tiền mặt';
+      case 'CHUYEN_KHOAN': return 'Chuyển khoản';
+      case 'CAN_TRU': return 'Cấn trừ công nợ';
+      default: return <span className="text-gray-400 italic">Chưa chọn</span>;
     }
   };
 
@@ -226,6 +239,7 @@ export default function CommissionTracking() {
                 <th className="px-4 py-3 text-right whitespace-nowrap">Tiền Hoa Hồng</th>
                 <th className="px-4 py-3 min-w-[150px]">Người Nhận</th>
                 <th className="px-4 py-3 min-w-[120px]">Số TK</th>
+                <th className="px-4 py-3 whitespace-nowrap">Hình thức TT</th>
                 <th className="px-4 py-3 text-center w-20">Thao Tác</th>
               </tr>
             </thead>
@@ -247,6 +261,7 @@ export default function CommissionTracking() {
                     <td className="px-4 py-3 text-right font-medium text-green-600">{new Intl.NumberFormat('vi-VN').format(item.commissionAmount || 0)}</td>
                     <td className="px-4 py-3">{item.recipientName || <span className="text-gray-400 italic">Chưa cập nhật</span>}</td>
                     <td className="px-4 py-3">{item.bankAccount || <span className="text-gray-400 italic">Chưa cập nhật</span>}</td>
+                    <td className="px-4 py-3 text-gray-700">{formatPayment(item.paymentMethod)}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-center space-x-2">
                         <button onClick={() => handleOpenModal(item)} className="p-1 text-blue-600 hover:bg-blue-50 rounded">
@@ -341,7 +356,20 @@ export default function CommissionTracking() {
                     className="w-full p-2 border rounded-md"
                   />
                 </div>
-                <div>
+                                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Hình Thức Thanh Toán</label>
+                  <select
+                    value={formData.paymentMethod || ''}
+                    onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
+                    className="w-full p-2 border rounded-md bg-white"
+                  >
+                    <option value="">-- Chọn hình thức --</option>
+                    <option value="TIEN_MAT">Tiền mặt</option>
+                    <option value="CHUYEN_KHOAN">Chuyển khoản</option>
+                    <option value="CAN_TRU">Cấn trừ công nợ</option>
+                  </select>
+                </div>
+<div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Số Tài Khoản</label>
                   <input
                     type="text"

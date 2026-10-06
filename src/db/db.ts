@@ -183,6 +183,7 @@ export interface LegalDoc {
 export interface Commission {
   documentId?: number;
   isHidden?: boolean;
+  paymentMethod?: string;
   id?: number;
   invoiceDate: Date;
   company: string;
