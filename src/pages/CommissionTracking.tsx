@@ -1,11 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, type Commission } from '../db/db';
-import { Plus, Edit2, Trash2, Search,  } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, RefreshCw } from 'lucide-react';
 
 export default function CommissionTracking() {
   const commissions = useLiveQuery(() => db.commissions.toArray());
+  const documents = useLiveQuery(() => db.documents.where('type').equals('QUOTATION').toArray());
+  const customers = useLiveQuery(() => db.customers.toArray());
+
   const [searchTerm, setSearchTerm] = useState('');
+  const [isSyncing, setIsSyncing] = useState(false);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -20,11 +24,60 @@ export default function CommissionTracking() {
     notes: ''
   });
 
-  const filteredData = commissions?.filter(c => 
+  const syncOrders = async () => {
+    if (!documents || !customers || !commissions) return;
+    setIsSyncing(true);
+    try {
+      const existingDocIds = new Set(commissions.filter(c => c.documentId).map(c => c.documentId));
+      
+      const newCommissions: Commission[] = [];
+      for (const doc of documents) {
+        if (!existingDocIds.has(doc.id!)) {
+          const customer = customers.find(c => c.id === doc.customerId);
+          newCommissions.push({
+            documentId: doc.id,
+            invoiceDate: doc.date,
+            company: customer ? customer.name : 'Khách hàng lẻ',
+            invoiceAmount: doc.total || 0,
+            commissionAmount: 0,
+            recipientName: '',
+            bankAccount: '',
+            percentage: 0,
+            isHidden: false,
+            createdAt: new Date()
+          });
+        }
+      }
+      
+      if (newCommissions.length > 0) {
+        await db.commissions.bulkAdd(newCommissions);
+      }
+    } catch (error) {
+      console.error("Lỗi khi đồng bộ đơn hàng:", error);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  // Auto sync on mount
+  useEffect(() => {
+    if (documents && customers && commissions) {
+      // Small timeout to prevent blocking render
+      const timer = setTimeout(() => {
+        syncOrders();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [documents?.length, customers?.length]); // Run when these are first loaded
+
+  // Filter out hidden (deleted) commissions and apply search
+  const visibleCommissions = commissions?.filter(c => !c.isHidden) || [];
+  
+  const filteredData = visibleCommissions.filter(c => 
     c.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.recipientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.bankAccount.includes(searchTerm)
-  ) || [];
+    (c.recipientName && c.recipientName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (c.bankAccount && c.bankAccount.includes(searchTerm))
+  );
 
   // Sort by date descending
   filteredData.sort((a, b) => new Date(b.invoiceDate).getTime() - new Date(a.invoiceDate).getTime());
@@ -78,8 +131,8 @@ export default function CommissionTracking() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.company || !formData.recipientName) {
-      alert('Vui lòng điền Đơn vị và Người nhận!');
+    if (!formData.company) {
+      alert('Vui lòng điền Đơn vị!');
       return;
     }
 
@@ -87,7 +140,8 @@ export default function CommissionTracking() {
       const dataToSave = {
         ...formData,
         invoiceDate: new Date(formData.invoiceDate!),
-        updatedAt: new Date()
+        updatedAt: new Date(),
+        isHidden: false
       } as Commission;
 
       if (editingId) {
@@ -103,25 +157,36 @@ export default function CommissionTracking() {
   };
 
   const handleDelete = async (id: number) => {
-    if (window.confirm('Bạn có chắc muốn xoá mục này?')) {
-      await db.commissions.delete(id);
+    if (window.confirm('Bạn có chắc muốn xoá mục này khỏi danh sách theo dõi?')) {
+      // Instead of hard delete, we hide it so it doesn't get synced again
+      await db.commissions.update(id, { isHidden: true });
     }
   };
 
-  const totalInvoice = filteredData.reduce((acc, curr) => acc + curr.invoiceAmount, 0);
-  const totalCommission = filteredData.reduce((acc, curr) => acc + curr.commissionAmount, 0);
+  const totalInvoice = filteredData.reduce((acc, curr) => acc + (curr.invoiceAmount || 0), 0);
+  const totalCommission = filteredData.reduce((acc, curr) => acc + (curr.commissionAmount || 0), 0);
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-800">Theo Dõi Hoa Hồng</h1>
-        <button 
-          onClick={() => handleOpenModal()}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-        >
-          <Plus size={20} />
-          <span>Thêm Ghi Nhận</span>
-        </button>
+        <div className="flex items-center space-x-3">
+          <button 
+            onClick={syncOrders}
+            disabled={isSyncing}
+            className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg flex items-center gap-2 border"
+          >
+            <RefreshCw size={20} className={isSyncing ? "animate-spin" : ""} />
+            <span className="hidden sm:inline">Làm mới Đơn Hàng</span>
+          </button>
+          <button 
+            onClick={() => handleOpenModal()}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+          >
+            <Plus size={20} />
+            <span className="hidden sm:inline">Thêm thủ công</span>
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
@@ -177,17 +242,17 @@ export default function CommissionTracking() {
                     <td className="px-4 py-3 text-center">{index + 1}</td>
                     <td className="px-4 py-3 whitespace-nowrap">{new Date(item.invoiceDate).toLocaleDateString('vi-VN')}</td>
                     <td className="px-4 py-3 font-medium text-gray-900">{item.company}</td>
-                    <td className="px-4 py-3 text-right text-gray-700">{new Intl.NumberFormat('vi-VN').format(item.invoiceAmount)}</td>
-                    <td className="px-4 py-3 text-right">{item.percentage}%</td>
-                    <td className="px-4 py-3 text-right font-medium text-green-600">{new Intl.NumberFormat('vi-VN').format(item.commissionAmount)}</td>
-                    <td className="px-4 py-3">{item.recipientName}</td>
-                    <td className="px-4 py-3">{item.bankAccount}</td>
+                    <td className="px-4 py-3 text-right text-gray-700">{new Intl.NumberFormat('vi-VN').format(item.invoiceAmount || 0)}</td>
+                    <td className="px-4 py-3 text-right">{item.percentage || 0}%</td>
+                    <td className="px-4 py-3 text-right font-medium text-green-600">{new Intl.NumberFormat('vi-VN').format(item.commissionAmount || 0)}</td>
+                    <td className="px-4 py-3">{item.recipientName || <span className="text-gray-400 italic">Chưa cập nhật</span>}</td>
+                    <td className="px-4 py-3">{item.bankAccount || <span className="text-gray-400 italic">Chưa cập nhật</span>}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-center space-x-2">
                         <button onClick={() => handleOpenModal(item)} className="p-1 text-blue-600 hover:bg-blue-50 rounded">
                           <Edit2 size={16} />
                         </button>
-                        <button onClick={() => handleDelete(item.id!)} className="p-1 text-red-600 hover:bg-red-50 rounded">
+                        <button onClick={() => handleDelete(item.id!)} className="p-1 text-red-600 hover:bg-red-50 rounded" title="Xoá (Ẩn khỏi danh sách)">
                           <Trash2 size={16} />
                         </button>
                       </div>
@@ -251,7 +316,7 @@ export default function CommissionTracking() {
                       step="0.01"
                       min="0"
                       max="100"
-                      value={formData.percentage}
+                      value={formData.percentage || 0}
                       onChange={(e) => handlePercentageChange(e.target.value)}
                       className="w-full p-2 border rounded-md text-right"
                     />
@@ -268,11 +333,10 @@ export default function CommissionTracking() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Người Nhận *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Người Nhận</label>
                   <input
                     type="text"
-                    required
-                    value={formData.recipientName}
+                    value={formData.recipientName || ''}
                     onChange={(e) => setFormData({ ...formData, recipientName: e.target.value })}
                     className="w-full p-2 border rounded-md"
                   />
@@ -281,7 +345,7 @@ export default function CommissionTracking() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Số Tài Khoản</label>
                   <input
                     type="text"
-                    value={formData.bankAccount}
+                    value={formData.bankAccount || ''}
                     onChange={(e) => setFormData({ ...formData, bankAccount: e.target.value })}
                     className="w-full p-2 border rounded-md"
                     placeholder="VD: 1903123456789 - Techcombank"

@@ -181,6 +181,8 @@ export interface LegalDoc {
 
 
 export interface Commission {
+  documentId?: number;
+  isHidden?: boolean;
   id?: number;
   invoiceDate: Date;
   company: string;
