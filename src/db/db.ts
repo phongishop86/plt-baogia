@@ -179,6 +179,21 @@ export interface LegalDoc {
   updatedAt: Date;
 }
 
+
+export interface Commission {
+  id?: number;
+  invoiceDate: Date;
+  company: string;
+  invoiceAmount: number;
+  commissionAmount: number;
+  recipientName: string;
+  bankAccount: string;
+  percentage: number;
+  notes?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
 export class PLTDatabase extends Dexie {
   customers!: Table<Customer, number>;
   products!: Table<Product, number>;
@@ -193,9 +208,26 @@ export class PLTDatabase extends Dexie {
   templates!: Table<DocTemplate, string>;
   projectTemplates!: Table<ProjectTemplate, number>;
   legalDocs!: Table<LegalDoc, number>;
+  commissions!: Table<Commission, number>;
 
   constructor() {
     super('PLTERPDatabase');
+    this.version(9).stores({
+      customers: '++id, taxCode, name',
+      products: '++id, code, name',
+      documents: '++id, type, docNumber, customerId, date',
+      transactions: '++id, date, type',
+      users: '++id, username, role',
+      projects: '++id, name, status, startDate',
+      personnel: '++id, employeeCode, fullName, status',
+      projectContracts: '++id, projectId, contractNumber',
+      projectUnits: '++id, projectId, role',
+      projectExpenses: '++id, projectId, type, date',
+      templates: 'id',
+      projectTemplates: '++id, projectId',
+      legalDocs: '++id, type, date',
+      commissions: '++id, invoiceDate, company'
+    });
     this.version(1).stores({
       customers: '++id, taxCode, name',
       products: '++id, code, name',

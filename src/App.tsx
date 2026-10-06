@@ -21,6 +21,7 @@ import PriceCalculator from './pages/PriceCalculator';
 import LegalDocs from './pages/LegalDocs';
 import BankReconciliation from './pages/BankReconciliation';
 import InvoiceReconciliation from './pages/InvoiceReconciliation';
+import CommissionTracking from './pages/CommissionTracking';
 import { type User } from './db/db';
 
 function App() {
@@ -258,6 +259,12 @@ function App() {
                   active={activeTab === 'invoice-reconciliation'} 
                   onClick={() => handleTabClick('invoice-reconciliation')} 
                 />
+                <NavItem 
+                  icon={<Calculator size={20} className="text-yellow-600" />} 
+                  label="Theo dõi hoa hồng" 
+                  active={activeTab === 'commission'} 
+                  onClick={() => handleTabClick('commission')} 
+                />
               </>
             )}
           </NavGroup>
@@ -322,6 +329,7 @@ function App() {
               activeTab === 'pricing' ? 'Công cụ tính giá' :
                 activeTab === 'bank-reconciliation' ? 'Chấm sao kê (Đối soát ngân hàng)' :
                 activeTab === 'invoice-reconciliation' ? 'Chấm hoá đơn' :
+                activeTab === 'commission' ? 'Theo dõi hoa hồng' :
               activeTab === 'settings' ? 'Cài đặt Hệ thống' :
               activeTab === 'templates' ? 'Quản lý Biểu mẫu (Templates)' :
               activeTab === 'legal-docs' ? 'Hồ sơ pháp lý' :
@@ -397,6 +405,7 @@ function App() {
           {activeTab === 'pricing' && <PriceCalculator />}
         {activeTab === 'bank-reconciliation' && <BankReconciliation />}
         {activeTab === 'invoice-reconciliation' && <InvoiceReconciliation />}
+        {activeTab === 'commission' && <CommissionTracking />}
           {activeTab === 'settings' && isAdmin && <Settings />}
           {activeTab === 'templates' && isAdmin && <Templates />}
           {activeTab === 'legal-docs' && <LegalDocs currentUser={currentUser} />}
