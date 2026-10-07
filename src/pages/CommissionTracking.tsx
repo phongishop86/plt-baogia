@@ -35,6 +35,9 @@ export default function CommissionTracking() {
       for (const doc of documents) {
         if (!existingDocIds.has(doc.id!)) {
           const customer = customers.find(c => c.id === doc.customerId);
+          // Bỏ qua các chứng từ Mua vào (isSupplier === true)
+          if (customer?.isSupplier) continue;
+          
           newCommissions.push({
             documentId: doc.id,
             invoiceDate: doc.date,
@@ -53,6 +56,21 @@ export default function CommissionTracking() {
       
       if (newCommissions.length > 0) {
         await db.commissions.bulkAdd(newCommissions);
+      }
+      
+      // Dọn dẹp các khoản hoa hồng đã lỡ đồng bộ từ chứng từ mua vào trước đó
+      const supplierDocIds = new Set(
+        documents
+          .filter(doc => {
+            const customer = customers.find(c => c.id === doc.customerId);
+            return customer?.isSupplier;
+          })
+          .map(doc => doc.id)
+      );
+      
+      const toDelete = commissions.filter(c => c.documentId && supplierDocIds.has(c.documentId)).map(c => c.id!);
+      if (toDelete.length > 0) {
+        await db.commissions.bulkDelete(toDelete);
       }
     } catch (error) {
       console.error("Lỗi khi đồng bộ đơn hàng:", error);
