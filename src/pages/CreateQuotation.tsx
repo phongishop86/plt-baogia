@@ -157,7 +157,7 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
 
     const hasEmptyName = selectedItems.some(p => !p.name || p.name.trim() === '');
     if (hasEmptyName) {
-      const confirmSave = confirm('Có một hoặc nhiều dòng chưa có Tên hàng hóa!\nBạn có chắc chắn muốn Lưu báo giá này không?');
+      const confirmSave = confirm('Có một hoặc nhiều dòng chưa có Tên hàng hóa!item.namenBạn có chắc chắn muốn Lưu báo giá này không?');
       if (!confirmSave) return;
     }
 
@@ -273,7 +273,7 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
       let w = readThree(chunks[i], i === chunks.length - 1);
       if (w) words.push(w, blockUnit[i]);
     }
-    const result = words.join(' ').trim().replace(/\s+/g, ' ');
+    const result = words.join(' ').trim().replace(/item.names+/g, ' ');
     return result.charAt(0).toUpperCase() + result.slice(1) + ' đồng.';
   };
 
@@ -290,6 +290,8 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
   });
 
   const selectedCustomer = customers?.find(c => c.id === selectedCustomerId);
+  const isKungTay = selectedCustomer?.name?.toUpperCase().includes('KUNG TAY');
+
 
   const getBankAccounts = () => {
     const custName = selectedCustomer?.name?.toUpperCase() || '';
@@ -314,26 +316,26 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
 
     if (type === 'QUOTATION') {
       subject = `Báo giá ${docNumber} - Công ty TNHH Phát Lộc Tech`;
-      body = `Kính gửi ${customer?.name || 'Quý khách hàng'},\n\n` +
-        `Công ty TNHH Phát Lộc Tech xin trân trọng gửi đến Quý đơn vị bảng báo giá ${docNumber} mới nhất.\n` +
-        `Tổng giá trị báo giá: ${formatCurrency(calculateSubTotal() + calculateTax())}.\n\n` +
-        `Vui lòng xem file PDF Báo giá đính kèm ở email này để biết chi tiết các hạng mục.\n\n` +
-        `Nếu Quý khách có bất kỳ thắc mắc nào, xin vui lòng phản hồi lại email này hoặc liên hệ hotline: 0932685794.\n\n` +
-        `Trân trọng cảm ơn,\nPhát Lộc Tech`;
+      body = `Kính gửi ${customer?.name || 'Quý khách hàng'},item.namenitem.namen` +
+        `Công ty TNHH Phát Lộc Tech xin trân trọng gửi đến Quý đơn vị bảng báo giá ${docNumber} mới nhất.item.namen` +
+        `Tổng giá trị báo giá: ${formatCurrency(calculateSubTotal() + calculateTax())}.item.namenitem.namen` +
+        `Vui lòng xem file PDF Báo giá đính kèm ở email này để biết chi tiết các hạng mục.item.namenitem.namen` +
+        `Nếu Quý khách có bất kỳ thắc mắc nào, xin vui lòng phản hồi lại email này hoặc liên hệ hotline: 0932685794.item.namenitem.namen` +
+        `Trân trọng cảm ơn,item.namenPhát Lộc Tech`;
     } else {
       subject = `Hồ sơ thanh toán & Bàn giao ${docNumber} - Công ty TNHH Phát Lộc Tech`;
-      body = `Kính gửi ${customer?.name || 'Quý khách hàng'},\n\n` +
-        `Công ty TNHH Phát Lộc Tech xin gửi đến Quý đơn vị bộ Hồ sơ thanh toán (Bao gồm: Báo giá, Biên bản bàn giao, Đề nghị thanh toán, và Hóa đơn) liên quan đến chứng từ ${docNumber}.\n` +
-        `Tổng giá trị thanh toán: ${formatCurrency(calculateSubTotal() + calculateTax())}.\n\n` +
-        `Quý khách vui lòng kiểm tra các file đính kèm và tiến hành các thủ tục thanh toán theo thông tin tài khoản đã ghi trên Đề nghị thanh toán.\n\n` +
-        `Nếu Quý khách cần thêm thông tin, xin vui lòng phản hồi lại email này hoặc liên hệ hotline: 0932685794.\n\n` +
-        `Trân trọng cảm ơn sự hợp tác của Quý khách,\nPhát Lộc Tech`;
+      body = `Kính gửi ${customer?.name || 'Quý khách hàng'},item.namenitem.namen` +
+        `Công ty TNHH Phát Lộc Tech xin gửi đến Quý đơn vị bộ Hồ sơ thanh toán (Bao gồm: Báo giá, Biên bản bàn giao, Đề nghị thanh toán, và Hóa đơn) liên quan đến chứng từ ${docNumber}.item.namen` +
+        `Tổng giá trị thanh toán: ${formatCurrency(calculateSubTotal() + calculateTax())}.item.namenitem.namen` +
+        `Quý khách vui lòng kiểm tra các file đính kèm và tiến hành các thủ tục thanh toán theo thông tin tài khoản đã ghi trên Đề nghị thanh toán.item.namenitem.namen` +
+        `Nếu Quý khách cần thêm thông tin, xin vui lòng phản hồi lại email này hoặc liên hệ hotline: 0932685794.item.namenitem.namen` +
+        `Trân trọng cảm ơn sự hợp tác của Quý khách,item.namenPhát Lộc Tech`;
     }
 
     window.location.href = `mailto:${customerEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     
     setIsEmailMenuOpen(false);
-    alert('Đã mở ứng dụng gửi Mail.\n\nLƯU Ý: Bạn nhớ ĐÍNH KÈM CÁC FILE BÁO CÁO (PDF, Hóa đơn...) vào email trước khi bấm Gửi nhé!');
+    alert('Đã mở ứng dụng gửi Mail.item.namenitem.namenLƯU Ý: Bạn nhớ ĐÍNH KÈM CÁC FILE BÁO CÁO (PDF, Hóa đơn...) vào email trước khi bấm Gửi nhé!');
   };
 
   return (
@@ -346,7 +348,7 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
               font-size: 13px !important;
               zoom: 0.95;
             }
-            .print\\:p-0 {
+            .printitem.nameitem.name:p-0 {
               padding: 0 !important;
             }
             * {
@@ -550,7 +552,7 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
                         type="text" 
                         value={item.quantity ? new Intl.NumberFormat('vi-VN').format(item.quantity) : ''}
                         onChange={(e) => {
-                          const val = e.target.value.replace(/\D/g, '');
+                          const val = e.target.value.replace(/item.nameD/g, '');
                           updateItem(item.tempId, 'quantity', Number(val));
                         }}
                         className="w-16 text-center border rounded p-1 print:border-none print:p-0"
@@ -567,7 +569,7 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
                       type="text" 
                       value={item.unitPrice ? new Intl.NumberFormat('vi-VN').format(item.unitPrice) : ''} 
                       onChange={e => {
-                        const val = e.target.value.replace(/\D/g, '');
+                        const val = e.target.value.replace(/item.nameD/g, '');
                         updateItem(item.tempId, 'unitPrice', Number(val));
                       }}
                       className="w-full min-w-[100px] border rounded p-1 print:border-none print:p-0 text-right"
@@ -729,6 +731,65 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
       {/* ==== BIÊN BẢN BÀN GIAO ==== */}
       {(printMode === 'DELIVERY' || printMode === 'ALL_3' || printMode === 'ALL_4') && (
         <div className={`hidden print:block text-[13px] leading-snug font-[Times_New_Roman] ${printMode.startsWith('ALL') ? 'mt-8' : ''}`} style={printMode.startsWith('ALL') ? { pageBreakBefore: 'always' } : {}}>
+          {isKungTay ? (
+            <>
+              <div className="mb-6 mt-4">
+                <p><span className="font-bold underline">Đơn vị:</span> <span className="font-bold">CÔNG TY TNHH PHÁT LỘC TECH</span></p>
+                <p><span className="underline">Địa chỉ:</span> Số 491/1 Trường Chinh, Phường Tân Bình, TP.HCM</p>
+              </div>
+
+              <div className="text-center mb-6 mt-12">
+                <h1 className="text-[20px] font-bold uppercase tracking-wide">PHIẾU GIAO HÀNG</h1>
+              </div>
+              
+              <div className="text-right mb-6 mr-10 mt-6">
+                <p>Ngày ......... tháng ......... năm .........</p>
+              </div>
+
+              <div className="mb-4">
+                <p><span className="underline">Đơn vị:</span> {selectedCustomer?.name}</p>
+                <p><span className="underline">Địa chỉ:</span> {selectedCustomer?.address}</p>
+              </div>
+
+              <table className="w-full border-collapse border border-black mb-6 print:table-fixed text-center">
+                <thead>
+                  <tr>
+                    <th className="border border-black p-2 w-12 font-bold">STT</th>
+                    <th className="border border-black p-2 font-bold">Tên Hàng và Quy Cách</th>
+                    <th className="border border-black p-2 w-24 font-bold">Đơn vị tính</th>
+                    <th className="border border-black p-2 w-24 font-bold">Số Lượng</th>
+                    <th className="border border-black p-2 w-32 font-bold">Ghi Chú</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedItems.map((item, index) => (
+                    <tr key={item.tempId}>
+                      <td className="border border-black p-2">{index + 1}</td>
+                      <td className="border border-black p-2 text-left">{item.name}</td>
+                      <td className="border border-black p-2">{item.unit}</td>
+                      <td className="border border-black p-2">{item.quantity}</td>
+                      <td className="border border-black p-2"></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              <div className="mb-6 space-y-1 mt-8">
+                <p className="underline">Hàng mới 100%, bảo hành theo tiêu chuẩn nhà sản xuất.</p>
+                <p className="underline">Thanh toán trong vòng 10 ngày kể từ ngày nhận được hàng và hoá đơn hợp pháp hợp lệ.</p>
+              </div>
+
+              <div className="flex justify-between items-start text-center mt-12">
+                <div className="w-1/2">
+                  <p className="font-bold">Bên giao</p>
+                </div>
+                <div className="w-1/2">
+                  <p className="font-bold">Bên nhận</p>
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
           <div className="flex justify-between items-start mb-6">
             <div className="font-bold text-center w-1/2">
               <h2 className="uppercase">CÔNG TY TNHH PHÁT LỘC TECH</h2>
@@ -863,6 +924,8 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
               </tr>
             </tbody>
           </table>
+            </>
+          )}
         </div>
       )}
 
