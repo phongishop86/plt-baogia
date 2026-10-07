@@ -43,7 +43,7 @@ export default function CommissionTracking() {
             documentId: doc.id,
             invoiceDate: doc.date,
             company: customer ? customer.name : 'Khách hàng lẻ',
-            invoiceAmount: doc.total || 0,
+            invoiceAmount: doc.subTotal || 0,
             commissionAmount: 0,
             recipientName: '',
             bankAccount: '',
