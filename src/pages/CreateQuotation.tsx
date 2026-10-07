@@ -157,7 +157,7 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
 
     const hasEmptyName = selectedItems.some(p => !p.name || p.name.trim() === '');
     if (hasEmptyName) {
-      const confirmSave = confirm('Có một hoặc nhiều dòng chưa có Tên hàng hóa!item.namenBạn có chắc chắn muốn Lưu báo giá này không?');
+      const confirmSave = confirm('Có một hoặc nhiều dòng chưa có Tên hàng hóa!\nBạn có chắc chắn muốn Lưu báo giá này không?');
       if (!confirmSave) return;
     }
 
@@ -273,7 +273,7 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
       let w = readThree(chunks[i], i === chunks.length - 1);
       if (w) words.push(w, blockUnit[i]);
     }
-    const result = words.join(' ').trim().replace(/item.names+/g, ' ');
+    const result = words.join(' ').trim().replace(/\s+/g, ' ');
     return result.charAt(0).toUpperCase() + result.slice(1) + ' đồng.';
   };
 
@@ -316,26 +316,26 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
 
     if (type === 'QUOTATION') {
       subject = `Báo giá ${docNumber} - Công ty TNHH Phát Lộc Tech`;
-      body = `Kính gửi ${customer?.name || 'Quý khách hàng'},item.namenitem.namen` +
-        `Công ty TNHH Phát Lộc Tech xin trân trọng gửi đến Quý đơn vị bảng báo giá ${docNumber} mới nhất.item.namen` +
-        `Tổng giá trị báo giá: ${formatCurrency(calculateSubTotal() + calculateTax())}.item.namenitem.namen` +
-        `Vui lòng xem file PDF Báo giá đính kèm ở email này để biết chi tiết các hạng mục.item.namenitem.namen` +
-        `Nếu Quý khách có bất kỳ thắc mắc nào, xin vui lòng phản hồi lại email này hoặc liên hệ hotline: 0932685794.item.namenitem.namen` +
-        `Trân trọng cảm ơn,item.namenPhát Lộc Tech`;
+      body = `Kính gửi ${customer?.name || 'Quý khách hàng'},\n\n` +
+        `Công ty TNHH Phát Lộc Tech xin trân trọng gửi đến Quý đơn vị bảng báo giá ${docNumber} mới nhất.\n` +
+        `Tổng giá trị báo giá: ${formatCurrency(calculateSubTotal() + calculateTax())}.\n\n` +
+        `Vui lòng xem file PDF Báo giá đính kèm ở email này để biết chi tiết các hạng mục.\n\n` +
+        `Nếu Quý khách có bất kỳ thắc mắc nào, xin vui lòng phản hồi lại email này hoặc liên hệ hotline: 0932685794.\n\n` +
+        `Trân trọng cảm ơn,\nPhát Lộc Tech`;
     } else {
       subject = `Hồ sơ thanh toán & Bàn giao ${docNumber} - Công ty TNHH Phát Lộc Tech`;
-      body = `Kính gửi ${customer?.name || 'Quý khách hàng'},item.namenitem.namen` +
-        `Công ty TNHH Phát Lộc Tech xin gửi đến Quý đơn vị bộ Hồ sơ thanh toán (Bao gồm: Báo giá, Biên bản bàn giao, Đề nghị thanh toán, và Hóa đơn) liên quan đến chứng từ ${docNumber}.item.namen` +
-        `Tổng giá trị thanh toán: ${formatCurrency(calculateSubTotal() + calculateTax())}.item.namenitem.namen` +
-        `Quý khách vui lòng kiểm tra các file đính kèm và tiến hành các thủ tục thanh toán theo thông tin tài khoản đã ghi trên Đề nghị thanh toán.item.namenitem.namen` +
-        `Nếu Quý khách cần thêm thông tin, xin vui lòng phản hồi lại email này hoặc liên hệ hotline: 0932685794.item.namenitem.namen` +
-        `Trân trọng cảm ơn sự hợp tác của Quý khách,item.namenPhát Lộc Tech`;
+      body = `Kính gửi ${customer?.name || 'Quý khách hàng'},\n\n` +
+        `Công ty TNHH Phát Lộc Tech xin gửi đến Quý đơn vị bộ Hồ sơ thanh toán (Bao gồm: Báo giá, Biên bản bàn giao, Đề nghị thanh toán, và Hóa đơn) liên quan đến chứng từ ${docNumber}.\n` +
+        `Tổng giá trị thanh toán: ${formatCurrency(calculateSubTotal() + calculateTax())}.\n\n` +
+        `Quý khách vui lòng kiểm tra các file đính kèm và tiến hành các thủ tục thanh toán theo thông tin tài khoản đã ghi trên Đề nghị thanh toán.\n\n` +
+        `Nếu Quý khách cần thêm thông tin, xin vui lòng phản hồi lại email này hoặc liên hệ hotline: 0932685794.\n\n` +
+        `Trân trọng cảm ơn sự hợp tác của Quý khách,\nPhát Lộc Tech`;
     }
 
     window.location.href = `mailto:${customerEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     
     setIsEmailMenuOpen(false);
-    alert('Đã mở ứng dụng gửi Mail.item.namenitem.namenLƯU Ý: Bạn nhớ ĐÍNH KÈM CÁC FILE BÁO CÁO (PDF, Hóa đơn...) vào email trước khi bấm Gửi nhé!');
+    alert('Đã mở ứng dụng gửi Mail.\n\nLƯU Ý: Bạn nhớ ĐÍNH KÈM CÁC FILE BÁO CÁO (PDF, Hóa đơn...) vào email trước khi bấm Gửi nhé!');
   };
 
   return (
@@ -348,7 +348,7 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
               font-size: 13px !important;
               zoom: 0.95;
             }
-            .printitem.nameitem.name:p-0 {
+            .print\\:p-0 {
               padding: 0 !important;
             }
             * {
@@ -552,7 +552,7 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
                         type="text" 
                         value={item.quantity ? new Intl.NumberFormat('vi-VN').format(item.quantity) : ''}
                         onChange={(e) => {
-                          const val = e.target.value.replace(/item.nameD/g, '');
+                          const val = e.target.value.replace(/\D/g, '');
                           updateItem(item.tempId, 'quantity', Number(val));
                         }}
                         className="w-16 text-center border rounded p-1 print:border-none print:p-0"
@@ -569,7 +569,7 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
                       type="text" 
                       value={item.unitPrice ? new Intl.NumberFormat('vi-VN').format(item.unitPrice) : ''} 
                       onChange={e => {
-                        const val = e.target.value.replace(/item.nameD/g, '');
+                        const val = e.target.value.replace(/\D/g, '');
                         updateItem(item.tempId, 'unitPrice', Number(val));
                       }}
                       className="w-full min-w-[100px] border rounded p-1 print:border-none print:p-0 text-right"
