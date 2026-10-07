@@ -33,12 +33,12 @@ export default function CommissionTracking() {
       const existingDocIds = new Set(commissions.filter(c => c.documentId).map(c => c.documentId));
       
       const newCommissions: Commission[] = [];
+      const updateCommissions: Commission[] = [];
       for (const doc of documents) {
+        const customer = customers.find(c => c.id === doc.customerId);
+        if (customer?.isSupplier) continue;
+
         if (!existingDocIds.has(doc.id!)) {
-          const customer = customers.find(c => c.id === doc.customerId);
-          // Bỏ qua các chứng từ Mua vào (isSupplier === true)
-          if (customer?.isSupplier) continue;
-          
           newCommissions.push({
             documentId: doc.id,
             invoiceDate: doc.date,
@@ -52,11 +52,32 @@ export default function CommissionTracking() {
             paymentMethod: '',
             createdAt: new Date()
           });
+        } else {
+          // Update existing
+          const existing = commissions.find(c => c.documentId === doc.id);
+          if (existing) {
+            const newCompany = customer ? customer.name : 'Khách hàng lẻ';
+            const newAmount = doc.subTotal || 0;
+            const newDate = new Date(doc.date).getTime();
+            const oldDate = new Date(existing.invoiceDate).getTime();
+            
+            if (existing.company !== newCompany || existing.invoiceAmount !== newAmount || oldDate !== newDate) {
+              updateCommissions.push({
+                ...existing,
+                company: newCompany,
+                invoiceAmount: newAmount,
+                invoiceDate: doc.date
+              });
+            }
+          }
         }
       }
       
       if (newCommissions.length > 0) {
         await db.commissions.bulkAdd(newCommissions);
+      }
+      if (updateCommissions.length > 0) {
+        await db.commissions.bulkPut(updateCommissions);
       }
       
       // Dọn dẹp các khoản hoa hồng không hợp lệ (không phải OUTPUT_INVOICE hoặc là của Supplier)
@@ -349,7 +370,7 @@ export default function CommissionTracking() {
                   <input
                     type="date"
                     required
-                    value={formData.invoiceDate ? new Date(formData.invoiceDate).toISOString().split('T')[0] : ''}
+                    value={formData.invoiceDate ? (() => { const d = new Date(formData.invoiceDate); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })() : ''}
                     onChange={(e) => setFormData({ ...formData, invoiceDate: new Date(e.target.value) })}
                     className="w-full p-2 border rounded-md"
                   />
