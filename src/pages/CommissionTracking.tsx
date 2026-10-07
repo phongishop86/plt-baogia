@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, type Commission } from '../db/db';
-import { Plus, Edit2, Trash2, Search, RefreshCw } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, RefreshCw, ChevronUp, ChevronDown } from 'lucide-react';
 
 export default function CommissionTracking() {
   const commissions = useLiveQuery(() => db.commissions.toArray());
-  const documents = useLiveQuery(() => db.documents.where('type').equals('QUOTATION').toArray());
+  const documents = useLiveQuery(() => db.documents.where('type').equals('OUTPUT_INVOICE').toArray());
   const customers = useLiveQuery(() => db.customers.toArray());
 
   const [searchTerm, setSearchTerm] = useState('');
+  const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>({ key: 'invoiceDate', direction: 'desc' });
   const [isSyncing, setIsSyncing] = useState(false);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -99,8 +100,42 @@ export default function CommissionTracking() {
     (c.bankAccount && c.bankAccount.includes(searchTerm))
   );
 
-  // Sort by date descending
-  filteredData.sort((a, b) => new Date(b.invoiceDate).getTime() - new Date(a.invoiceDate).getTime());
+  
+  const handleSort = (key: keyof Commission) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const getSortIcon = (key: keyof Commission) => {
+    if (!sortConfig || sortConfig.key !== key) return null;
+    return sortConfig.direction === 'asc' ? <ChevronUp size={14} className="inline ml-1" /> : <ChevronDown size={14} className="inline ml-1" />;
+  };
+
+  if (sortConfig !== null) {
+    filteredData.sort((a, b) => {
+      let aVal = a[sortConfig.key as keyof Commission];
+      let bVal = b[sortConfig.key as keyof Commission];
+      
+      if (aVal === undefined) aVal = '';
+      if (bVal === undefined) bVal = '';
+
+      if (sortConfig.key === 'invoiceDate') {
+        aVal = new Date(aVal as Date).getTime();
+        bVal = new Date(bVal as Date).getTime();
+      } else if (typeof aVal === 'string' && typeof bVal === 'string') {
+        aVal = aVal.toLowerCase();
+        bVal = bVal.toLowerCase();
+      }
+
+      if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
+      if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }
+
 
   const handleOpenModal = (item?: Commission) => {
     if (item) {
@@ -250,14 +285,14 @@ export default function CommissionTracking() {
             <thead className="bg-gray-50 text-gray-700 font-medium border-b">
               <tr>
                 <th className="px-4 py-3 text-center w-12">STT</th>
-                <th className="px-4 py-3 whitespace-nowrap">Ngày HĐ</th>
-                <th className="px-4 py-3 min-w-[150px]">Đơn Vị</th>
-                <th className="px-4 py-3 text-right whitespace-nowrap">Tiền HĐ</th>
-                <th className="px-4 py-3 text-right whitespace-nowrap">Tỉ lệ (%)</th>
-                <th className="px-4 py-3 text-right whitespace-nowrap">Tiền Hoa Hồng</th>
-                <th className="px-4 py-3 min-w-[150px]">Người Nhận</th>
-                <th className="px-4 py-3 min-w-[120px]">Số TK</th>
-                <th className="px-4 py-3 whitespace-nowrap">Hình thức TT</th>
+                <th className="px-4 py-3 whitespace-nowrap cursor-pointer hover:bg-gray-100" onClick={() => handleSort("invoiceDate")}>Ngày HĐ {getSortIcon("invoiceDate")}</th>
+                <th className="px-4 py-3 min-w-[150px] cursor-pointer hover:bg-gray-100" onClick={() => handleSort("company")}>Đơn Vị {getSortIcon("company")}</th>
+                <th className="px-4 py-3 text-right whitespace-nowrap cursor-pointer hover:bg-gray-100" onClick={() => handleSort("invoiceAmount")}>Tiền HĐ {getSortIcon("invoiceAmount")}</th>
+                <th className="px-4 py-3 text-right whitespace-nowrap cursor-pointer hover:bg-gray-100" onClick={() => handleSort("percentage")}>Tỉ lệ (%) {getSortIcon("percentage")}</th>
+                <th className="px-4 py-3 text-right whitespace-nowrap cursor-pointer hover:bg-gray-100" onClick={() => handleSort("commissionAmount")}>Tiền Hoa Hồng {getSortIcon("commissionAmount")}</th>
+                <th className="px-4 py-3 min-w-[150px] cursor-pointer hover:bg-gray-100" onClick={() => handleSort("recipientName")}>Người Nhận {getSortIcon("recipientName")}</th>
+                <th className="px-4 py-3 min-w-[120px] cursor-pointer hover:bg-gray-100" onClick={() => handleSort("bankAccount")}>Số TK {getSortIcon("bankAccount")}</th>
+                <th className="px-4 py-3 whitespace-nowrap cursor-pointer hover:bg-gray-100" onClick={() => handleSort("paymentMethod")}>Hình thức TT {getSortIcon("paymentMethod")}</th>
                 <th className="px-4 py-3 text-center w-20">Thao Tác</th>
               </tr>
             </thead>
