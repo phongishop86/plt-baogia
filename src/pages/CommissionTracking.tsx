@@ -59,17 +59,17 @@ export default function CommissionTracking() {
         await db.commissions.bulkAdd(newCommissions);
       }
       
-      // Dọn dẹp các khoản hoa hồng đã lỡ đồng bộ từ chứng từ mua vào trước đó
-      const supplierDocIds = new Set(
+      // Dọn dẹp các khoản hoa hồng không hợp lệ (không phải OUTPUT_INVOICE hoặc là của Supplier)
+      const validOutputInvoices = new Set(
         documents
           .filter(doc => {
             const customer = customers.find(c => c.id === doc.customerId);
-            return customer?.isSupplier;
+            return !customer?.isSupplier;
           })
           .map(doc => doc.id)
       );
       
-      const toDelete = commissions.filter(c => c.documentId && supplierDocIds.has(c.documentId)).map(c => c.id!);
+      const toDelete = commissions.filter(c => c.documentId && !validOutputInvoices.has(c.documentId)).map(c => c.id!);
       if (toDelete.length > 0) {
         await db.commissions.bulkDelete(toDelete);
       }
