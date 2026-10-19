@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, type User } from '../db/db';
-import { Filter, Search, TrendingUp, TrendingDown, ChevronUp, ChevronDown, Printer } from 'lucide-react';
+import { Filter, Search, TrendingUp, TrendingDown, ChevronUp, ChevronDown, Printer, Calendar, CheckCircle, X, AlertCircle } from 'lucide-react';
 import PizZip from 'pizzip';
 import Docxtemplater from 'docxtemplater';
 import { saveAs } from 'file-saver';
@@ -12,6 +12,89 @@ interface DocumentsProps {
   currentUser?: User | null;
   mode?: 'DOCUMENTS' | 'QUOTATIONS';
   onNavigate?: (tab: string) => void;
+}
+
+export type PeriodType = 'QUARTER' | 'HALF_YEAR' | 'YEAR' | 'CUSTOM' | 'ALL';
+
+export interface ReportPeriodConfig {
+  periodType: PeriodType;
+  quarter: 1 | 2 | 3 | 4;
+  halfYear: 1 | 2;
+  year: number;
+  customStartDate?: string;
+  customEndDate?: string;
+}
+
+export function getPeriodDateRange(config: ReportPeriodConfig): { start?: Date; end?: Date; label: string } {
+  const { periodType, quarter, halfYear, year, customStartDate, customEndDate } = config;
+  
+  if (periodType === 'QUARTER') {
+    let startMonth = 0;
+    let endMonth = 2;
+    let endDay = 31;
+    if (quarter === 2) {
+      startMonth = 3; endMonth = 5; endDay = 30;
+    } else if (quarter === 3) {
+      startMonth = 6; endMonth = 8; endDay = 30;
+    } else if (quarter === 4) {
+      startMonth = 9; endMonth = 11; endDay = 31;
+    }
+    const start = new Date(year, startMonth, 1, 0, 0, 0, 0);
+    const end = new Date(year, endMonth, endDay, 23, 59, 59, 999);
+    const startStr = `01/${String(startMonth + 1).padStart(2, '0')}/${year}`;
+    const endStr = `${endDay}/${String(endMonth + 1).padStart(2, '0')}/${year}`;
+    return {
+      start,
+      end,
+      label: `Quý ${quarter} Năm ${year} (Từ ${startStr} đến ${endStr})`
+    };
+  }
+  
+  if (periodType === 'HALF_YEAR') {
+    if (halfYear === 1) {
+      const start = new Date(year, 0, 1, 0, 0, 0, 0);
+      const end = new Date(year, 5, 30, 23, 59, 59, 999);
+      return {
+        start,
+        end,
+        label: `6 tháng đầu năm ${year} (Từ 01/01/${year} đến 30/06/${year})`
+      };
+    } else {
+      const start = new Date(year, 6, 1, 0, 0, 0, 0);
+      const end = new Date(year, 11, 31, 23, 59, 59, 999);
+      return {
+        start,
+        end,
+        label: `6 tháng cuối năm ${year} (Từ 01/07/${year} đến 31/12/${year})`
+      };
+    }
+  }
+  
+  if (periodType === 'YEAR') {
+    const start = new Date(year, 0, 1, 0, 0, 0, 0);
+    const end = new Date(year, 11, 31, 23, 59, 59, 999);
+    return {
+      start,
+      end,
+      label: `Năm ${year} (Từ 01/01/${year} đến 31/12/${year})`
+    };
+  }
+  
+  if (periodType === 'CUSTOM') {
+    const start = customStartDate ? new Date(`${customStartDate}T00:00:00`) : undefined;
+    const end = customEndDate ? new Date(`${customEndDate}T23:59:59.999`) : undefined;
+    let label = 'Tùy chọn khoảng ngày';
+    if (start && end) {
+      label = `Từ ${start.toLocaleDateString('vi-VN')} đến ${end.toLocaleDateString('vi-VN')}`;
+    } else if (start) {
+      label = `Từ ngày ${start.toLocaleDateString('vi-VN')}`;
+    } else if (end) {
+      label = `Đến ngày ${end.toLocaleDateString('vi-VN')}`;
+    }
+    return { start, end, label };
+  }
+  
+  return { label: 'Tất cả thời gian' };
 }
 
 export default function Documents({ setEditingQuotationId, currentUser, mode = 'DOCUMENTS', onNavigate }: DocumentsProps) {
@@ -39,6 +122,125 @@ export default function Documents({ setEditingQuotationId, currentUser, mode = '
       return { ...doc, customer };
     }));
   });
+
+  // Kỳ báo cáo
+  const currentYear = new Date().getFullYear();
+  const currentQuarter = (Math.floor(new Date().getMonth() / 3) + 1) as 1 | 2 | 3 | 4;
+  const currentHalfYear = (new Date().getMonth() < 6 ? 1 : 2) as 1 | 2;
+
+  const [selectedPeriod, setSelectedPeriod] = useState<ReportPeriodConfig>({
+    periodType: 'ALL',
+    quarter: currentQuarter,
+    halfYear: currentHalfYear,
+    year: currentYear
+  });
+
+  // Modal in bảng kê
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  const [modalPeriod, setModalPeriod] = useState<ReportPeriodConfig>({
+    periodType: 'QUARTER',
+    quarter: currentQuarter,
+    halfYear: currentHalfYear,
+    year: currentYear,
+    customStartDate: '',
+    customEndDate: ''
+  });
+  const [modalFilterType, setModalFilterType] = useState(filterType);
+  const [modalFilterPayment, setModalFilterPayment] = useState(filterPayment);
+  const [showSignatures, setShowSignatures] = useState(true);
+
+  // Danh sách năm có chứng từ
+  const availableYears = useMemo(() => {
+    const years = new Set<number>([currentYear, currentYear - 1, currentYear + 1]);
+    if (documents) {
+      documents.forEach(doc => {
+        if (doc.date) {
+          const y = new Date(doc.date).getFullYear();
+          if (!isNaN(y)) years.add(y);
+        }
+      });
+    }
+    return Array.from(years).sort((a, b) => b - a);
+  }, [documents, currentYear]);
+
+  const activePeriodRange = useMemo(() => {
+    return getPeriodDateRange(selectedPeriod);
+  }, [selectedPeriod]);
+
+  const modalRange = useMemo(() => {
+    return getPeriodDateRange(modalPeriod);
+  }, [modalPeriod]);
+
+  // Documents matching in the modal preview
+  const modalPreviewDocs = useMemo(() => {
+    if (!documents) return [];
+    return documents.filter(doc => {
+      let matchesType = true;
+      if (mode === 'QUOTATIONS') {
+        matchesType = doc.type === 'QUOTATION';
+      } else {
+        matchesType = doc.type !== 'QUOTATION' && (modalFilterType === 'ALL' || doc.type === modalFilterType);
+      }
+      let matchesPayment = true;
+      if (mode === 'DOCUMENTS') {
+        if (modalFilterPayment === 'PAID') matchesPayment = !!doc.paymentDate;
+        if (modalFilterPayment === 'UNPAID') matchesPayment = !doc.paymentDate;
+      }
+      let matchesPeriod = true;
+      if (modalPeriod.periodType !== 'ALL' && doc.date) {
+        const docTime = new Date(doc.date).getTime();
+        if (modalRange.start && docTime < modalRange.start.getTime()) matchesPeriod = false;
+        if (modalRange.end && docTime > modalRange.end.getTime()) matchesPeriod = false;
+      }
+      return matchesType && matchesPayment && matchesPeriod;
+    });
+  }, [documents, mode, modalFilterType, modalFilterPayment, modalPeriod, modalRange]);
+
+  const modalTotals = useMemo(() => {
+    let totalInput = 0;
+    let totalOutput = 0;
+    let totalAll = 0;
+    modalPreviewDocs.forEach(d => {
+      if (d.status === 'CANCELLED') return;
+      const amt = d.total || 0;
+      totalAll += amt;
+      if (d.type === 'INPUT_INVOICE') totalInput += amt;
+      if (d.type === 'OUTPUT_INVOICE') totalOutput += amt;
+    });
+    return { totalInput, totalOutput, totalAll, count: modalPreviewDocs.length };
+  }, [modalPreviewDocs]);
+
+  const handleOpenPrintModal = () => {
+    setModalPeriod(prev => ({
+      ...prev,
+      periodType: selectedPeriod.periodType !== 'ALL' ? selectedPeriod.periodType : 'QUARTER',
+      quarter: selectedPeriod.quarter,
+      halfYear: selectedPeriod.halfYear,
+      year: selectedPeriod.year,
+      customStartDate: selectedPeriod.customStartDate || '',
+      customEndDate: selectedPeriod.customEndDate || ''
+    }));
+    setModalFilterType(filterType);
+    setModalFilterPayment(filterPayment);
+    setIsPrintModalOpen(true);
+  };
+
+  const handleConfirmPrint = () => {
+    setSelectedPeriod(modalPeriod);
+    setFilterType(modalFilterType);
+    setFilterPayment(modalFilterPayment);
+    setIsPrintModalOpen(false);
+    setTimeout(() => {
+      window.print();
+    }, 200);
+  };
+
+  const handleApplyFilterOnly = () => {
+    setSelectedPeriod(modalPeriod);
+    setFilterType(modalFilterType);
+    setFilterPayment(modalFilterPayment);
+    setIsPrintModalOpen(false);
+  };
 
   const formatNumber = (val: number) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
@@ -196,7 +398,15 @@ export default function Documents({ setEditingQuotationId, currentUser, mode = '
         if (filterStatus !== 'ALL') matchesStatus = doc.status === filterStatus;
       }
 
-      return matchesSearch && matchesType && matchesPayment && matchesStatus;
+      // 4. Filter Period
+      let matchesPeriod = true;
+      if (selectedPeriod.periodType !== 'ALL' && doc.date) {
+        const docTime = new Date(doc.date).getTime();
+        if (activePeriodRange.start && docTime < activePeriodRange.start.getTime()) matchesPeriod = false;
+        if (activePeriodRange.end && docTime > activePeriodRange.end.getTime()) matchesPeriod = false;
+      }
+
+      return matchesSearch && matchesType && matchesPayment && matchesStatus && matchesPeriod;
     });
 
     if (sortConfig !== null) {
@@ -222,7 +432,7 @@ export default function Documents({ setEditingQuotationId, currentUser, mode = '
     }
     
     return result;
-  }, [documents, searchTerm, filterType, filterPayment, sortConfig]);
+  }, [documents, searchTerm, filterType, filterPayment, sortConfig, selectedPeriod, activePeriodRange]);
 
   // Tính tổng
   const totals = useMemo(() => {
@@ -289,12 +499,26 @@ export default function Documents({ setEditingQuotationId, currentUser, mode = '
                   <option value="PAID">Đã thanh toán</option>
                   <option value="UNPAID">Chưa thanh toán (Công nợ)</option>
                 </select>
+                {selectedPeriod.periodType !== 'ALL' && (
+                  <div className="flex items-center space-x-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-1.5 rounded-lg text-xs font-semibold">
+                    <Calendar size={14} className="text-emerald-600" />
+                    <span>{activePeriodRange.label}</span>
+                    <button 
+                      type="button"
+                      onClick={() => setSelectedPeriod({ periodType: 'ALL', quarter: currentQuarter, halfYear: currentHalfYear, year: currentYear })}
+                      className="text-emerald-600 hover:text-emerald-900 ml-1 p-0.5 rounded hover:bg-emerald-100"
+                      title="Bỏ lọc theo kỳ (Xem tất cả)"
+                    >
+                      <X size={13} />
+                    </button>
+                  </div>
+                )}
                 <button
-                  onClick={() => window.print()}
-                  className="bg-emerald-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-emerald-700 flex items-center print:hidden"
-                  title="In danh sách chứng từ hiện tại để đối chiếu"
+                  onClick={handleOpenPrintModal}
+                  className="bg-emerald-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-emerald-700 flex items-center print:hidden shadow-sm transition-colors whitespace-nowrap"
+                  title="In bảng kê chứng từ theo kỳ (quý, 6 tháng, năm...)"
                 >
-                  <Printer size={16} className="mr-1" /> In Bảng Kê
+                  <Printer size={16} className="mr-1.5" /> In Bảng Kê
                 </button>
               </>
             ) : (
@@ -348,9 +572,30 @@ export default function Documents({ setEditingQuotationId, currentUser, mode = '
         )}
       </div>
 
-      <div className="hidden print:block mb-6 text-center font-[Times_New_Roman]">
-        <h1 className="text-2xl font-bold uppercase tracking-wider">BẢNG KÊ CHỨNG TỪ</h1>
-        <p className="mt-1 italic">{(filterType === 'ALL' ? 'Tất cả hóa đơn' : filterType === 'INPUT_INVOICE' ? 'Mua vào (Chi phí)' : 'Bán ra (Doanh thu)')} - {(filterPayment === 'ALL' ? 'Tất cả trạng thái' : filterPayment === 'PAID' ? 'Đã thanh toán' : 'Chưa thanh toán')}</p>
+      <div className="hidden print:block mb-6 font-[Times_New_Roman]">
+        <div className="flex justify-between items-start mb-2">
+          <div>
+            <p className="font-bold text-sm uppercase">CÔNG TY TNHH PHÁT LỘC TECH</p>
+            <p className="text-xs text-gray-600">Hệ thống quản lý chứng từ & kế toán</p>
+          </div>
+          <div className="text-right text-xs italic">
+            Ngày lập biểu: {new Date().toLocaleDateString('vi-VN')}
+          </div>
+        </div>
+        <div className="text-center my-3">
+          <h1 className="text-2xl font-bold uppercase tracking-wider">
+            {filterType === 'INPUT_INVOICE' ? 'BẢNG KÊ HÓA ĐƠN / CHỨNG TỪ MUA VÀO' : 
+             filterType === 'OUTPUT_INVOICE' ? 'BẢNG KÊ HÓA ĐƠN BÁN RA' : 
+             'BẢNG KÊ CHỨNG TỪ'}
+          </h1>
+          <p className="mt-1 font-bold text-sm">
+            Kỳ báo cáo: {activePeriodRange.label}
+          </p>
+          <p className="text-xs italic text-gray-700 mt-0.5">
+            Phân loại: {(filterType === 'ALL' ? 'Tất cả hóa đơn' : filterType === 'INPUT_INVOICE' ? 'Mua vào (Chi phí)' : 'Bán ra (Doanh thu)')} - {(filterPayment === 'ALL' ? 'Tất cả trạng thái' : filterPayment === 'PAID' ? 'Đã thanh toán' : 'Chưa thanh toán (Công nợ)')}
+            {searchTerm ? ` - Lọc: "${searchTerm}"` : ''}
+          </p>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 print:border-none print:shadow-none overflow-hidden relative">
@@ -613,6 +858,32 @@ export default function Documents({ setEditingQuotationId, currentUser, mode = '
               )}
             </tfoot>
           </table>
+
+          {/* Chữ ký khi in */}
+          {showSignatures && (
+            <div className="hidden print:block mt-8 pt-4 font-[Times_New_Roman]">
+              <div className="text-right italic mb-4 text-xs pr-4">
+                Ngày ......... tháng ......... năm 20.........
+              </div>
+              <div className="grid grid-cols-3 text-center text-xs">
+                <div>
+                  <p className="font-bold uppercase">NGƯỜI LẬP BIỂU</p>
+                  <p className="italic text-gray-500 text-[11px] mt-0.5">(Ký, ghi rõ họ tên)</p>
+                  <div className="h-20"></div>
+                </div>
+                <div>
+                  <p className="font-bold uppercase">KẾ TOÁN TRƯỞNG</p>
+                  <p className="italic text-gray-500 text-[11px] mt-0.5">(Ký, ghi rõ họ tên)</p>
+                  <div className="h-20"></div>
+                </div>
+                <div>
+                  <p className="font-bold uppercase">GIÁM ĐỐC</p>
+                  <p className="italic text-gray-500 text-[11px] mt-0.5">(Ký, đóng dấu, ghi rõ họ tên)</p>
+                  <div className="h-20"></div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Preview Modal */}
@@ -800,6 +1071,317 @@ export default function Documents({ setEditingQuotationId, currentUser, mode = '
                       Lưu lại
                     </button>
                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal Chọn Kỳ Báo Cáo In Bảng Kê */}
+        {isPrintModalOpen && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 print:hidden">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-gray-100 animate-in fade-in zoom-in-95 duration-150">
+              {/* Header */}
+              <div className="px-6 py-4 bg-gradient-to-r from-emerald-600 to-teal-700 text-white flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <div className="p-2 bg-white/20 rounded-lg">
+                    <Printer size={20} className="text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold">In Bảng Kê Chứng Từ</h3>
+                    <p className="text-xs text-emerald-100">Chọn kỳ báo cáo và cấu hình dữ liệu in</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsPrintModalOpen(false)}
+                  className="p-1 rounded-lg hover:bg-white/20 text-white/80 hover:text-white transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+                {/* 1. Chọn loại kỳ */}
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                    1. Kỳ báo cáo
+                  </label>
+                  <div className="grid grid-cols-5 gap-1.5 p-1 bg-gray-100 rounded-xl">
+                    {[
+                      { id: 'QUARTER', label: 'Theo Quý' },
+                      { id: 'HALF_YEAR', label: '6 Tháng' },
+                      { id: 'YEAR', label: 'Theo Năm' },
+                      { id: 'CUSTOM', label: 'Tùy chọn' },
+                      { id: 'ALL', label: 'Tất cả' },
+                    ].map((tab) => (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => setModalPeriod(prev => ({ ...prev, periodType: tab.id as any }))}
+                        className={`py-2 text-xs font-semibold rounded-lg transition-all ${
+                          modalPeriod.periodType === tab.id
+                            ? 'bg-white text-emerald-700 shadow-sm'
+                            : 'text-gray-600 hover:text-gray-900'
+                        }`}
+                      >
+                        {tab.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 2. Chi tiết theo kỳ */}
+                {modalPeriod.periodType === 'QUARTER' && (
+                  <div className="space-y-3 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-gray-700 uppercase tracking-wider">Chọn Quý</span>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-xs text-gray-500">Năm:</span>
+                        <select
+                          value={modalPeriod.year}
+                          onChange={(e) => setModalPeriod(prev => ({ ...prev, year: Number(e.target.value) }))}
+                          className="text-xs font-bold border border-gray-300 rounded-lg px-2.5 py-1 bg-white outline-none focus:ring-1 focus:ring-emerald-500"
+                        >
+                          {availableYears.map(y => (
+                            <option key={y} value={y}>{y}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-4 gap-2">
+                      {[
+                        { q: 1, name: 'Quý 1', range: 'T1 - T3' },
+                        { q: 2, name: 'Quý 2', range: 'T4 - T6' },
+                        { q: 3, name: 'Quý 3', range: 'T7 - T9' },
+                        { q: 4, name: 'Quý 4', range: 'T10 - T12' },
+                      ].map(item => (
+                        <button
+                          key={item.q}
+                          type="button"
+                          onClick={() => setModalPeriod(prev => ({ ...prev, quarter: item.q as any }))}
+                          className={`p-2.5 rounded-lg border text-center transition-all ${
+                            modalPeriod.quarter === item.q
+                              ? 'bg-emerald-600 text-white border-emerald-600 font-bold shadow'
+                              : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-100'
+                          }`}
+                        >
+                          <div className="text-xs font-bold">{item.name}</div>
+                          <div className={`text-[10px] mt-0.5 ${modalPeriod.quarter === item.q ? 'text-emerald-100' : 'text-gray-400'}`}>
+                            {item.range}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                    <div className="text-[11px] text-gray-600 italic bg-white p-2 rounded border border-gray-200">
+                      📅 {modalRange.label}
+                    </div>
+                  </div>
+                )}
+
+                {modalPeriod.periodType === 'HALF_YEAR' && (
+                  <div className="space-y-3 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-gray-700 uppercase tracking-wider">Chọn 6 Tháng (Bán Niên)</span>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-xs text-gray-500">Năm:</span>
+                        <select
+                          value={modalPeriod.year}
+                          onChange={(e) => setModalPeriod(prev => ({ ...prev, year: Number(e.target.value) }))}
+                          className="text-xs font-bold border border-gray-300 rounded-lg px-2.5 py-1 bg-white outline-none focus:ring-1 focus:ring-emerald-500"
+                        >
+                          {availableYears.map(y => (
+                            <option key={y} value={y}>{y}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      {[
+                        { h: 1, name: '6 tháng đầu năm', range: '01/01 - 30/06' },
+                        { h: 2, name: '6 tháng cuối năm', range: '01/07 - 31/12' },
+                      ].map(item => (
+                        <button
+                          key={item.h}
+                          type="button"
+                          onClick={() => setModalPeriod(prev => ({ ...prev, halfYear: item.h as any }))}
+                          className={`p-3 rounded-lg border text-center transition-all ${
+                            modalPeriod.halfYear === item.h
+                              ? 'bg-emerald-600 text-white border-emerald-600 font-bold shadow'
+                              : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-100'
+                          }`}
+                        >
+                          <div className="text-xs font-bold">{item.name}</div>
+                          <div className={`text-[10px] mt-0.5 ${modalPeriod.halfYear === item.h ? 'text-emerald-100' : 'text-gray-400'}`}>
+                            {item.range}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                    <div className="text-[11px] text-gray-600 italic bg-white p-2 rounded border border-gray-200">
+                      📅 {modalRange.label}
+                    </div>
+                  </div>
+                )}
+
+                {modalPeriod.periodType === 'YEAR' && (
+                  <div className="space-y-3 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-gray-700 uppercase tracking-wider">Chọn Năm Tài Chính</span>
+                      <select
+                        value={modalPeriod.year}
+                        onChange={(e) => setModalPeriod(prev => ({ ...prev, year: Number(e.target.value) }))}
+                        className="text-xs font-bold border border-gray-300 rounded-lg px-3 py-1.5 bg-white outline-none focus:ring-1 focus:ring-emerald-500"
+                      >
+                        {availableYears.map(y => (
+                          <option key={y} value={y}>Năm {y}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="text-[11px] text-gray-600 italic bg-white p-2 rounded border border-gray-200">
+                      📅 {modalRange.label}
+                    </div>
+                  </div>
+                )}
+
+                {modalPeriod.periodType === 'CUSTOM' && (
+                  <div className="space-y-3 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Từ ngày</label>
+                        <input
+                          type="date"
+                          value={modalPeriod.customStartDate || ''}
+                          onChange={(e) => setModalPeriod(prev => ({ ...prev, customStartDate: e.target.value }))}
+                          className="w-full text-xs border border-gray-300 rounded-lg px-3 py-2 bg-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Đến ngày</label>
+                        <input
+                          type="date"
+                          value={modalPeriod.customEndDate || ''}
+                          onChange={(e) => setModalPeriod(prev => ({ ...prev, customEndDate: e.target.value }))}
+                          className="w-full text-xs border border-gray-300 rounded-lg px-3 py-2 bg-white"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {modalPeriod.periodType === 'ALL' && (
+                  <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 text-center text-xs text-gray-600">
+                    📅 In toàn bộ danh sách chứng từ từ trước đến nay (Không giới hạn thời gian)
+                  </div>
+                )}
+
+                {/* 3. Phạm vi chứng từ */}
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                    2. Phạm vi chứng từ khi in
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Phân loại</label>
+                      <select
+                        value={modalFilterType}
+                        onChange={(e) => setModalFilterType(e.target.value)}
+                        className="w-full text-xs border border-gray-300 rounded-lg px-3 py-2 bg-white outline-none focus:ring-1 focus:ring-emerald-500 font-medium"
+                      >
+                        <option value="ALL">Tất cả Hóa đơn</option>
+                        <option value="OUTPUT_INVOICE">Bán ra (Doanh thu)</option>
+                        <option value="INPUT_INVOICE">Mua vào (Chi phí)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Trạng thái thanh toán</label>
+                      <select
+                        value={modalFilterPayment}
+                        onChange={(e) => setModalFilterPayment(e.target.value)}
+                        className="w-full text-xs border border-gray-300 rounded-lg px-3 py-2 bg-white outline-none focus:ring-1 focus:ring-emerald-500 font-medium"
+                      >
+                        <option value="ALL">Tất cả trạng thái</option>
+                        <option value="PAID">Đã thanh toán</option>
+                        <option value="UNPAID">Chưa thanh toán (Công nợ)</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 4. Xem trước kết quả trong kỳ */}
+                <div className="bg-emerald-50/70 border border-emerald-200 rounded-xl p-3.5 space-y-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-semibold text-emerald-900 flex items-center">
+                      <CheckCircle size={14} className="mr-1 text-emerald-600" />
+                      Dữ liệu tìm thấy trong kỳ:
+                    </span>
+                    <span className="font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
+                      {modalTotals.count} chứng từ
+                    </span>
+                  </div>
+                  
+                  {modalTotals.count > 0 ? (
+                    <div className="text-xs text-emerald-950 pt-1 border-t border-emerald-200/60 flex flex-wrap gap-x-4 gap-y-1">
+                      {modalFilterType === 'ALL' ? (
+                        <>
+                          <div>Mua vào: <span className="font-bold text-blue-700">{formatNumber(modalTotals.totalInput)}</span></div>
+                          <div>Bán ra: <span className="font-bold text-green-700">{formatNumber(modalTotals.totalOutput)}</span></div>
+                          <div>Chênh lệch: <span className="font-bold text-emerald-800">{formatNumber(modalTotals.totalOutput - modalTotals.totalInput)}</span></div>
+                        </>
+                      ) : modalFilterType === 'OUTPUT_INVOICE' ? (
+                        <div>Tổng tiền bán ra: <span className="font-bold text-green-800">{formatNumber(modalTotals.totalOutput)}</span></div>
+                      ) : (
+                        <div>Tổng tiền mua vào: <span className="font-bold text-blue-800">{formatNumber(modalTotals.totalInput)}</span></div>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-amber-700 italic flex items-center pt-1">
+                      <AlertCircle size={13} className="mr-1 text-amber-600 flex-shrink-0" />
+                      Không có chứng từ nào trong kỳ báo cáo này.
+                    </p>
+                  )}
+                </div>
+
+                {/* 5. Tùy chọn chữ ký */}
+                <label className="flex items-center space-x-2 text-xs text-gray-700 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={showSignatures}
+                    onChange={(e) => setShowSignatures(e.target.checked)}
+                    className="rounded text-emerald-600 focus:ring-emerald-500 w-4 h-4"
+                  />
+                  <span>In kèm phần chữ ký (Người lập biểu, Kế toán trưởng, Giám đốc)</span>
+                </label>
+              </div>
+
+              {/* Footer */}
+              <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => setIsPrintModalOpen(false)}
+                  className="px-4 py-2 text-xs font-semibold text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-lg transition-colors"
+                >
+                  Đóng
+                </button>
+                
+                <div className="flex items-center space-x-2">
+                  <button
+                    type="button"
+                    onClick={handleApplyFilterOnly}
+                    className="px-3.5 py-2 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 rounded-lg transition-colors"
+                    title="Áp dụng kỳ này ra bảng danh sách bên ngoài"
+                  >
+                    Áp dụng ra bảng
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleConfirmPrint}
+                    className="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm hover:shadow flex items-center transition-all"
+                  >
+                    <Printer size={15} className="mr-1.5" />
+                    In Bảng Kê Ngay
+                  </button>
                 </div>
               </div>
             </div>
