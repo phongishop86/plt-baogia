@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Upload } from 'lucide-react';
 import { parseInvoiceXML } from '../lib/xmlParser';
 import { db } from '../db/db';
+import { findMatchingProduct, normalizeUnit } from '../lib/productMatcher';
 
 export default function XMLImport() {
   const [loading, setLoading] = useState(false);
@@ -65,17 +66,17 @@ export default function XMLImport() {
           customerId = await db.customers.add(counterpart as any);
         }
 
-        // 2. Save Products and Update Stock
+        // 2. Save Products and Update Stock (Sử dụng thuật toán so khớp thông minh & chuẩn hóa ĐVT)
+        const allExistingProducts = await db.products.toArray();
+
         for (const prod of products) {
           if (!prod.code && !prod.name) continue;
           
-          let existing = null;
-          if (prod.code && prod.code.trim() !== '') {
-            existing = await db.products.where('code').equals(prod.code).first();
-          }
-          if (!existing && prod.name) {
-            existing = await db.products.filter(p => p.name.trim().toLowerCase() === prod.name.trim().toLowerCase()).first();
-          }
+          // Chuẩn hóa ĐVT ngay từ đầu (vd: cái -> Cái, chiếc -> Cái, cuộn -> Cuộn)
+          prod.unit = normalizeUnit(prod.unit);
+
+          // Tìm kiếm sản phẩm phù hợp nhất trong kho (khớp Unicode NFC, khoảng trắng, ĐVT tương đương)
+          const existing = findMatchingProduct(allExistingProducts, prod);
           
           let newStock = 0;
           const qty = prod.quantity || 1;
@@ -87,30 +88,49 @@ export default function XMLImport() {
             
             // Nếu là HĐ Mua vào (INPUT) và không lưu kho => Chi phí hoạt động (EXPENSE)
             // Nếu là HĐ Bán ra (OUTPUT) và không lưu kho => Dịch vụ bán (SERVICE)
-            const resolvedType = (invoiceType === 'INPUT' && isServiceOrExpense) ? 'EXPENSE' : (isServiceOrExpense ? 'SERVICE' : 'PRODUCT');
+            const resolvedType: 'PRODUCT' | 'SERVICE' | 'EXPENSE' = (invoiceType === 'INPUT' && isServiceOrExpense) ? 'EXPENSE' : (isServiceOrExpense ? 'SERVICE' : 'PRODUCT');
             
             // Các loại phi hàng hoá sẽ không cộng dồn/trừ tồn kho
             newStock = (invoiceType === 'INPUT' && resolvedType === 'PRODUCT') ? qty : (resolvedType === 'PRODUCT' ? -qty : 0);
             
-            const newId = await db.products.add({
+            const newProductData = {
               code: prod.code || '',
-              name: prod.name || '',
-              unit: prod.unit || '',
+              name: prod.name.trim(),
+              unit: prod.unit,
               unitPrice: prod.unitPrice || 0,
               taxRate: prod.taxRate || 0,
               stock: newStock,
               type: resolvedType,
               expenseDate: resolvedType === 'EXPENSE' ? invoiceInfo.date : undefined
-            });
+            };
+
+            const newId = await db.products.add(newProductData);
             prod.productId = newId;
+
+            // Thêm vào bộ nhớ tạm để các dòng tiếp theo trong cùng hóa đơn nếu trùng cũng tự động khớp
+            allExistingProducts.push({ ...newProductData, id: newId });
           } else {
             const currentStock = existing.stock || 0;
             const isNonProduct = existing.type === 'SERVICE' || existing.type === 'EXPENSE';
             newStock = (invoiceType === 'INPUT' && !isNonProduct) ? currentStock + qty : (!isNonProduct ? currentStock - qty : currentStock);
             
+            // Thống nhất ĐVT chuẩn
+            const unifiedUnit = normalizeUnit(existing.unit || prod.unit);
+
             await db.products.update(existing.id!, { 
-              stock: newStock, unitPrice: prod.unitPrice }); // Update price as well
+              stock: newStock,
+              unit: unifiedUnit,
+              unitPrice: prod.unitPrice || existing.unitPrice 
+            });
+
+            // Cập nhật bộ nhớ tạm
+            existing.stock = newStock;
+            existing.unit = unifiedUnit;
+            if (prod.unitPrice) existing.unitPrice = prod.unitPrice;
+
             prod.productId = existing.id;
+            prod.name = existing.name; // Thống nhất tên sản phẩm theo tên đã có
+            prod.unit = unifiedUnit;   // Thống nhất ĐVT
           }
         }
         

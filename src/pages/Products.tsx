@@ -1,7 +1,8 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db, type User } from '../db/db';
+import { db, type User, type Product } from '../db/db';
 import { useMemo, useState } from 'react';
-import { CheckSquare, FileText, Search, Edit2, Save, X } from 'lucide-react';
+import { CheckSquare, FileText, Search, Edit2, Save, X, Layers, GitMerge, CheckCircle, RefreshCw } from 'lucide-react';
+import { detectDuplicateGroups, normalizeUnit, normalizeText, type DuplicateGroup } from '../lib/productMatcher';
 
 interface ProductsProps {
   onNavigate?: (tab: string) => void;
@@ -24,6 +25,208 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
   const [editType, setEditType] = useState<'PRODUCT' | 'SERVICE' | 'EXPENSE'>('PRODUCT');
   const [editCategory, setEditCategory] = useState('');
 
+  // Tự động nhận diện các nhóm sản phẩm trùng lặp (tên giống nhau, khác ĐVT hoặc kiểu chữ)
+  const duplicateGroups = useMemo(() => {
+    return detectDuplicateGroups(products || []);
+  }, [products]);
+
+  const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
+  const [manualMergeModal, setManualMergeModal] = useState<{
+    isOpen: boolean;
+    products: Product[];
+    selectedTargetId: number;
+    customName: string;
+    customUnit: string;
+  } | null>(null);
+
+  const [isMerging, setIsMerging] = useState(false);
+
+  // Gộp 1 nhóm trùng lặp
+  const handleMergeGroup = async (group: DuplicateGroup) => {
+    if (!confirm(`Xác nhận gộp ${group.allProducts.length} dòng mặt hàng "${group.canonicalName}" thành 1 dòng duy nhất?\n(Tổng tồn sau gộp: ${group.totalStock} ${group.canonicalUnit})`)) {
+      return;
+    }
+
+    try {
+      setIsMerging(true);
+      const target = group.targetProduct;
+      const duplicates = group.duplicateProducts;
+      const dupIds = duplicates.map(p => p.id!);
+      const dupNames = new Set(duplicates.map(p => normalizeText(p.name)));
+
+      // 1. Cập nhật sản phẩm đích (cộng dồn tồn kho, chuẩn hóa tên và ĐVT)
+      await db.products.update(target.id!, {
+        name: group.canonicalName,
+        unit: group.canonicalUnit,
+        stock: group.totalStock,
+        updatedAt: new Date()
+      });
+
+      // 2. Chuyển toàn bộ chứng từ lịch sử (Hóa đơn, Báo giá) liên quan về ID và Tên chuẩn của sản phẩm đích
+      const allDocs = await db.documents.toArray();
+      for (const doc of allDocs) {
+        if (!doc.items || !Array.isArray(doc.items)) continue;
+        let changed = false;
+
+        doc.items.forEach(item => {
+          const isIdMatch = item.productId && dupIds.includes(item.productId);
+          const isNameMatch = item.productName && dupNames.has(normalizeText(item.productName));
+
+          if (isIdMatch || isNameMatch) {
+            item.productId = target.id;
+            item.productName = group.canonicalName;
+            item.unit = group.canonicalUnit;
+            changed = true;
+          }
+        });
+
+        if (changed) {
+          await db.documents.update(doc.id!, { items: doc.items });
+        }
+      }
+
+      // 3. Xóa bỏ các dòng sản phẩm thừa
+      await db.products.bulkDelete(dupIds);
+      setSelectedIds(prev => prev.filter(id => !dupIds.includes(id)));
+    } catch (err: any) {
+      console.error("Lỗi khi gộp sản phẩm:", err);
+      alert("Lỗi khi gộp: " + err.message);
+    } finally {
+      setIsMerging(false);
+    }
+  };
+
+  // 1-Click: Gộp tất cả các nhóm trùng lặp
+  const handleMergeAllGroups = async () => {
+    if (duplicateGroups.length === 0) return;
+    if (!confirm(`Xác nhận TỰ ĐỘNG THỐNG NHẤT VÀ GỘP TẤT CẢ ${duplicateGroups.length} nhóm mặt hàng bị trùng lặp?\nHành động này sẽ cộng dồn tồn kho và hợp nhất toàn bộ lịch sử chứng từ.`)) {
+      return;
+    }
+
+    try {
+      setIsMerging(true);
+      for (const group of duplicateGroups) {
+        const target = group.targetProduct;
+        const duplicates = group.duplicateProducts;
+        const dupIds = duplicates.map(p => p.id!);
+        const dupNames = new Set(duplicates.map(p => normalizeText(p.name)));
+
+        await db.products.update(target.id!, {
+          name: group.canonicalName,
+          unit: group.canonicalUnit,
+          stock: group.totalStock,
+          updatedAt: new Date()
+        });
+
+        const allDocs = await db.documents.toArray();
+        for (const doc of allDocs) {
+          if (!doc.items || !Array.isArray(doc.items)) continue;
+          let changed = false;
+
+          doc.items.forEach(item => {
+            const isIdMatch = item.productId && dupIds.includes(item.productId);
+            const isNameMatch = item.productName && dupNames.has(normalizeText(item.productName));
+
+            if (isIdMatch || isNameMatch) {
+              item.productId = target.id;
+              item.productName = group.canonicalName;
+              item.unit = group.canonicalUnit;
+              changed = true;
+            }
+          });
+
+          if (changed) {
+            await db.documents.update(doc.id!, { items: doc.items });
+          }
+        }
+
+        await db.products.bulkDelete(dupIds);
+      }
+      setSelectedIds([]);
+      setIsMergeModalOpen(false);
+      alert(`Đã thống nhất và gộp thành công ${duplicateGroups.length} nhóm mặt hàng trùng lặp!`);
+    } catch (err: any) {
+      console.error("Lỗi khi gộp tất cả:", err);
+      alert("Lỗi khi gộp: " + err.message);
+    } finally {
+      setIsMerging(false);
+    }
+  };
+
+  // Mở modal gộp thủ công khi chọn checkbox
+  const handleOpenManualMerge = () => {
+    if (selectedIds.length < 2) {
+      alert("Vui lòng tích chọn ít nhất 2 mặt hàng để gộp!");
+      return;
+    }
+    const prods = (products || []).filter(p => selectedIds.includes(p.id!));
+    if (prods.length < 2) return;
+
+    const sorted = [...prods].sort((a, b) => (b.stock || 0) - (a.stock || 0));
+    setManualMergeModal({
+      isOpen: true,
+      products: prods,
+      selectedTargetId: sorted[0].id!,
+      customName: sorted[0].name,
+      customUnit: normalizeUnit(sorted[0].unit || 'Cái')
+    });
+  };
+
+  // Xác nhận gộp thủ công
+  const handleConfirmManualMerge = async () => {
+    if (!manualMergeModal) return;
+    const { products: prods, selectedTargetId, customName, customUnit } = manualMergeModal;
+    const target = prods.find(p => p.id === selectedTargetId);
+    if (!target) return;
+
+    const duplicates = prods.filter(p => p.id !== selectedTargetId);
+    const dupIds = duplicates.map(p => p.id!);
+    const dupNames = new Set(duplicates.map(p => normalizeText(p.name)));
+    const totalStock = prods.reduce((sum, p) => sum + (p.stock || 0), 0);
+
+    try {
+      setIsMerging(true);
+      await db.products.update(target.id!, {
+        name: customName.trim(),
+        unit: normalizeUnit(customUnit),
+        stock: totalStock,
+        updatedAt: new Date()
+      });
+
+      const allDocs = await db.documents.toArray();
+      for (const doc of allDocs) {
+        if (!doc.items || !Array.isArray(doc.items)) continue;
+        let changed = false;
+
+        doc.items.forEach(item => {
+          const isIdMatch = item.productId && dupIds.includes(item.productId);
+          const isNameMatch = item.productName && dupNames.has(normalizeText(item.productName));
+
+          if (isIdMatch || isNameMatch) {
+            item.productId = target.id;
+            item.productName = customName.trim();
+            item.unit = normalizeUnit(customUnit);
+            changed = true;
+          }
+        });
+
+        if (changed) {
+          await db.documents.update(doc.id!, { items: doc.items });
+        }
+      }
+
+      await db.products.bulkDelete(dupIds);
+      setSelectedIds([]);
+      setManualMergeModal(null);
+      alert(`Đã gộp thành công ${prods.length} mặt hàng thành 1 dòng duy nhất!`);
+    } catch (err: any) {
+      console.error("Lỗi khi gộp thủ công:", err);
+      alert("Lỗi: " + err.message);
+    } finally {
+      setIsMerging(false);
+    }
+  };
+
   const [soldModal, setSoldModal] = useState<{ isOpen: boolean; productIds: number[] } | null>(null);
   const [soldDate, setSoldDate] = useState(new Date().toISOString().split('T')[0]);
   const [soldCustomerId, setSoldCustomerId] = useState<string>('');
@@ -44,10 +247,10 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
     for (const doc of documents) {
       if (!doc.items || !Array.isArray(doc.items)) continue;
       
-      const normalize = (str?: string) => (str || '').toString().trim().toLowerCase();
       const match = doc.items.find((item: any) => 
-        normalize(product.name) === normalize(item.productName) || 
-        (product.code && product.code === item.productId?.toString())
+        (item.productId && item.productId === product.id) ||
+        normalizeText(product.name) === normalizeText(item.productName) || 
+        (product.code && product.code.trim() !== '' && product.code === item.productId?.toString())
       );
       
       if (match) {
@@ -97,10 +300,10 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
       const docDate = new Date(doc.date);
       
       doc.items.forEach(item => {
-        const normalize = (str?: string) => (str || '').toString().trim().toLowerCase();
         const product = products.find(p => 
-          normalize(p.name) === normalize(item.productName) || 
-          (p.code && p.code === item.productId?.toString())
+          (item.productId && p.id === item.productId) ||
+          normalizeText(p.name) === normalizeText(item.productName) || 
+          (p.code && p.code.trim() !== '' && p.code === item.productId?.toString())
         );
         
         if (product && product.id) {
@@ -404,6 +607,29 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
             </button>
           </div>
 
+          {/* Nút Kiểm tra & Gộp mặt hàng trùng lặp */}
+          {duplicateGroups.length > 0 ? (
+            <button
+              type="button"
+              onClick={() => setIsMergeModalOpen(true)}
+              className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-600 text-white px-3 py-2 rounded-md text-sm font-semibold shadow-sm transition-all animate-pulse whitespace-nowrap"
+              title="Phát hiện mặt hàng trùng lặp tên hoặc đơn vị tính"
+            >
+              <Layers className="w-4 h-4" />
+              <span>Gộp trùng lặp (${duplicateGroups.length})</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setIsMergeModalOpen(true)}
+              className="flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap"
+              title="Kiểm tra và thống nhất mặt hàng trùng lặp"
+            >
+              <Layers className="w-4 h-4 text-gray-500" />
+              <span>Kiểm tra trùng</span>
+            </button>
+          )}
+
           {/* Nút Báo giá & Chuyển đổi */}
           {selectedIds.length > 0 && (
             <div className="flex flex-wrap gap-2 w-full sm:w-auto items-center">
@@ -422,6 +648,17 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
                   >
                     Chuyển sang Đã Bán
                   </button>
+                  {selectedIds.length >= 2 && (
+                    <button 
+                      type="button"
+                      onClick={handleOpenManualMerge}
+                      className="flex-1 sm:flex-none items-center gap-1.5 bg-purple-600 hover:bg-purple-700 text-white px-3.5 py-2 rounded-md text-sm font-bold transition-colors shadow-sm whitespace-nowrap justify-center flex"
+                      title="Gộp các mặt hàng đã chọn thành 1 dòng duy nhất"
+                    >
+                      <GitMerge className="w-4 h-4" />
+                      Gộp (${selectedIds.length}) thành 1
+                    </button>
+                  )}
                 </>
               )}
               <select
@@ -804,6 +1041,298 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
                 className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50"
               >
                 Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 1: TỰ ĐỘNG THỐNG NHẤT & GỘP TRÙNG LẶP */}
+      {isMergeModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[85vh] overflow-hidden flex flex-col border border-gray-100 animate-in fade-in zoom-in-95 duration-150">
+            {/* Header */}
+            <div className="px-6 py-4 bg-gradient-to-r from-amber-500 to-orange-600 text-white flex items-center justify-between">
+              <div className="flex items-center space-x-2.5">
+                <div className="p-2 bg-white/20 rounded-lg">
+                  <Layers size={22} className="text-white" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold">Thống Nhất & Gộp Mặt Hàng Trùng Lặp</h3>
+                  <p className="text-xs text-amber-100">Tự động phát hiện các mặt hàng cùng loại nhưng bị tách dòng do khác kiểu ĐVT hoặc viết hoa/thường</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsMergeModalOpen(false)}
+                className="p-1 rounded-lg hover:bg-white/20 text-white/80 hover:text-white transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Subheader action bar */}
+            <div className="p-4 bg-amber-50/80 border-b border-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div>
+                <span className="text-xs font-bold text-amber-900 uppercase tracking-wider">
+                  Kết quả quét kho hàng:
+                </span>
+                <span className="ml-2 text-sm font-extrabold text-amber-800">
+                  {duplicateGroups.length > 0 ? `Phát hiện ${duplicateGroups.length} nhóm mặt hàng bị trùng dòng` : 'Không phát hiện mặt hàng trùng lặp'}
+                </span>
+              </div>
+              {duplicateGroups.length > 0 && (
+                <button
+                  type="button"
+                  disabled={isMerging}
+                  onClick={handleMergeAllGroups}
+                  className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-sm hover:shadow flex items-center gap-1.5 transition-all whitespace-nowrap"
+                >
+                  <RefreshCw size={14} className={isMerging ? 'animate-spin' : ''} />
+                  ⚡ Thống nhất tất cả (${duplicateGroups.length} nhóm)
+                </button>
+              )}
+            </div>
+
+            {/* Content List */}
+            <div className="p-6 overflow-y-auto space-y-4 flex-1">
+              {duplicateGroups.length === 0 ? (
+                <div className="py-12 text-center">
+                  <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <CheckCircle size={32} />
+                  </div>
+                  <h4 className="text-base font-bold text-gray-800">Kho hàng rất gọn gàng!</h4>
+                  <p className="text-xs text-gray-500 mt-1 max-w-md mx-auto">
+                    Tất cả các mặt hàng trong kho đều có tên và đơn vị tính thống nhất, không phát hiện dòng nào bị chia đôi.
+                  </p>
+                </div>
+              ) : (
+                duplicateGroups.map((group, gIdx) => (
+                  <div key={group.id} className="border border-amber-200 rounded-xl overflow-hidden bg-white shadow-sm hover:border-amber-300 transition-colors">
+                    {/* Group Header */}
+                    <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                      <div className="flex items-center space-x-2">
+                        <span className="bg-amber-100 text-amber-800 text-[11px] font-bold px-2 py-0.5 rounded-full">
+                          Nhóm #{gIdx + 1}
+                        </span>
+                        <h4 className="text-sm font-bold text-gray-900">
+                          {group.canonicalName}
+                        </h4>
+                        <span className="text-xs text-gray-500">
+                          (ĐVT chuẩn: <strong className="text-emerald-700">{group.canonicalUnit}</strong>)
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        disabled={isMerging}
+                        onClick={() => handleMergeGroup(group)}
+                        className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1 whitespace-nowrap"
+                      >
+                        <GitMerge size={13} />
+                        Gộp nhóm này
+                      </button>
+                    </div>
+
+                    {/* Group Rows Table */}
+                    <div className="p-3">
+                      <table className="min-w-full text-xs">
+                        <thead>
+                          <tr className="text-gray-400 border-b border-gray-100">
+                            <th className="text-left py-1.5 font-medium">Tên hiển thị hiện tại</th>
+                            <th className="text-center py-1.5 font-medium">ĐVT hiện tại</th>
+                            <th className="text-right py-1.5 font-medium">Tồn kho</th>
+                            <th className="text-right py-1.5 font-medium">Giá nhập gần nhất</th>
+                            <th className="text-center py-1.5 font-medium">Vai trò</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                          {group.allProducts.map((p) => {
+                            const isTarget = p.id === group.targetProduct.id;
+                            return (
+                              <tr key={p.id} className={isTarget ? 'bg-emerald-50/50' : 'bg-red-50/30'}>
+                                <td className="py-2 font-medium text-gray-800">
+                                  {p.name}
+                                </td>
+                                <td className="py-2 text-center font-bold text-gray-700">
+                                  <span className={p.unit !== group.canonicalUnit ? 'text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded' : ''}>
+                                    {p.unit || '---'}
+                                  </span>
+                                </td>
+                                <td className="py-2 text-right font-bold text-gray-900">
+                                  {p.stock || 0}
+                                </td>
+                                <td className="py-2 text-right text-gray-600">
+                                  {new Intl.NumberFormat('vi-VN').format(p.unitPrice || 0)} đ
+                                </td>
+                                <td className="py-2 text-center">
+                                  {isTarget ? (
+                                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                                      Giữ lại làm mốc
+                                    </span>
+                                  ) : (
+                                    <span className="text-[10px] font-medium text-red-600 bg-red-100 px-2 py-0.5 rounded-full">
+                                      Sẽ gộp vào
+                                    </span>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+
+                      {/* Footer dự kiến sau gộp */}
+                      <div className="mt-2 pt-2 border-t border-gray-100 flex items-center justify-between text-xs text-gray-600 bg-emerald-50/70 p-2 rounded-lg">
+                        <span className="italic flex items-center text-emerald-900 font-medium">
+                          <CheckCircle size={13} className="text-emerald-600 mr-1" />
+                          Lý do phát hiện: {group.reason}
+                        </span>
+                        <div className="text-right">
+                          <span className="text-gray-500">Sau khi gộp: </span>
+                          <strong className="text-emerald-800 font-extrabold text-sm">
+                            {group.totalStock} {group.canonicalUnit}
+                          </strong>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-3.5 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
+              <span className="text-xs text-gray-500 italic">
+                * Quá trình gộp sẽ tự động chuyển toàn bộ lịch sử xuất/nhập của các dòng thừa sang dòng chính.
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsMergeModalOpen(false)}
+                className="px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-200 rounded-lg transition-colors"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 2: GỘP THỦ CÔNG KHI CHỌN CHECKBOX */}
+      {manualMergeModal && manualMergeModal.isOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-xl w-full overflow-hidden border border-gray-100 animate-in fade-in zoom-in-95 duration-150">
+            <div className="px-6 py-4 bg-gradient-to-r from-purple-600 to-indigo-700 text-white flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <div className="p-2 bg-white/20 rounded-lg">
+                  <GitMerge size={20} className="text-white" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold">Gộp {manualMergeModal.products.length} Mặt Hàng Đã Chọn Thành 1</h3>
+                  <p className="text-xs text-purple-100">Cộng dồn tồn kho và chuyển toàn bộ chứng từ về dòng được chọn</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setManualMergeModal(null)}
+                className="p-1 rounded-lg hover:bg-white/20 text-white/80 hover:text-white transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                  1. Chọn mặt hàng làm mốc (giữ lại ID này):
+                </label>
+                <div className="space-y-2">
+                  {manualMergeModal.products.map(p => (
+                    <label
+                      key={p.id}
+                      className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all ${
+                        manualMergeModal.selectedTargetId === p.id
+                          ? 'border-purple-500 bg-purple-50/60 ring-1 ring-purple-500'
+                          : 'border-gray-200 hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="radio"
+                          name="targetProduct"
+                          checked={manualMergeModal.selectedTargetId === p.id}
+                          onChange={() => {
+                            setManualMergeModal(prev => prev ? ({
+                              ...prev,
+                              selectedTargetId: p.id!,
+                              customName: p.name,
+                              customUnit: normalizeUnit(p.unit || 'Cái')
+                            }) : null);
+                          }}
+                          className="text-purple-600 focus:ring-purple-500"
+                        />
+                        <div>
+                          <p className="text-xs font-bold text-gray-900">{p.name}</p>
+                          <p className="text-[11px] text-gray-500">ĐVT: {p.unit || '---'} | Giá: {new Intl.NumberFormat('vi-VN').format(p.unitPrice || 0)} đ</p>
+                        </div>
+                      </div>
+                      <span className="text-xs font-extrabold text-gray-800 bg-gray-100 px-2 py-1 rounded">
+                        Tồn: {p.stock || 0}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 pt-2">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Tên thống nhất sau gộp</label>
+                  <input
+                    type="text"
+                    value={manualMergeModal.customName}
+                    onChange={(e) => setManualMergeModal(prev => prev ? ({ ...prev, customName: e.target.value }) : null)}
+                    className="w-full text-xs border border-gray-300 rounded-lg px-3 py-2 bg-white font-medium"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Đơn vị tính thống nhất</label>
+                  <input
+                    type="text"
+                    value={manualMergeModal.customUnit}
+                    onChange={(e) => setManualMergeModal(prev => prev ? ({ ...prev, customUnit: e.target.value }) : null)}
+                    className="w-full text-xs border border-gray-300 rounded-lg px-3 py-2 bg-white font-medium"
+                    placeholder="VD: Cái, Bộ, Cuộn..."
+                  />
+                </div>
+              </div>
+
+              {/* Tổng kết sau gộp */}
+              <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3.5 flex items-center justify-between text-xs">
+                <span className="font-semibold text-emerald-900 flex items-center">
+                  <CheckCircle size={15} className="mr-1 text-emerald-600" />
+                  Tổng tồn kho cộng dồn:
+                </span>
+                <span className="text-sm font-black text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-lg">
+                  {manualMergeModal.products.reduce((s, p) => s + (p.stock || 0), 0)} {manualMergeModal.customUnit}
+                </span>
+              </div>
+            </div>
+
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => setManualMergeModal(null)}
+                className="px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-200 rounded-lg transition-colors"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                disabled={isMerging}
+                onClick={handleConfirmManualMerge}
+                className="px-5 py-2 text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 rounded-lg shadow-sm flex items-center gap-1.5 transition-all"
+              >
+                <GitMerge size={14} />
+                Xác nhận Gộp thành 1 dòng
               </button>
             </div>
           </div>
