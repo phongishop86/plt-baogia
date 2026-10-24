@@ -95,8 +95,8 @@ export default function XMLImport() {
             
             const newProductData = {
               code: prod.code || '',
-              name: prod.name.trim(),
-              unit: prod.unit,
+              name: prod.name.replace(/\s+/g, ' ').trim(),
+              unit: normalizeUnit(prod.unit),
               unitPrice: prod.unitPrice || 0,
               taxRate: prod.taxRate || 0,
               stock: newStock,

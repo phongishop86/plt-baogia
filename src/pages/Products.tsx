@@ -1,8 +1,8 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, type User, type Product } from '../db/db';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { CheckSquare, FileText, Search, Edit2, Save, X, Layers, GitMerge, CheckCircle, RefreshCw } from 'lucide-react';
-import { detectDuplicateGroups, normalizeUnit, normalizeText, type DuplicateGroup } from '../lib/productMatcher';
+import { detectDuplicateGroups, normalizeUnit, normalizeText, areProductsMatch, type DuplicateGroup } from '../lib/productMatcher';
 
 interface ProductsProps {
   onNavigate?: (tab: string) => void;
@@ -27,8 +27,78 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
 
   // Tự động nhận diện các nhóm sản phẩm trùng lặp (tên giống nhau, khác ĐVT hoặc kiểu chữ)
   const duplicateGroups = useMemo(() => {
-    return detectDuplicateGroups(products || []);
-  }, [products]);
+    return detectDuplicateGroups(products || [], documents || []);
+  }, [products, documents]);
+
+  // Tự động đồng bộ và gộp các sản phẩm trùng lặp ngầm trong IndexedDB (chạy ngầm, không làm phiền người dùng)
+  const isAutoConsolidatingRef = useRef(false);
+
+  useEffect(() => {
+    if (!products || products.length < 2 || !documents || isAutoConsolidatingRef.current) return;
+
+    // Lọc các nhóm trùng lặp có độ tin cậy tuyệt đối/cao
+    const exactDuplicates = detectDuplicateGroups(products, documents).filter(g => 
+      g.duplicateProducts.length > 0 && 
+      (g.reason.includes('hoàn toàn trùng khớp') || g.reason.includes('khác kiểu ĐVT') || g.reason.includes('Tên cốt lõi'))
+    );
+
+    if (exactDuplicates.length === 0) return;
+
+    const performBackgroundConsolidation = async () => {
+      try {
+        isAutoConsolidatingRef.current = true;
+        for (const group of exactDuplicates) {
+          const target = group.targetProduct;
+          const duplicates = group.duplicateProducts;
+          const dupIds = duplicates.map(p => p.id!).filter(Boolean);
+          if (dupIds.length === 0) continue;
+
+          const dupNames = new Set(duplicates.map(p => normalizeText(p.name)));
+          dupNames.add(normalizeText(target.name));
+
+          // 1. Cập nhật sản phẩm chính với tên chuẩn hóa, ĐVT chuẩn hóa và Tồn kho thực tế (Nhập - Xuất)
+          await db.products.update(target.id!, {
+            name: group.canonicalName,
+            unit: group.canonicalUnit,
+            stock: group.totalStock,
+            updatedAt: new Date()
+          });
+
+          // 2. Chuyển toàn bộ các chứng từ lịch sử về ID và tên của sản phẩm chính
+          const allDocs = await db.documents.toArray();
+          for (const doc of allDocs) {
+            if (!doc.items || !Array.isArray(doc.items)) continue;
+            let changed = false;
+
+            doc.items.forEach(item => {
+              const isIdMatch = item.productId && dupIds.includes(item.productId);
+              const isNameMatch = item.productName && dupNames.has(normalizeText(item.productName));
+
+              if (isIdMatch || isNameMatch) {
+                item.productId = target.id;
+                item.productName = group.canonicalName;
+                item.unit = group.canonicalUnit;
+                changed = true;
+              }
+            });
+
+            if (changed) {
+              await db.documents.update(doc.id!, { items: doc.items });
+            }
+          }
+
+          // 3. Xóa các sản phẩm trùng lặp thừa
+          await db.products.bulkDelete(dupIds);
+        }
+      } catch (err) {
+        console.error("Auto consolidation background error:", err);
+      } finally {
+        isAutoConsolidatingRef.current = false;
+      }
+    };
+
+    performBackgroundConsolidation();
+  }, [products, documents]);
 
   const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
   const [manualMergeModal, setManualMergeModal] = useState<{
@@ -243,17 +313,19 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
   const openHistoryModal = async (product: any) => {
     if (!documents) return;
     const historyList = [];
+    const prodIds = (product.allIds && product.allIds.length > 0) ? product.allIds : [product.id];
+    const normName = normalizeText(product.name);
     
     for (const doc of documents) {
       if (!doc.items || !Array.isArray(doc.items)) continue;
       
-      const match = doc.items.find((item: any) => 
-        (item.productId && item.productId === product.id) ||
-        normalizeText(product.name) === normalizeText(item.productName) || 
+      const matches = doc.items.filter((item: any) => 
+        (item.productId && prodIds.includes(item.productId)) ||
+        normName === normalizeText(item.productName) || 
         (product.code && product.code.trim() !== '' && product.code === item.productId?.toString())
       );
       
-      if (match) {
+      if (matches.length > 0) {
         let customerName = 'Không rõ đối tác';
         if (doc.customerId) {
           try {
@@ -262,17 +334,19 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
           } catch (e) {}
         }
         
-        historyList.push({
-          docId: doc.id,
-          date: doc.date,
-          docNumber: doc.docNumber,
-          type: doc.type,
-          customerName,
-          quantity: match.quantity,
-          unitPrice: match.unitPrice,
-          taxRate: match.taxRate || 0,
-          amount: match.amount || (match.quantity * match.unitPrice)
-        });
+        for (const match of matches) {
+          historyList.push({
+            docId: doc.id,
+            date: doc.date,
+            docNumber: doc.docNumber,
+            type: doc.type,
+            customerName,
+            quantity: match.quantity,
+            unitPrice: match.unitPrice,
+            taxRate: match.taxRate || 0,
+            amount: match.amount || (match.quantity * match.unitPrice)
+          });
+        }
       }
     }
     
@@ -329,16 +403,109 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
       });
     });
 
-    return products.map(p => {
-      const pStats = statsMap[p.id!];
+    // Gom cụm các sản phẩm trùng lặp (on-the-fly) để bảng luôn hiển thị đúng 1 dòng duy nhất cho cùng 1 mặt hàng
+    const clusters: Array<{
+      primary: Product;
+      members: Product[];
+      allIds: number[];
+      canonicalName: string;
+      canonicalUnit: string;
+      totalIn: number;
+      totalOut: number;
+      lastInPrice: number;
+      lastOutPrice: number;
+      stock: number;
+    }> = [];
+
+    const clusterAssigned = new Set<number>();
+
+    for (let i = 0; i < products.length; i++) {
+      const p = products[i];
+      if (!p.id || clusterAssigned.has(p.id)) continue;
+
+      const clusterMembers: Product[] = [p];
+      clusterAssigned.add(p.id);
+
+      for (let j = i + 1; j < products.length; j++) {
+        const other = products[j];
+        if (!other.id || clusterAssigned.has(other.id)) continue;
+
+        const match = areProductsMatch(p, other);
+        if (match.isMatch) {
+          clusterMembers.push(other);
+          clusterAssigned.add(other.id);
+        }
+      }
+
+      // Chọn sản phẩm mốc đại diện
+      const sortedMembers = [...clusterMembers].sort((a, b) => {
+        const aStats = statsMap[a.id!] || { totalIn: 0, totalOut: 0 };
+        const bStats = statsMap[b.id!] || { totalIn: 0, totalOut: 0 };
+        const aAct = aStats.totalIn + aStats.totalOut;
+        const bAct = bStats.totalIn + bStats.totalOut;
+        if (bAct !== aAct) return bAct - aAct;
+        return (b.stock || 0) - (a.stock || 0);
+      });
+
+      const primary = sortedMembers[0];
+      const allIds = clusterMembers.map(m => m.id!);
+      const canonicalName = primary.name.replace(/\s+/g, ' ').trim();
+      const canonicalUnit = normalizeUnit(primary.unit || clusterMembers.find(m => m.unit)?.unit || 'Cái');
+
+      // Tổng hợp giao dịch
+      let clusterTotalIn = 0;
+      let clusterTotalOut = 0;
+      let clusterLastInPrice = 0;
+      let clusterLastOutPrice = 0;
+      let clusterStockSum = 0;
+
+      clusterMembers.forEach(m => {
+        const s = statsMap[m.id!];
+        if (s) {
+          clusterTotalIn += s.totalIn;
+          clusterTotalOut += s.totalOut;
+          if (s.lastInPrice > clusterLastInPrice) clusterLastInPrice = s.lastInPrice;
+          if (s.lastOutPrice > clusterLastOutPrice) clusterLastOutPrice = s.lastOutPrice;
+        }
+        clusterStockSum += (m.stock || 0);
+      });
+
+      if (clusterLastOutPrice === 0) {
+        clusterLastOutPrice = primary.unitPrice || 0;
+      }
+
+      // Tồn kho thực tế: nếu có phát sinh giao dịch Nhập thì số lượng thực tế = Nhập - Xuất
+      const realStock = clusterTotalIn > 0 ? (clusterTotalIn - clusterTotalOut) : clusterStockSum;
+
+      clusters.push({
+        primary,
+        members: clusterMembers,
+        allIds,
+        canonicalName,
+        canonicalUnit,
+        totalIn: clusterTotalIn,
+        totalOut: clusterTotalOut,
+        lastInPrice: clusterLastInPrice,
+        lastOutPrice: clusterLastOutPrice,
+        stock: realStock
+      });
+    }
+
+    return clusters.map(c => {
+      const p = c.primary;
       return {
         ...p,
+        id: p.id!,
+        allIds: c.allIds,
+        name: c.canonicalName,
+        unit: c.canonicalUnit,
+        stock: c.stock,
         type: p.type || 'PRODUCT',
-        category: p.category || '',
-        totalIn: pStats.totalIn,
-        totalOut: pStats.totalOut,
-        lastInPrice: pStats.lastInPrice,
-        lastOutPrice: pStats.lastOutPrice > 0 ? pStats.lastOutPrice : p.unitPrice // fallback
+        category: p.category || c.members.find(m => m.category)?.category || '',
+        totalIn: c.totalIn,
+        totalOut: c.totalOut,
+        lastInPrice: c.lastInPrice,
+        lastOutPrice: c.lastOutPrice
       };
     }).filter(p => {
       const matchSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -731,15 +898,16 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
           <tbody className="bg-white divide-y divide-gray-200">
             {productStats.map((product) => {
               const isEditing = editingId === product.id;
+              const isSelected = selectedIds.includes(product.id!) || Boolean(product.allIds && product.allIds.some((id: number) => selectedIds.includes(id)));
               
               return (
-                <tr key={product.id} className={`hover:bg-blue-50 transition-colors cursor-pointer ${selectedIds.includes(product.id!) ? 'bg-blue-50' : ''}`} onClick={() => openHistoryModal(product)}>
+                <tr key={product.id} className={`hover:bg-blue-50 transition-colors cursor-pointer ${isSelected ? 'bg-blue-50' : ''}`} onClick={() => openHistoryModal(product)}>
                   <td className="px-4 py-4 text-center border-r border-gray-100" onClick={(e) => e.stopPropagation()}>
                     <input 
                       type="checkbox" 
                       className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                       disabled={false}
-                      checked={selectedIds.includes(product.id!)}
+                      checked={isSelected}
                       onChange={() => handleToggleSelect(product.id!)}
                       title="Chọn để thao tác"
                     />

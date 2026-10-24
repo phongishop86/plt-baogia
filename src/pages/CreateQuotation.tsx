@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, type Product } from '../db/db';
 import { Trash2, Printer } from 'lucide-react';
+import { normalizeText, normalizeUnit } from '../lib/productMatcher';
 
 interface SelectedProduct extends Partial<Product> {
   tempId: string; // Cho các dòng nhập thủ công
@@ -280,7 +281,20 @@ export default function CreateQuotation({ prefilledProducts = [], clearPrefilled
   const formatCurrency = (val: number) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
   
   // Lấy toàn bộ sản phẩm để có thể báo giá kể cả khi tồn kho = 0
-  const availableProducts = products || [];
+  const availableProducts = useMemo(() => {
+    if (!products) return [];
+    const seen = new Map<string, Product>();
+    for (const p of products) {
+      const key = `${normalizeText(p.name)}___${normalizeUnit(p.unit)}`;
+      if (!seen.has(key)) {
+        seen.set(key, { ...p, unit: normalizeUnit(p.unit) });
+      } else {
+        const existing = seen.get(key)!;
+        existing.stock = (existing.stock || 0) + (p.stock || 0);
+      }
+    }
+    return Array.from(seen.values());
+  }, [products]);
   const searchNormalized = searchQuery.trim().toLowerCase();
   
   // Thuật toán tìm kiếm tương đối

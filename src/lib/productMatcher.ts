@@ -149,6 +149,16 @@ export function getCoreSearchKey(name?: string): string {
 }
 
 /**
+ * Trích xuất các mã model / mã số quan trọng từ tên sản phẩm để tránh gộp nhầm
+ */
+function extractModelTokens(str: string): string[] {
+  const norm = normalizeText(str);
+  // Tìm các token có chứa cả chữ và số (ví dụ: 120-40001104bl, cat6, 24awg)
+  const matches = norm.match(/[a-z0-9]+[-_./]?[a-z0-9]+/g) || [];
+  return matches.filter(m => /\d/.test(m) && /[a-z]/i.test(m) && m.length >= 3);
+}
+
+/**
  * Tính toán độ tương đồng giữa 2 chuỗi (Token Jaccard + Levenshtein):
  */
 export function computeSimilarity(str1: string, str2: string): number {
@@ -221,7 +231,7 @@ export function areProductsMatch(
 
   const unitMatch = areUnitsEquivalent(p1.unit, p2.unit);
 
-  // 1. Tên giống hệt nhau sau chuẩn hóa Unicode & khoảng trắng
+  // 1. Tên giống hệt nhau sau chuẩn hóa Unicode & gộp khoảng trắng thừa
   if (normName1 === normName2) {
     if (unitMatch) {
       return { 
@@ -230,7 +240,7 @@ export function areProductsMatch(
         reason: 'Tên và ĐVT hoàn toàn trùng khớp' 
       };
     } else {
-      // Tên giống hệt nhau nhưng ĐVT khác nhau kiểu trình bày (VD: "Cái" vs "cái" hoặc "Cái" vs "Chiếc")
+      // Tên giống hệt nhau nhưng ĐVT khác nhau kiểu trình bày (VD: "Cuộn" vs "CUỘN")
       return { 
         isMatch: true, 
         confidence: 0.95, 
@@ -250,7 +260,17 @@ export function areProductsMatch(
     };
   }
 
-  // 3. Đo độ tương đồng chuỗi cao
+  // 3. Kiểm tra mã model quan trọng nếu có: nếu có mã model khác nhau thì không được gộp nhầm
+  const models1 = extractModelTokens(p1.name);
+  const models2 = extractModelTokens(p2.name);
+  if (models1.length > 0 && models2.length > 0) {
+    const hasSharedModel = models1.some(m => models2.includes(m));
+    if (!hasSharedModel) {
+      return { isMatch: false, confidence: 0.1, reason: 'Khác mã model / quy cách' };
+    }
+  }
+
+  // 4. Đo độ tương đồng chuỗi cao
   const sim = computeSimilarity(p1.name, p2.name);
   if (sim >= 0.88 && unitMatch) {
     return {
@@ -297,13 +317,16 @@ export interface DuplicateGroup {
   duplicateProducts: Product[];
   allProducts: Product[];
   totalStock: number;
+  totalIn: number;
+  totalOut: number;
   reason: string;
 }
 
 /**
  * Tự động rà soát và nhóm các mặt hàng bị trùng lặp trong toàn bộ danh sách sản phẩm
+ * Hỗ trợ nhận diện lịch sử chứng từ để tính toán Tồn kho thực tế = Tổng Nhập - Tổng Xuất
  */
-export function detectDuplicateGroups(allProducts: Product[]): DuplicateGroup[] {
+export function detectDuplicateGroups(allProducts: Product[], allDocuments?: any[]): DuplicateGroup[] {
   if (!allProducts || allProducts.length < 2) return [];
 
   const visited = new Set<number>();
@@ -330,8 +353,33 @@ export function detectDuplicateGroups(allProducts: Product[]): DuplicateGroup[] 
 
     if (matchedProducts.length > 1) {
       visited.add(p1.id);
-      
-      // Chọn sản phẩm làm mốc: Ưu tiên sản phẩm có tồn kho > 0 hoặc tên dài đầy đủ hơn
+
+      const memberIds = new Set(matchedProducts.map(p => p.id!).filter(Boolean));
+      const memberNormNames = new Set(matchedProducts.map(p => normalizeText(p.name)).filter(Boolean));
+
+      // Tính tổng Nhập và Xuất từ toàn bộ chứng từ liên quan
+      let totalIn = 0;
+      let totalOut = 0;
+
+      if (allDocuments && Array.isArray(allDocuments)) {
+        allDocuments.forEach(doc => {
+          if (!doc.items || !Array.isArray(doc.items)) return;
+          doc.items.forEach((item: any) => {
+            const isMatch = (item.productId && memberIds.has(item.productId)) ||
+                            (item.productName && memberNormNames.has(normalizeText(item.productName)));
+            if (isMatch) {
+              const qty = Number(item.quantity) || 0;
+              if (doc.type === 'INPUT_INVOICE') {
+                totalIn += qty;
+              } else if (doc.type === 'OUTPUT_INVOICE' || doc.type === 'DELIVERY_NOTE') {
+                totalOut += qty;
+              }
+            }
+          });
+        });
+      }
+
+      // Chọn sản phẩm làm mốc: Ưu tiên sản phẩm có tồn kho > 0 hoặc tên gọn gàng hơn
       const sorted = [...matchedProducts].sort((a, b) => {
         if ((b.stock || 0) !== (a.stock || 0)) {
           return (b.stock || 0) - (a.stock || 0);
@@ -342,18 +390,24 @@ export function detectDuplicateGroups(allProducts: Product[]): DuplicateGroup[] 
       const targetProduct = sorted[0];
       const duplicateProducts = matchedProducts.filter(p => p.id !== targetProduct.id);
 
-      const canonicalName = targetProduct.name.trim();
-      const canonicalUnit = normalizeUnit(targetProduct.unit || 'Cái');
-      const totalStock = matchedProducts.reduce((sum, p) => sum + (p.stock || 0), 0);
+      // Chuẩn hóa tên và đơn vị tính sạch sẽ (loại bỏ double spaces, viết hoa ĐVT chuẩn)
+      const canonicalName = targetProduct.name.replace(/\s+/g, ' ').trim();
+      const canonicalUnit = normalizeUnit(targetProduct.unit || duplicateProducts[0]?.unit || 'Cái');
+
+      // Tồn kho thực tế: Nếu có phát sinh mua hàng thì tính bằng Tổng Mua - Tổng Bán
+      const sumStock = matchedProducts.reduce((sum, p) => sum + (p.stock || 0), 0);
+      const calculatedStock = totalIn > 0 ? (totalIn - totalOut) : sumStock;
 
       groups.push({
-        id: `dup_${targetProduct.id}_${Date.now()}_${i}`,
+        id: `dup_${targetProduct.id}_${i}`,
         canonicalName,
         canonicalUnit,
         targetProduct,
         duplicateProducts,
         allProducts: matchedProducts,
-        totalStock,
+        totalStock: calculatedStock,
+        totalIn,
+        totalOut,
         reason: matchReason || 'Cùng tên, khác kiểu ĐVT'
       });
     }
