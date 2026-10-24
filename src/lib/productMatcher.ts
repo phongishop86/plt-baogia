@@ -1,7 +1,51 @@
 import { type Product } from '../db/db';
 
 /**
+ * Chuẩn hóa và làm sạch tên sản phẩm:
+ * - Loại bỏ các hậu tố số serial, S/N, IMEI (ví dụ: "(SCDCWXFWWWK)", "(S/N: ...)", "(IMEI: ...)", "- Imei")
+ * - Loại bỏ các hậu tố tình trạng hàng hóa: "- Mới", "- Mới 100%", "(Mới)", "- New", "- Cũ", "- Like New"
+ * - Loại bỏ các thẻ phân loại thiết bị: "(NB)", "[NB]", "(PC)", "[PC]"
+ * - Chuẩn hóa quy cách RAM/ROM/Bộ nhớ: "(6+128G)", "(6GB/128GB)", "6G/128G" -> "6GB 128GB"
+ * - Chuẩn hóa mã phụ tùng / model bị lỗi dấu cách ở đuôi: "617K2P A" -> "617K2PA"
+ */
+export function cleanProductSpec(str?: string): string {
+  if (!str) return '';
+  let s = str.toString().normalize('NFC');
+
+  // 1. Loại bỏ thông tin Serial, S/N, IMEI trong ngoặc đơn hoặc ngoặc vuông:
+  // Ví dụ: "(SCDCWXFWWWK)", "(S/N: 5CD123)", "(IMEI: 8632...)", "[SN123456]"
+  s = s.replace(/\s*[-–—]?\s*(?:imei|serial|s\/?n)?\s*[:#-]?\s*[\(\[][a-z0-9_\-\/]{5,}[\)\]]/gi, ' ');
+  s = s.replace(/\s*[\(\[](?:s\/?n|serial|imei)\s*[:#-]?\s*[^)\]]+[\)\]]/gi, ' ');
+
+  // 2. Loại bỏ nhãn "- Imei", "- Serial", "- S/N" đứng ở cuối hoặc giữa tên
+  s = s.replace(/\s*[-–—]\s*(?:imei|serial|s\/?n)\b/gi, ' ');
+
+  // 3. Loại bỏ thông tin tình trạng: "- Mới", "- Mới 100%", "(Mới)", "- New", "- Like New", "- Cũ"
+  s = s.replace(/\s*[-–—]\s*(?:mới(?:\s*100%)?|new|cũ|like\s*new|đã\s*qua\s*sử\s*dụng)\b/gi, ' ');
+  s = s.replace(/\s*[\(\[](?:mới(?:\s*100%)?|new|cũ|like\s*new|đã\s*qua\s*sử\s*dụng)\s*[\)\]]/gi, ' ');
+
+  // 4. Loại bỏ các tiền tố / thẻ phân loại thiết bị: "(NB)", "[NB]", "(PC)", "[PC]"
+  s = s.replace(/\s*[\(\[](?:nb|pc)[\)\]]/gi, ' ');
+
+  // 5. Chuẩn hóa quy cách RAM/Bộ nhớ: (6+128G), (6GB/128GB), (6GB+128GB), 6G/128G -> 6GB 128GB
+  s = s.replace(/[\(\[]?\s*(\d+)\s*(?:gb|g)?\s*[\/+\-]\s*(\d+)\s*(?:gb|g)?\s*[\)\]]?/gi, ' $1GB $2GB ');
+
+  // 6. Chuẩn hóa mã phụ tùng / model bị cách dấu cách ở ký tự cuối: "617K2P A" -> "617K2PA"
+  s = s.replace(/\b([a-z0-9]{4,})\s+([a-z0-9])\b/gi, '$1$2');
+
+  // 7. Gộp khoảng trắng thừa và trim
+  s = s.replace(/[\u00A0\u1680\u180e\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]/g, ' ');
+  s = s.replace(/\s+/g, ' ').trim();
+
+  // 8. Bỏ dấu gạch nối hoặc dấu phẩy thừa ở cuối chuỗi
+  s = s.replace(/\s*[-–—.,;:_]+\s*$/, '').trim();
+
+  return s;
+}
+
+/**
  * 1. Chuẩn hóa chuỗi văn bản:
+ * - Tự động làm sạch các hậu tố serial, imei, tình trạng hàng
  * - Chuyển sang Unicode NFC (Dựng sẵn).
  * - Thay thế non-breaking spaces và các ký tự khoảng trắng đặc biệt.
  * - Gộp các khoảng trắng liên tiếp thành 1 dấu cách.
@@ -9,13 +53,12 @@ import { type Product } from '../db/db';
  */
 export function normalizeText(str?: string): string {
   if (!str) return '';
-  return str
-    .toString()
-    .normalize('NFC')
+  const cleaned = cleanProductSpec(str);
+  return cleaned
+    .toLowerCase()
     .replace(/[\u00A0\u1680\u180e\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]/g, ' ')
     .replace(/\s+/g, ' ')
-    .trim()
-    .toLowerCase();
+    .trim();
 }
 
 /**
@@ -142,6 +185,12 @@ export function getCoreSearchKey(name?: string): string {
   
   // Chuẩn hóa Cat 6, Cat-6, Cat.6 -> cat6
   str = str.replace(/\bcat[\s_.-]*([0-9a-zA-Z]+)\b/g, 'cat$1');
+
+  // Chuẩn hóa từ đồng nghĩa danh mục thiết bị
+  str = str.replace(/\b(?:máy tính xách tay|laptop|notebook)\b/g, 'laptop');
+  str = str.replace(/\b(?:điện thoại di động|điện thoại|đtdđ)\b/g, 'điện thoại');
+  str = str.replace(/\b(?:thiết bị chuyển mạch|switch mạng|switch)\b/g, 'switch');
+  str = str.replace(/\b(?:dây cáp mạng|cáp mạng|dây mạng)\b/g, 'cáp mạng');
   
   // Loại bỏ các dấu phân cách không cần thiết
   str = str.replace(/[-_.,/\\()[\]{}":;]/g, ' ').replace(/\s+/g, ' ').trim();
@@ -153,9 +202,9 @@ export function getCoreSearchKey(name?: string): string {
  */
 function extractModelTokens(str: string): string[] {
   const norm = normalizeText(str);
-  // Tìm các token có chứa cả chữ và số (ví dụ: 120-40001104bl, cat6, 24awg)
+  // Tìm các token có chứa cả chữ và số (ví dụ: 120-40001104bl, cat6, 24awg, 617k2pa, mqdp3, 1005g1, 512gssd)
   const matches = norm.match(/[a-z0-9]+[-_./]?[a-z0-9]+/g) || [];
-  return matches.filter(m => /\d/.test(m) && /[a-z]/i.test(m) && m.length >= 3);
+  return matches.filter(m => /\d/.test(m) && /[a-z]/i.test(m) && m.length >= 3 && !/^\d+gb$/.test(m));
 }
 
 /**
@@ -180,7 +229,7 @@ export function computeSimilarity(str1: string, str2: string): number {
   const union = set1.size + set2.size - intersection;
   const wordSim = union > 0 ? intersection / union : 0;
 
-  if (wordSim >= 0.85) return wordSim;
+  if (wordSim >= 0.82) return wordSim;
 
   // Levenshtein distance
   const len1 = s1.length;
@@ -231,7 +280,7 @@ export function areProductsMatch(
 
   const unitMatch = areUnitsEquivalent(p1.unit, p2.unit);
 
-  // 1. Tên giống hệt nhau sau chuẩn hóa Unicode & gộp khoảng trắng thừa
+  // 1. Tên giống hệt nhau sau chuẩn hóa Unicode, loại bỏ hậu tố Serial/IMEI & gộp khoảng trắng
   if (normName1 === normName2) {
     if (unitMatch) {
       return { 
@@ -240,7 +289,6 @@ export function areProductsMatch(
         reason: 'Tên và ĐVT hoàn toàn trùng khớp' 
       };
     } else {
-      // Tên giống hệt nhau nhưng ĐVT khác nhau kiểu trình bày (VD: "Cuộn" vs "CUỘN")
       return { 
         isMatch: true, 
         confidence: 0.95, 
@@ -249,14 +297,14 @@ export function areProductsMatch(
     }
   }
 
-  // 2. Tên cốt lõi (Core Key) giống hệt nhau (chỉ khác dấu chấm, gạch nối, khoảng cách)
+  // 2. Tên cốt lõi (Core Key) giống hệt nhau (chỉ khác dấu phân cách, tiền tố danh mục)
   const core1 = getCoreSearchKey(p1.name);
   const core2 = getCoreSearchKey(p2.name);
   if (core1 === core2) {
     return {
       isMatch: true,
       confidence: unitMatch ? 0.98 : 0.92,
-      reason: `Tên cốt lõi trùng khớp (chỉ khác dấu phân cách và ĐVT)`
+      reason: `Tên cốt lõi trùng khớp (chỉ khác tiền tố danh mục, dấu phân cách và ĐVT)`
     };
   }
 
@@ -270,9 +318,21 @@ export function areProductsMatch(
     }
   }
 
-  // 4. Đo độ tương đồng chuỗi cao
+  // 4. Nếu có chung mã model (ví dụ: MQDP3, HP 240 G8, 617K2PA, Redmi Note 15 5G) và một bên chứa bên kia
+  if (models1.length > 0 && models2.length > 0 && unitMatch) {
+    const hasSharedModel = models1.some(m => models2.includes(m));
+    if (hasSharedModel && (core1.includes(core2) || core2.includes(core1))) {
+      return {
+        isMatch: true,
+        confidence: 0.94,
+        reason: 'Trùng mã model chính và chứa thông tin tương đương'
+      };
+    }
+  }
+
+  // 5. Đo độ tương đồng chuỗi cao
   const sim = computeSimilarity(p1.name, p2.name);
-  if (sim >= 0.88 && unitMatch) {
+  if (sim >= 0.82 && unitMatch) {
     return {
       isMatch: true,
       confidence: sim,
@@ -297,7 +357,7 @@ export function findMatchingProduct(
 
   for (const prod of existingProducts) {
     const res = areProductsMatch(prod, target);
-    if (res.isMatch && res.confidence > highestConfidence && res.confidence >= 0.85) {
+    if (res.isMatch && res.confidence > highestConfidence && res.confidence >= 0.82) {
       highestConfidence = res.confidence;
       bestMatch = prod;
     }
@@ -324,7 +384,7 @@ export interface DuplicateGroup {
 
 /**
  * Tự động rà soát và nhóm các mặt hàng bị trùng lặp trong toàn bộ danh sách sản phẩm
- * Hỗ trợ nhận diện lịch sử chứng từ để tính toán Tồn kho thực tế = Tổng Nhập - Tổng Xuất
+ * Hỗ trợ nhận diện lịch sử chứng từ để tính toán Tồn kho thực tế = max(0, Tổng Nhập - Tổng Xuất)
  */
 export function detectDuplicateGroups(allProducts: Product[], allDocuments?: any[]): DuplicateGroup[] {
   if (!allProducts || allProducts.length < 2) return [];
@@ -390,13 +450,13 @@ export function detectDuplicateGroups(allProducts: Product[], allDocuments?: any
       const targetProduct = sorted[0];
       const duplicateProducts = matchedProducts.filter(p => p.id !== targetProduct.id);
 
-      // Chuẩn hóa tên và đơn vị tính sạch sẽ (loại bỏ double spaces, viết hoa ĐVT chuẩn)
-      const canonicalName = targetProduct.name.replace(/\s+/g, ' ').trim();
+      // Chuẩn hóa tên sạch sẽ (loại bỏ serials, double spaces, viết hoa ĐVT chuẩn)
+      const canonicalName = cleanProductSpec(targetProduct.name);
       const canonicalUnit = normalizeUnit(targetProduct.unit || duplicateProducts[0]?.unit || 'Cái');
 
-      // Tồn kho thực tế: Nếu có phát sinh mua hàng thì tính bằng Tổng Mua - Tổng Bán
+      // Tồn kho thực tế: Không bao giờ để âm, tối thiểu là 0 (Hết hàng)
       const sumStock = matchedProducts.reduce((sum, p) => sum + (p.stock || 0), 0);
-      const calculatedStock = totalIn > 0 ? (totalIn - totalOut) : sumStock;
+      const calculatedStock = totalIn > 0 ? Math.max(0, totalIn - totalOut) : Math.max(0, sumStock);
 
       groups.push({
         id: `dup_${targetProduct.id}_${i}`,

@@ -2,7 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db, type User, type Product } from '../db/db';
 import { useMemo, useState, useEffect, useRef } from 'react';
 import { CheckSquare, FileText, Search, Edit2, Save, X, Layers, GitMerge, CheckCircle, RefreshCw } from 'lucide-react';
-import { detectDuplicateGroups, normalizeUnit, normalizeText, areProductsMatch, type DuplicateGroup } from '../lib/productMatcher';
+import { detectDuplicateGroups, normalizeUnit, normalizeText, areProductsMatch, cleanProductSpec, type DuplicateGroup } from '../lib/productMatcher';
 
 interface ProductsProps {
   onNavigate?: (tab: string) => void;
@@ -251,15 +251,35 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
 
     const duplicates = prods.filter(p => p.id !== selectedTargetId);
     const dupIds = duplicates.map(p => p.id!);
-    const dupNames = new Set(duplicates.map(p => normalizeText(p.name)));
-    const totalStock = prods.reduce((sum, p) => sum + (p.stock || 0), 0);
+    const dupNames = new Set(prods.map(p => normalizeText(p.name)));
+    const allProdIds = prods.map(p => p.id!);
+
+    let totalIn = 0;
+    let totalOut = 0;
+    if (documents) {
+      documents.forEach(doc => {
+        if (!doc.items || !Array.isArray(doc.items)) return;
+        doc.items.forEach(item => {
+          const isMatch = (item.productId && allProdIds.includes(item.productId)) ||
+                          (item.productName && dupNames.has(normalizeText(item.productName)));
+          if (isMatch) {
+            const qty = Number(item.quantity) || 0;
+            if (doc.type === 'INPUT_INVOICE') totalIn += qty;
+            else if (doc.type === 'OUTPUT_INVOICE' || doc.type === 'DELIVERY_NOTE') totalOut += qty;
+          }
+        });
+      });
+    }
+
+    const sumStock = prods.reduce((sum, p) => sum + (p.stock || 0), 0);
+    const calculatedStock = totalIn > 0 ? Math.max(0, totalIn - totalOut) : Math.max(0, sumStock);
 
     try {
       setIsMerging(true);
       await db.products.update(target.id!, {
-        name: customName.trim(),
+        name: cleanProductSpec(customName),
         unit: normalizeUnit(customUnit),
-        stock: totalStock,
+        stock: calculatedStock,
         updatedAt: new Date()
       });
 
@@ -449,7 +469,7 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
 
       const primary = sortedMembers[0];
       const allIds = clusterMembers.map(m => m.id!);
-      const canonicalName = primary.name.replace(/\s+/g, ' ').trim();
+      const canonicalName = cleanProductSpec(primary.name);
       const canonicalUnit = normalizeUnit(primary.unit || clusterMembers.find(m => m.unit)?.unit || 'Cái');
 
       // Tổng hợp giao dịch
@@ -474,8 +494,10 @@ export default function Products({ onNavigate, setPrefilledProducts, currentUser
         clusterLastOutPrice = primary.unitPrice || 0;
       }
 
-      // Tồn kho thực tế: nếu có phát sinh giao dịch Nhập thì số lượng thực tế = Nhập - Xuất
-      const realStock = clusterTotalIn > 0 ? (clusterTotalIn - clusterTotalOut) : clusterStockSum;
+      // Tồn kho thực tế: nếu có phát sinh giao dịch Nhập thì số lượng thực tế = max(0, Nhập - Xuất), không bao giờ để âm
+      const realStock = clusterTotalIn > 0 
+        ? Math.max(0, clusterTotalIn - clusterTotalOut) 
+        : Math.max(0, clusterStockSum);
 
       clusters.push({
         primary,

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Upload } from 'lucide-react';
 import { parseInvoiceXML } from '../lib/xmlParser';
 import { db } from '../db/db';
-import { findMatchingProduct, normalizeUnit } from '../lib/productMatcher';
+import { findMatchingProduct, normalizeUnit, cleanProductSpec } from '../lib/productMatcher';
 
 export default function XMLImport() {
   const [loading, setLoading] = useState(false);
@@ -95,11 +95,11 @@ export default function XMLImport() {
             
             const newProductData = {
               code: prod.code || '',
-              name: prod.name.replace(/\s+/g, ' ').trim(),
+              name: cleanProductSpec(prod.name),
               unit: normalizeUnit(prod.unit),
               unitPrice: prod.unitPrice || 0,
               taxRate: prod.taxRate || 0,
-              stock: newStock,
+              stock: Math.max(0, newStock),
               type: resolvedType,
               expenseDate: resolvedType === 'EXPENSE' ? invoiceInfo.date : undefined
             };
@@ -118,7 +118,7 @@ export default function XMLImport() {
             const unifiedUnit = normalizeUnit(existing.unit || prod.unit);
 
             await db.products.update(existing.id!, { 
-              stock: newStock,
+              stock: Math.max(0, newStock),
               unit: unifiedUnit,
               unitPrice: prod.unitPrice || existing.unitPrice 
             });
